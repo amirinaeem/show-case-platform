@@ -9,26 +9,25 @@ function ApplicationScreen() {
   const application = applicationsData.find((ap) => ap._id === applicationUrlId);
 
   if (!application) {
-    return <div>Application not found</div>;
+    return <div>Data not found</div>;
   }
 
   return (
     <>
-      {/* Back Button */}
       <Link className="btn btn-light my-3" to="/">
         Go Back
       </Link>
-
-
-
-
-      {/* Main Content */}
       <Row mb={8} className="d-flex">
-        {/* Column 1: Application Image and Previews */}
         <Col md={6}>
-          <Image style={{height: '100%', objectFit: 'cover'}} src={application.image} alt={application.name} fluid />
+          <Image 
+          style={{
+            height: '100%',
+            objectFit: 'cover',
+            borderRadius: '20px'
+             }}
+           src={application.image} alt={application.name} fluid />
         </Col>
-        {/* Column 2: Author Details */}
+       
         <Col md={3}>
           <Card>
             <ListGroup variant="flush">
@@ -76,7 +75,7 @@ function ApplicationScreen() {
             </ListGroup>
           </Card>
         </Col>
-        {/* Column 3: Purchase Details */}
+
         <Col md={3}>
           <Card>
             <ListGroup variant="flush">
@@ -91,7 +90,7 @@ function ApplicationScreen() {
               <ListGroup.Item>
                 <Row>
                   <Col>License:</Col>
-                  <Col>
+                  <Col md={6}>
                     <strong>{application.licenseType}</strong>
                   </Col>
                 </Row>
@@ -147,8 +146,7 @@ function ApplicationScreen() {
 
       </Row>
 
-      <Row>
-        {/* Column 2: Application Details */}
+      <Row>      
         <Col md={12}>
           <ListGroup variant="flush">
             <ListGroup.Item>
@@ -220,7 +218,6 @@ function ApplicationScreen() {
 
       <hr></hr>
 
-      {/* Reviews Section */}
       <Row className="mt-4">
         <Col md={8}>
           <h4>Reviews</h4>
