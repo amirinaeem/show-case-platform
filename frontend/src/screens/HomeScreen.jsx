@@ -1,8 +1,21 @@
+import { useEffect, useState } from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
-import applicationsData from '../applicationsData';
 import Application from '../components/Application'; 
+import axios from 'axios';
 
 function HomeScreen() {
+
+  const [applicationsData, setApplicationsData] = useState([]);
+
+  useEffect(() => {
+    const fetchApplicationsData = async () => {
+      const {data} = await axios.get('/api/applications');
+      setApplicationsData(data)
+    };
+    fetchApplicationsData()
+  }, []);
+
+
   return (
     <Container fluid className="p-0"> 
       <Row className="g-0"> 
