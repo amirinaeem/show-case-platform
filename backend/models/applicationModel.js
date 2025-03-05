@@ -91,6 +91,7 @@ const applicationSchema = new mongoose.Schema(
     versions: [{ type: versionSchema }],
     metrics: { type: metricsSchema, default: { views: 0, likes: 0, shares: 0, downloads: 0, purchases: 0 } },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Reference to the User model
+    isAvailable: { type: Boolean, default: true }, // Add this field to indicate availability
   },
   { timestamps: true } // Enable timestamps for the application
 );

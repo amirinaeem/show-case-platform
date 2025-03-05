@@ -1,6 +1,8 @@
 import { Container, Row, Col } from 'react-bootstrap';
-import Application from '../components/Application'; 
+import Application from '../components/Application';
 import { useGetApplicationsQuery } from '../slices/applicationsSlice';
+import Loader from '../components/Loader';
+import Message from '../components/Message';
 
 function HomeScreen() {
   const { data: applicationsData, isLoading, isError } = useGetApplicationsQuery();
@@ -8,9 +10,9 @@ function HomeScreen() {
   return (
     <>
       {isLoading ? (
-        <h2>Loading...</h2>
+        <Loader />
       ) : isError ? (
-        <div>{isError?.data?.message || isError.error}</div>
+        <Message variant='danger'>{isError?.data?.message || isError.error}</Message>
       ) : (
         <Container fluid className="p-0">
           <Row className="g-0">

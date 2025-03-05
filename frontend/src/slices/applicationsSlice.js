@@ -8,9 +8,16 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
                 url: APPLICATIONS_URL,
             }),
             keepUnusedDataFor: 5
-        })
+        }),
+
+        getApplicationDetails: builder.query({
+            query: (appId) => ({
+                url: `${APPLICATIONS_URL}/${appId}`
+            }),
+            keepUnusedDataFor: 5,
+        }),
     }),
 });
 
 
-export const {useGetApplicationsQuery} = applicationsApiSlice;
+export const {useGetApplicationsQuery, useGetApplicationDetailsQuery} = applicationsApiSlice;
