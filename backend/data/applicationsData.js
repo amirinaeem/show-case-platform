@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const applicationsData = [
   {
     user: new mongoose.Types.ObjectId(), 
-    name: "E-commerce Website",
+    name: "Excellent e-commerce solution! Easy to customize and deploy",
     image: "/images/cybers/cyber1.jpg",
     description: `
     Limitless app kit is fully based on LESS pre-processor, includes 100+ commented LESS files.

@@ -69,19 +69,6 @@ function Application({ application }) {
               >
                 Live Preview
               </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                className="w-50"
-                style={{
-                  borderRadius: "10px",
-                  fontWeight: "bold",
-                  borderWidth: "2px",
-                  margin: "5px",
-                }}
-              >
-                Buy Now
-              </Button>
             </div>
           )}
         </Col>

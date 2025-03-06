@@ -20,12 +20,7 @@ function ApplicationScreen() {
     if (application.isAvailable) {
       dispatch(
         addToCart({
-          _id: application._id,
-          name: application.name,
-          image: application.image,
-          price: application.price,
-          licenseType: application.licenseType,
-          qty: 1, // Fixed quantity for digital products
+          ...application, qty : 1,
         })
       );
       navigate('/cart'); // Redirect to the cart page
