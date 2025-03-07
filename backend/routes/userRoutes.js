@@ -11,12 +11,13 @@ import {
     deleteUser,
     updateUser,
 } from '../controllers/userController.js';
+import { protect, admin } from '../middleware/authMiddleware.js';
 
 // Corrected routes
-router.route('/').post(registerUser).get(getUsers);
+router.route('/').post(registerUser).get(protect, admin, getUsers);
 router.post('/logout', logoutUser); // Use router.post() for logout
-router.post('/login', authUser); // Use router.post() for login
-router.route('/profile').get(getUserProfile).put(updateUserProfile);
-router.route('/:id').delete(deleteUser).get(getUserByID).put(updateUser);
+router.post('/auth', authUser); // Use router.post() for login
+router.route('/profile').get(protect, getUserProfile).put(protect, updateUserProfile);
+router.route('/:id').delete(protect, admin, deleteUser).get(protect, admin, getUserByID).put(protect, admin, updateUser);
 
 export default router;
