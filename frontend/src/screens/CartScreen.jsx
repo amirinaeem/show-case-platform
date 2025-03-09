@@ -27,7 +27,7 @@ const CartScreen = () => {
   };
 
     const checkoutHandler = () => {
-    navigate('/login?redirect=/payment')
+    navigate('/login?redirect=/billingAddress')
    }
 
   return (

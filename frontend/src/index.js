@@ -9,11 +9,14 @@ import './assets/styles/index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import HomeScreen from './screens/HomeScreen';
+import PrivateRoute from './components/PrivateRoute';
 import ApplicationScreen from './screens/ApplicationScreen';
 import CartScreen from './screens/CartScreen';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
+import BillingAddressScreen from './screens/BillingAddressScreen';
 import PaymentScreen from './screens/PaymentScreen';
+
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -23,7 +26,13 @@ const router = createBrowserRouter(
       <Route path='/cart' element={<CartScreen />} />
       <Route path='/login' element={<LoginScreen />} />
       <Route path='/register' element={<RegisterScreen />} />
-      <Route path='/payment' element={<PaymentScreen />} />
+
+      
+
+      <Route path='' element={<PrivateRoute />}>
+        <Route path='/billingAddress' element={<BillingAddressScreen />} />
+        <Route path='/payment' element={<PaymentScreen />} />
+      </Route>
     </Route>
   )
 )

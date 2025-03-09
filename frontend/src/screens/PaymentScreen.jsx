@@ -1,83 +1,54 @@
-import { useState } from "react";
-import { Form, Button } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux'; 
-import { useNavigate } from 'react-router-dom';
-import FormContainer from '../components/FormContainer';
-import { saveBillingAddress } from '../slices/cartSlice';
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { Form, Button, Col } from "react-bootstrap";
+import FormContainer from "../components/FormContainer";
+import CheckoutSteps from "../components/CheckoutSteps";
+import { savePaymentMethod } from "../slices/cartSlice";
 
 function PaymentScreen() {
-    const cart = useSelector((state) => state.cart);
-    const { billingAddress } = cart; 
+    const [paymentMethod, setPaymentMethod] = useState("PayPal");
 
-    const [address, setAddress] = useState(billingAddress?.address || '');
-    const [city, setCity] = useState(billingAddress?.city || '');
-    const [postalCode, setPostalCode] = useState(billingAddress?.postalCode || '');
-    const [country, setCountry] = useState(billingAddress?.country || '');
-
+    const dispatch = useDispatch();
     const navigate = useNavigate();
-    const dispatch = useDispatch(); 
+
+    const cart = useSelector((state) => state.cart);
+    const { billingAddress } = cart;
+
+    useEffect(() => {
+        if (!billingAddress) {
+            navigate("/billingAddress");
+        }
+    }, [billingAddress, navigate]);
 
     const submitHandler = (e) => {
         e.preventDefault();
-        dispatch(saveBillingAddress({ address, city, postalCode, country }));
-        navigate('/checkout'); 
+        dispatch(savePaymentMethod(paymentMethod));
+        navigate("/placeorder");
     };
 
     return (
         <FormContainer>
-            <h1>Payment Process</h1>
+            <CheckoutSteps step1 step2 step3 />
+            <h1>Payment Method</h1>
             <Form onSubmit={submitHandler}>
-                {/* Address Field */}
-                <Form.Group controlId="address" className="my-2">
-                    <Form.Label>Address</Form.Label>
-                    <Form.Control
-                        type="text"
-                        placeholder="Enter Address"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        required
-                    />
+                <Form.Group>
+                    <Form.Label as="legend">Select Method</Form.Label>
+                    <Col>
+                        <Form.Check
+                            type="radio"
+                            className="my-2"
+                            label="PayPal or Credit Card"
+                            id="PayPal"
+                            name="paymentMethod"
+                            value="PayPal"
+                            checked={paymentMethod === "PayPal"}
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                        />
+                    </Col>
                 </Form.Group>
-
-                {/* City Field */}
-                <Form.Group controlId="city" className="my-2">
-                    <Form.Label>City</Form.Label>
-                    <Form.Control
-                        type="text"
-                        placeholder="Enter City"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        required
-                    />
-                </Form.Group>
-
-                {/* Postal Code Field */}
-                <Form.Group controlId="postalCode" className="my-2">
-                    <Form.Label>Postal Code</Form.Label>
-                    <Form.Control
-                        type="text"
-                        placeholder="Enter Postal Code"
-                        value={postalCode}
-                        onChange={(e) => setPostalCode(e.target.value)}
-                        required
-                    />
-                </Form.Group>
-
-                {/* Country Field */}
-                <Form.Group controlId="country" className="my-2">
-                    <Form.Label>Country</Form.Label>
-                    <Form.Control
-                        type="text"
-                        placeholder="Enter Country"
-                        value={country}
-                        onChange={(e) => setCountry(e.target.value)}
-                        required
-                    />
-                </Form.Group>
-
-                {/* Submit Button */}
-                <Button type="submit" variant="primary" className="my-3">
-                    Continue to Payment
+                <Button type="submit" variant="primary">
+                    Continue
                 </Button>
             </Form>
         </FormContainer>
