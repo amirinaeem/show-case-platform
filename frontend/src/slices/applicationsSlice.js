@@ -16,8 +16,16 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
             }),
             keepUnusedDataFor: 5,
         }),
+
+        createApplication: builder.mutation({
+            query: () => ({
+                url: APPLICATIONS_URL,
+                method: 'POST',
+            }),
+            invalidatesTags: ['Application'],
+        })
     }),
 });
 
 
-export const {useGetApplicationsQuery, useGetApplicationDetailsQuery} = applicationsApiSlice;
+export const {useGetApplicationsQuery, useGetApplicationDetailsQuery, useCreateApplicationMutation} = applicationsApiSlice;
