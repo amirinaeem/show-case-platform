@@ -32,61 +32,114 @@ const getApplicationById = asyncHandler(async (req, res) => {
 // @route   POST /api/applications
 // @access  Private/Admin
 const createApplication = asyncHandler(async (req, res) => {
-    const {
-        name,
-        image,
-        description,
-        platform,
-        programmingLanguage,
-        framework,
-        database,
-        licenseType,
-        price,
-        demoLink,
-        documentationLink,
-        githubRepo,
-        supportDetails,
-        features,
-        previews,
-        authorDetails,
-        tags,
-        isAvailable,
-    } = req.body;
 
     const application = new Application({
-        name: name || 'Sample Name',
-        image: image || 'SHCAPL-logo.jpg',
-        description: description || 'Sample description',
-        platform: platform || 'Web',
-        programmingLanguage: programmingLanguage || 'JavaScript',
-        framework: framework || 'React, Node.js',
-        database: database || 'MongoDB',
-        licenseType: licenseType || 'Single License',
-        price: price || 0,
-        demoLink: demoLink || '',
-        documentationLink: documentationLink || '',
-        githubRepo: githubRepo || '',
-        supportDetails: supportDetails || { type: 'Email support', duration: '6 months' },
-        features: features || [],
-        previews: previews || [],
-        authorDetails: authorDetails || {
+        name: 'cyber solution',
+        image:  '/images/sample/SHCAPL-logo.jpg',
+        description: `If you want to keep all fields as required, you need to provide default values for them when creating a new application. Here's how you can update If you want to keep all fields as required, you need to provide default values for them when creating a new application. Here's how you can updateIf you want to keep all fields as required, you need to provide default values for them when creating a new application. Here's how you can updateIf you want to keep all fields as required, you need to provide default values for them when creating a new application. Here's how you can updateIf you want to keep all fields as required, you need to provide default values for them when creating a new application. Here's how you can update`,
+        platform: 'Web',
+        programmingLanguage:  'JavaScript',
+        framework: 'React, Node.js',
+        database: 'MongoDB',
+        licenseType: 'Single License',
+        price: 0,
+        demoLink: '',
+        documentationLink: '',
+        githubRepo: '',
+        supportDetails: { type: 'Email support', duration: '6 months' },
+        features:  [ "Responsive design",
+          "Product search and filtering",
+          "Shopping cart and checkout"],
+      previews: [{
+        type: 'video',
+        url: '/videos/video4.mov',
+        caption: 'Full Demo'
+        }],
+        authorDetails:  {
             name: 'Sample Author',
             portfolioLink: '',
             lastUpdate: new Date().toISOString(),
             published: new Date().toISOString(),
             highResolution: false,
-            compatibleBrowsers: [],
+            compatibleBrowsers: ["IE11", "Firefox", "Safari", "Opera", "Chrome"],
             compatibleWith: '',
             documentation: '',
             layout: '',
         },
-        tags: tags || [],
-        isAvailable: isAvailable || false,
-        user: req.user._id, 
+        tags: ["ecommerce", "react", "nodejs", "mongodb"],
+        isAvailable:  false,
+      user: req.user._id,
+      likes: [],
+      comments: [],
+      shares: 0,
     });
 
     const createdApplication = await application.save();
     res.status(201).json(createdApplication);
 });
 
-export { getApplications, getApplicationById, createApplication };
+// @desc    Like an application
+// @route   POST /api/applications/:id/like
+// @access  Private
+const likeApplication = asyncHandler(async (req, res) => {
+    const application = await Application.findById(req.params.id);
+  
+    if (application) {
+      // Check if the user already liked the application
+      if (application.likes.includes(req.user._id)) {
+        return res.status(400).json({ message: 'You already liked this application' });
+      }
+  
+      // Add the user to the likes array
+      application.likes.push(req.user._id);
+      await application.save();
+      res.status(200).json({ message: 'Application liked successfully' });
+    } else {
+      res.status(404);
+      throw new Error('Application not found');
+    }
+  });
+
+// @desc    Add a comment to an application
+// @route   POST /api/applications/:id/comment
+// @access  Private
+const addComment = asyncHandler(async (req, res) => {
+    const { text } = req.body;
+  
+    const application = await Application.findById(req.params.id);
+  
+    if (application) {
+      const comment = {
+        user: req.user._id,
+        text,
+      };
+  
+      application.comments.push(comment);
+      await application.save();
+      res.status(201).json({ message: 'Comment added successfully', comment });
+    } else {
+      res.status(404);
+      throw new Error('Application not found');
+    }
+});
+  
+
+// @desc    Share an application
+// @route   POST /api/applications/:id/share
+// @access  Public
+const shareApplication = asyncHandler(async (req, res) => {
+    const application = await Application.findById(req.params.id);
+  
+    if (application) {
+      application.shares += 1;
+      await application.save();
+      res.status(200).json({ message: 'Application shared successfully' });
+    } else {
+      res.status(404);
+      throw new Error('Application not found');
+    }
+  });
+
+
+
+export { getApplications, getApplicationById, createApplication, likeApplication, addComment, shareApplication };

@@ -8,6 +8,7 @@
 
 main {
   min-height: 80vh;
+  background-color: hsl(0, 0%, 96%)
 }
 
 .rating span {

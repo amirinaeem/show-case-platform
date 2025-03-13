@@ -50,10 +50,11 @@ function ApplicationScreen() {
           objectFit: 'cover',
           borderRadius: '10px',
         }}
-        src={application.image}
+        src={application.image}         
         alt={application.name}
         fluid
-      />
+                    />
+                    {console.log(application.image)}
     </Card>
   </Col>
 

@@ -18,43 +18,7 @@ function ApplicationListScreen() {
   const createApplicationHandler = async () => {
     if (window.confirm('Are you sure you want to create a new application?')) {
       try {
-        // Create a default application object with all required fields
-        const newApplication = {
-          name: 'New Application',
-          price: 0,
-          image: 'SHCAPL-logo.jpg',
-          framework: 'Sample Framework',
-          description: 'Sample description',
-          platform: 'Web',
-          programmingLanguage: 'JavaScript',
-          database: 'MongoDB',
-          licenseType: 'Single License',
-          demoLink: 'https://demo.example.com', // Add a default value
-          documentationLink: 'https://docs.example.com', // Add a default value
-          githubRepo: 'https://github.com/example', // Add a default value
-          supportDetails: {
-            type: 'Email support',
-            duration: '6 months',
-          },
-          features: [],
-          previews: [],
-          authorDetails: {
-            name: 'Sample Author',
-            portfolioLink: 'https://portfolio.example.com', // Add a default value
-            lastUpdate: new Date().toISOString(),
-            published: new Date().toISOString(),
-            highResolution: false,
-            compatibleBrowsers: [],
-            compatibleWith: 'Bootstrap 5.x', // Add a default value
-            documentation: 'Well Documented', // Add a default value
-            layout: 'Responsive', // Add a default value
-          },
-          tags: [],
-          isAvailable: false,
-        };
-  
-        // Call the createApplication mutation with the newApplication object
-        await createApplication(newApplication).unwrap();
+        await createApplication();
         refetch(); // Refetch the applications list
         toast.success('Application created successfully');
       } catch (error) {
@@ -101,7 +65,6 @@ function ApplicationListScreen() {
               <tr key={application._id}>
                 <td>{application._id}</td>
                 <td>{application.name}</td>
-                <td>{application.platform}</td>
                 <td>{application.framework}</td>
                 <td>${application.price}</td>
                 <td>{application.rating}</td>
