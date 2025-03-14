@@ -14,8 +14,10 @@ function HomeScreen() {
       ) : isError ? (
         <Message variant='danger'>{isError?.data?.message || isError.error}</Message>
       ) : (
-        <Container fluid className="p-0">
-          <Row className="g-0">
+            <Container fluid className="p-0">
+              
+              <Row className="g-0">
+              <Col>filter section</Col>
             <Col md={10} className="p-3">
               <h1>Latest Applications</h1>
               <Row>

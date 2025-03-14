@@ -1,10 +1,11 @@
 import { LinkContainer } from 'react-router-bootstrap';
 import { Table, Button, Row, Col } from 'react-bootstrap';
-import { FaTimes, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaTimes, FaEdit, FaTrash, FaCheck } from 'react-icons/fa';
 import Loader from '../../components/Loader';
 import { toast } from 'react-toastify';
 import Message from '../../components/Message';
 import { useGetApplicationsQuery, useCreateApplicationMutation } from '../../slices/applicationsSlice';
+
 
 function ApplicationListScreen() {
   const { data: applications, isLoading, error, refetch } = useGetApplicationsQuery();
@@ -29,9 +30,9 @@ function ApplicationListScreen() {
 
   return (
     <>
-      <Row className='align-items-center'>
-        <Col>
-          <h1>Applications</h1>
+      <Row style={{ marginTop: '2rem', marginBottom: '2rem'}} className='align-items-center'>
+        <Col md='8' >
+          <h1>Applications Managment</h1>
         </Col>
         <Col className='text-end'>
           <Button className='btn-sm m-3' onClick={createApplicationHandler} disabled={loadingCreate}>
@@ -49,28 +50,36 @@ function ApplicationListScreen() {
       ) : (
         <Table striped hover responsive className='table-sm'>
           <thead>
-            <tr>
-              <th>ID</th>
-              <th>NAME</th>
-              <th>PLATFORM</th>
-              <th>FRAMEWORK</th>
-              <th>PRICE</th>
-              <th>RATING</th>
-              <th>AVAILABLE</th>
-              <th>ACTIONS</th>
+                <tr>
+                <th>NAME</th>
+                <th>LICENSE TYPE</th>
+                <th>PRICE</th>
+                <th>Rating</th>
+                <th>COMMENTS</th>
+                <th>LIKES</th>
+                <th>SHARES</th>
+                <th>FRAMEWORK</th>
+                <th>AVAILABLE</th>
+                <th>EDITE</th>
+                <th>DELETE</th>
+                  
             </tr>
           </thead>
           <tbody>
             {applications.map((application) => (
               <tr key={application._id}>
-                <td>{application._id}</td>
-                <td>{application.name}</td>
-                <td>{application.framework}</td>
+                
+                <td className="text-truncate" style={{ maxWidth: '150px' }}>{application.name}</td>
+                <td>{application.licenseType}</td>
                 <td>${application.price}</td>
                 <td>{application.rating}</td>
+                <td>{application.comments.length}</td>
+                <td>{application.likes.length}</td>
+                <td>{application.shares.length}</td>
+                <td>{application.framework}</td>
                 <td>
                   {application.isAvailable ? (
-                    <FaTimes style={{ color: 'green' }} />
+                    <FaCheck style={{ color: 'green' }} />
                   ) : (
                     <FaTimes style={{ color: 'red' }} />
                   )}

@@ -57,7 +57,8 @@ function Application({ application }) {
   };
 
   return (
-    <Card
+    
+       <Card
       className="mb-2 shadow-sm"
       style={{
         height: "auto",
@@ -142,7 +143,7 @@ function Application({ application }) {
         </Col>
       </Row>
 
-      {/* Comment Section */}
+      {/* Comment placeholder Section */}
       <Row className="mt-3">
         <Col>
           {application.comments.map((comment, index) => (
@@ -162,7 +163,9 @@ function Application({ application }) {
           )}
         </Col>
       </Row>
-    </Card>
+       </Card>
+  
+
   );
 }
 

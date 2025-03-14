@@ -1,3 +1,4 @@
+import { application } from 'express';
 import asyncHandler from '../middleware/asyncHandler.js';
 import Application from '../models/applicationModel.js';
 import mongoose from 'mongoose';
@@ -78,6 +79,84 @@ const createApplication = asyncHandler(async (req, res) => {
     res.status(201).json(createdApplication);
 });
 
+
+// @desc    Update an application
+// @route   GET /api/applications/:id
+// @access  Private/Adin
+const updateApplication = asyncHandler(async (req, res) => {
+  const {
+    name,
+    image,
+    description,
+    platform,
+    programmingLanguage,
+    framework,
+    database,
+    licenseType,
+    price,
+    demoLink,
+    documentationLink,
+    githubRepo,
+    supportDetails,
+    features,
+    previews,
+    authorDetails,
+    tags,
+    isAvailable,
+    likes,
+    comments,
+    shares,
+    rating,
+    numReviews,
+    reviews,
+    collaborators,
+    versions,
+    metrics,
+  } = req.body;
+
+  const application = await Application.findById(req.params.id);
+
+  if (application) {
+    // Update all fields
+    application.name = name || application.name;
+    application.image = image || application.image;
+    application.description = description || application.description;
+    application.platform = platform || application.platform;
+    application.programmingLanguage = programmingLanguage || application.programmingLanguage;
+    application.framework = framework || application.framework;
+    application.database = database || application.database;
+    application.licenseType = licenseType || application.licenseType;
+    application.price = price || application.price;
+    application.demoLink = demoLink || application.demoLink;
+    application.documentationLink = documentationLink || application.documentationLink;
+    application.githubRepo = githubRepo || application.githubRepo;
+    application.supportDetails = supportDetails || application.supportDetails;
+    application.features = features || application.features;
+    application.previews = previews || application.previews;
+    application.authorDetails = authorDetails || application.authorDetails;
+    application.tags = tags || application.tags;
+    application.isAvailable = isAvailable || application.isAvailable;
+    application.likes = likes || application.likes;
+    application.comments = comments || application.comments;
+    application.shares = shares || application.shares;
+    application.rating = rating || application.rating;
+    application.numReviews = numReviews || application.numReviews;
+    application.reviews = reviews || application.reviews;
+    application.collaborators = collaborators || application.collaborators;
+    application.versions = versions || application.versions;
+    application.metrics = metrics || application.metrics;
+
+    // Save the updated application
+    const updatedApplication = await application.save();
+    res.status(200).json(updatedApplication);
+  } else {
+    res.status(404);
+    throw new Error('Application not found');
+  }
+});
+
+
+
 // @desc    Like an application
 // @route   POST /api/applications/:id/like
 // @access  Private
@@ -142,4 +221,4 @@ const shareApplication = asyncHandler(async (req, res) => {
 
 
 
-export { getApplications, getApplicationById, createApplication, likeApplication, addComment, shareApplication };
+export { getApplications, getApplicationById, createApplication, likeApplication, addComment, shareApplication, updateApplication };

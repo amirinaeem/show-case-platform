@@ -1,3 +1,4 @@
+
 import { APPLICATIONS_URL } from '../constants';
 import { apiSlice } from './apiSlice';
 
@@ -26,6 +27,15 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
       }),
       invalidatesTags: ['Application'],
+    }),
+
+    updateApplication: builder.mutation({
+      query: (data) => ({
+        url: `${APPLICATIONS_URL}/${data._id}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['application'],
     }),
 
     // Like an application
@@ -65,4 +75,5 @@ export const {
   useLikeApplicationMutation,
   useAddCommentMutation,
   useShareApplicationMutation,
+  useUpdateApplicationMutation
 } = applicationsApiSlice;
