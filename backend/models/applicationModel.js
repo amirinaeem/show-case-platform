@@ -55,7 +55,7 @@ const authorDetailsSchema = new mongoose.Schema({
 const previewSchema = new mongoose.Schema({
   type: { type: String, enum: ["image", "video"], required: true },
   url: { type: String, required: true },
-  caption: { type: String, required: true },
+  caption: { type: String, required: false },
 });
 
 // Schema for Support Details (embedded in Application)
@@ -70,7 +70,7 @@ const applicationSchema = new mongoose.Schema(
     name: { type: String, required: true },
     image: { type: String, required: true },
     description: { type: String, required: true },
-    platform: { type: String, enum: ["Web", "Mobile", "Desktop"], required: true },
+    platform: { type: String, enum: ["Web", "Mobile", "Desktop"], required: false },
     programmingLanguage: { type: String, required: true },
     framework: { type: String, required: true },
     database: { type: String, required: true },

@@ -1,5 +1,6 @@
 
 import { APPLICATIONS_URL } from '../constants';
+import { UPLOAD_URL } from '../constants';
 import { apiSlice } from './apiSlice';
 
 export const applicationsApiSlice = apiSlice.injectEndpoints({
@@ -10,6 +11,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         url: APPLICATIONS_URL,
       }),
       keepUnusedDataFor: 5,
+      invalidatesTags: ['Applications'],
     }),
 
     // Fetch a single application by ID
@@ -28,14 +30,24 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Application'],
     }),
-
+    ///made change here
     updateApplication: builder.mutation({
-      query: (data) => ({
-        url: `${APPLICATIONS_URL}/${data._id}`,
+      query: ({ appId, ...data }) => ({
+        url: `${APPLICATIONS_URL}/${appId}`,
         method: 'PUT',
         body: data,
       }),
-      invalidatesTags: ['application'],
+      invalidatesTags: ['Applications'],
+    }),
+
+    uploadApplicationFile: builder.mutation({
+      query: ({ file, fileType }) => {
+        return {
+          url: `${UPLOAD_URL}/${fileType}`, 
+          method: 'POST',
+          body: file, 
+        };
+      },
     }),
 
     // Like an application
@@ -75,5 +87,6 @@ export const {
   useLikeApplicationMutation,
   useAddCommentMutation,
   useShareApplicationMutation,
-  useUpdateApplicationMutation
+  useUpdateApplicationMutation,
+  useUploadApplicationFileMutation,
 } = applicationsApiSlice;
