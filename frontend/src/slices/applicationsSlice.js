@@ -50,6 +50,13 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       },
     }),
 
+    deleteApplication: builder.mutation({
+      query: (appId) => ({
+        url: `${APPLICATIONS_URL}/${appId}`,
+        method: 'DELETE',
+      }),
+    }),
+
     // Like an application
     likeApplication: builder.mutation({
       query: (appId) => ({
@@ -89,4 +96,5 @@ export const {
   useShareApplicationMutation,
   useUpdateApplicationMutation,
   useUploadApplicationFileMutation,
+  useDeleteApplicationMutation
 } = applicationsApiSlice;

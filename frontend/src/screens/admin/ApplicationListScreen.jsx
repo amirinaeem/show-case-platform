@@ -5,48 +5,56 @@ import { FaTimes, FaEdit, FaTrash, FaCheck } from 'react-icons/fa';
 import Loader from '../../components/Loader';
 import { toast } from 'react-toastify';
 import Message from '../../components/Message';
-import { useGetApplicationsQuery, useCreateApplicationMutation } from '../../slices/applicationsSlice';
+import { useGetApplicationsQuery, useCreateApplicationMutation, useDeleteApplicationMutation } from '../../slices/applicationsSlice';
 import ReactPaginate from 'react-paginate';
 
 function ApplicationListScreen() {
+
   const { data: applications, isLoading, error, refetch } = useGetApplicationsQuery();
   const [createApplication, { isLoading: loadingCreate }] = useCreateApplicationMutation();
+  const [deleteApplication, { isLoading: loadingDelete }] = useDeleteApplicationMutation();
 
-  // Pagination state
+ 
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 5; // Number of items per page
+  const itemsPerPage = 5; 
 
-  // Search state
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filter applications based on search term
+ 
   const filteredApplications = applications?.filter((application) =>
     application.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Calculate the total number of pages based on filtered applications
+  
   const pageCount = Math.ceil(filteredApplications?.length / itemsPerPage);
 
-  // Get the current page's data
+  
   const offset = currentPage * itemsPerPage;
   const currentApplications = filteredApplications?.slice(offset, offset + itemsPerPage);
 
-  // Handle page change
+
   const handlePageClick = ({ selected }) => {
     setCurrentPage(selected);
   };
 
-  // Delete application handler
-  const deleteHandler = (id) => {
-    console.log('delete', id);
+ 
+  const deleteHandler = async(id) => {
+    if (window.confirm('Are you sure?')) {
+      try {
+        await deleteApplication(id);
+        toast.success('Application Deleted')
+        refetch();
+      } catch (error) {
+        toast.error(error?.data?.message || error.error)
+      }
+    }
   };
 
-  // Create application handler
   const createApplicationHandler = async () => {
     if (window.confirm('Are you sure you want to create a new application?')) {
       try {
         await createApplication();
-        refetch(); // Refetch the applications list
+        refetch(); 
         toast.success('Application created successfully');
       } catch (error) {
         toast.error(error?.data?.message || error.error);
@@ -76,13 +84,14 @@ function ApplicationListScreen() {
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
-              setCurrentPage(0); // Reset to the first page when searching
+              setCurrentPage(0); 
             }}
           />
         </Col>
       </Row>
 
       {loadingCreate && <Loader />}
+      {loadingDelete && <Loader />}
 
       {isLoading ? (
         <div className="loader-container">

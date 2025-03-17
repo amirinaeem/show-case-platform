@@ -157,6 +157,23 @@ const updateApplication = asyncHandler(async (req, res) => {
 
 
 
+// @desc    Delete an application
+// @route   Delete/api/applications/:id
+// @access  Private/Adin
+const deleteApplication = asyncHandler(async (req, res) => {
+
+  const application = await Application.findById(req.params.id);
+
+  if (application) {
+    await Application.deleteOne({ _id: application._id });
+    res.status(200).json({message: 'Application Deleted'})
+  } else {
+    res.status(404);
+    throw new Error('Application not found');
+  }
+});
+
+
 // @desc    Like an application
 // @route   POST /api/applications/:id/like
 // @access  Private
@@ -221,4 +238,4 @@ const shareApplication = asyncHandler(async (req, res) => {
 
 
 
-export { getApplications, getApplicationById, createApplication, likeApplication, addComment, shareApplication, updateApplication };
+export { getApplications, getApplicationById, createApplication, likeApplication, addComment, shareApplication, updateApplication, deleteApplication };
