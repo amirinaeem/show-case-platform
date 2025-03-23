@@ -7,8 +7,12 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // Fetch all applications
     getApplications: builder.query({
-      query: () => ({
+      query: ({keyword, pageNumber}) => ({
         url: APPLICATIONS_URL,
+        params: {
+          keyword,
+          pageNumber,
+        },
       }),
       keepUnusedDataFor: 5,
       invalidatesTags: ['Application'],

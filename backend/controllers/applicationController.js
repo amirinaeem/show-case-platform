@@ -7,8 +7,12 @@ import mongoose from 'mongoose';
 // @route   GET /api/applications
 // @access  Public
 const getApplications = asyncHandler(async (req, res) => {
-    const applications = await Application.find({});
-    res.json(applications);
+  const pageSize = 5;
+  const page = Number(req.query.pageNumber) || 1;
+  const keyword = req.query.keyword ? { name: { $regex: req.query.keyword, $options: 'i' } } : {};
+  const count = await Application.countDocuments({...keyword});
+  const applications = await Application.find({...keyword}).limit(pageSize).skip(pageSize * (page - 1));
+  res.json({applications, page, pages: Math.ceil(count / pageSize)})
 });
 
 // @desc    Fetch a single application by ID

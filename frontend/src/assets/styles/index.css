@@ -75,143 +75,128 @@ table th {
 
 
 /* ApplicationListScreen.css */
+/* Custom Table Styling */
+.custom-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
 
-/* General Styling */
-.application-list-container {
-  padding: 2rem;
-  background-color: #f8f9fa;
+.custom-table thead {
+  background: linear-gradient(135deg, #5c595f, #8d9fbe);
+  color: white;
+}
+
+.custom-table th,
+.custom-table td {
+  padding: 12px;
+  text-align: left;
+}
+
+.custom-table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+/* Button Styling */
+.create-button {
+  background: linear-gradient(135deg, #5e5a62, #7b8699);
+  border: none;
+  color: white;
+  transition: background 0.3s ease;
+}
+
+.create-button:hover {
+  background: linear-gradient(135deg, #2575fc, #6a11cb);
+}
+
+.edit-button {
+  background: #728977;
+  border: none;
+  color: white;
+  transition: background 0.3s ease;
+}
+
+.edit-button:hover {
+  background: #738577;
+}
+
+.delete-button {
+  background: #8e454c;
+  border: none;
+  color: white;
+  transition: background 0.3s ease;
+}
+
+.delete-button:hover {
+  background: #934c53;
 }
 
 /* Search Bar Styling */
-.search-bar {
-  margin-bottom: 2rem;
+.search-container {
+  position: relative;
 }
 
-.search-bar input {
-  width: 100%;
-  padding: 0.75rem;
-  border-radius: 8px;
-  font-size: 1rem;
-  outline: none;
-  transition: border-color 0.3s ease;
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #bdb0cc;
 }
 
-.search-bar input:focus {
-  border-color: #0056b3;
-}
-
-/* Card Styling */
-.application-card {
-  border: none;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  background-color: #ffffff;
-  margin-bottom: 1.5rem;
-}
-
-.application-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-}
-
-.application-card .card-body {
-  padding: 1.5rem;
-}
-
-.application-card h5 {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #93aac2;
-  margin-bottom: 1rem;
-}
-
-.application-card p {
-  font-size: 1rem;
-  color: #555;
-  margin-bottom: 0.5rem;
-}
-
-.application-card ul {
-  list-style-type: none;
-  padding-left: 0;
-}
-
-.application-card ul li {
-  font-size: 0.95rem;
-  color: #666;
-  margin-bottom: 0.25rem;
-}
-
-.application-card .btn {
-  font-size: 0.9rem;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  transition: background-color 0.3s ease;
-}
-
-.application-card .btn-light {
-  background-color: #f8f9fa;
+.search-input {
+  padding-left: 35px;
+  border-radius: 20px;
   border: 1px solid #ddd;
-}
-
-.application-card .btn-light:hover {
-  background-color: #e9ecef;
-}
-
-.application-card .btn-danger {
-  background-color: #dc3545;
-  border: none;
-}
-
-.application-card .btn-danger:hover {
-  background-color: #c82333;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Pagination Styling */
 .pagination {
   display: flex;
   justify-content: center;
-  list-style: none;
-  padding: 0;
-  margin-top: 2rem;
-  
+  margin-top: 20px;
 }
 
-.pagination li {
+.page-item {
   margin: 0 5px;
 }
 
-.pagination li a {
-  padding: 0.5rem 1rem;
+.page-link {
+  border-radius: 5px;
+  color: #817a89;
   border: 1px solid #ddd;
-  border-radius: 8px;
-  cursor: pointer;
-  color: #8297ac;
-  transition: background-color 0.3s ease, color 0.3s ease;
-  text-decoration: none;
+  transition: background 0.3s ease;
 }
 
-.pagination li a:hover {
-  background-color: #007bff;
+.page-link:hover {
+  background: #f5f5f5;
+}
+
+.active .page-link {
+  background: #6c5f7b;
   color: white;
+  border-color: #aaa4b1;
 }
 
-.pagination li.active a {
-  background-color: #007bff;
-  color: white;
-  border-color: #007bff;
+/* General Styling */
+.page-title {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: #333;
 }
 
-/* Loader and Message Styling */
-.loader-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
+.features-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
 }
 
-.message-container {
-  margin: 2rem 0;
-  text-align: center;
+.features-list li {
+  margin-bottom: 5px;
 }
+
+/* ApplicationListScreen.css */
