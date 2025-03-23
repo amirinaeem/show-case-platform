@@ -70,6 +70,13 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Application'],
     }),
 
+    getTopApplications: builder.query({
+      query: () => ({
+        url: `${APPLICATIONS_URL}/top`,
+      }),
+      keepUnusedDataFor: 5,
+    }),
+
 
     // Like an application
     likeApplication: builder.mutation({
@@ -111,5 +118,6 @@ export const {
   useUpdateApplicationMutation,
   useUploadApplicationFileMutation,
   useDeleteApplicationMutation,
-  useCreateReviewMutation
+  useCreateReviewMutation,
+  useGetTopApplicationsQuery
 } = applicationsApiSlice;

@@ -220,6 +220,15 @@ const createApplicationReview = asyncHandler(async (req, res) => {
 });
 
 
+// @desc    Get top rated products
+// @route   GET /api/applications/top
+// @access  Public
+const getTopApplications = asyncHandler(async (req, res) => {
+  const applications = await Application.find({}).sort({ rating: -1 }).limit(3);
+  res.status(200).json(applications)
+});
+
+
 // @desc    Like an application
 // @route   POST /api/applications/:id/like
 // @access  Private
@@ -284,4 +293,4 @@ const shareApplication = asyncHandler(async (req, res) => {
 
 
 
-export { getApplications, getApplicationById, createApplication, likeApplication, addComment, shareApplication, updateApplication, deleteApplication, createApplicationReview };
+export { getApplications, getApplicationById, createApplication, likeApplication, addComment, shareApplication, updateApplication, deleteApplication, createApplicationReview, getTopApplications };

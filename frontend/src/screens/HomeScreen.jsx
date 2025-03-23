@@ -5,6 +5,7 @@ import { useGetApplicationsQuery } from '../slices/applicationsSlice';
 import Paginate from '../components/Paginate';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
+import ApplicationCarousel from '../components/ApplicationCarousel.jsx'
 
 function HomeScreen() {
   const { pageNumber, keyword } = useParams();
@@ -12,7 +13,9 @@ function HomeScreen() {
 
   return (
     <>
-      {keyword && (<Link to='/' className='btn btn-light mb-4'>Go Back</Link>)}
+      {!keyword ? (<ApplicationCarousel />) : (
+        <Link to='/' className='btn btn-light mb-4'>Go Back</Link>
+      )}
       {isLoading ? (
         <Loader />
       ) : isError ? (
