@@ -1,4 +1,4 @@
-import { application } from 'express';
+
 import asyncHandler from '../middleware/asyncHandler.js';
 import Application from '../models/applicationModel.js';
 import mongoose from 'mongoose';
@@ -174,6 +174,48 @@ const deleteApplication = asyncHandler(async (req, res) => {
 });
 
 
+// @desc    Create a review
+// @route   PUT/api/applications/:id
+// @access  Private
+const createApplicationReview = asyncHandler(async (req, res) => {
+  const { rating, comment } = req.body;
+
+  const application = await Application.findById(req.params.id);
+
+  if (application) {
+    const alreadyReviewed = application.reviews.find(
+      (review) => review.user.toString() === req.user._id.toString()
+    );
+
+    if (alreadyReviewed) {
+      res.status(400);
+      throw new Error("Application already reviewed");
+    }
+
+    const review = {
+      user: req.user._id,
+      name: req.user.name, // Ensure this matches the schema
+      rating: Number(rating),
+      comment,
+    };
+
+    application.reviews.push(review);
+    application.numReviews = application.reviews.length;
+
+    // Calculate the new average rating
+    application.rating =
+      application.reviews.reduce((acc, review) => acc + review.rating, 0) /
+      application.reviews.length;
+
+    await application.save();
+    res.status(201).json({ message: "Review added successfully" });
+  } else {
+    res.status(404);
+    throw new Error("Application not found");
+  }
+});
+
+
 // @desc    Like an application
 // @route   POST /api/applications/:id/like
 // @access  Private
@@ -238,4 +280,4 @@ const shareApplication = asyncHandler(async (req, res) => {
 
 
 
-export { getApplications, getApplicationById, createApplication, likeApplication, addComment, shareApplication, updateApplication, deleteApplication };
+export { getApplications, getApplicationById, createApplication, likeApplication, addComment, shareApplication, updateApplication, deleteApplication, createApplicationReview };

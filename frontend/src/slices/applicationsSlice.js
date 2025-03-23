@@ -11,7 +11,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         url: APPLICATIONS_URL,
       }),
       keepUnusedDataFor: 5,
-      invalidatesTags: ['Applications'],
+      invalidatesTags: ['Application'],
     }),
 
     // Fetch a single application by ID
@@ -37,7 +37,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'PUT',
         body: data,
       }),
-      invalidatesTags: ['Applications'],
+      invalidatesTags: ['Application'],
     }),
 
     uploadApplicationFile: builder.mutation({
@@ -56,6 +56,16 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'DELETE',
       }),
     }),
+
+    createReview: builder.mutation({
+      query: (data) => ({
+        url: `${APPLICATIONS_URL}/${data.appId}/reviews`,
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Application'],
+    }),
+
 
     // Like an application
     likeApplication: builder.mutation({
@@ -96,5 +106,6 @@ export const {
   useShareApplicationMutation,
   useUpdateApplicationMutation,
   useUploadApplicationFileMutation,
-  useDeleteApplicationMutation
+  useDeleteApplicationMutation,
+  useCreateReviewMutation
 } = applicationsApiSlice;

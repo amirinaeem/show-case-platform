@@ -5,10 +5,11 @@ import User from "./userModel.js";
 const reviewSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    name: { type: String, required: true }, 
     rating: { type: Number, required: true, min: 1, max: 5 },
     comment: { type: String, required: true },
   },
-  { timestamps: true } // Enable timestamps for reviews
+  { timestamps: true } 
 );
 
 // Schema for Collaborator (embedded in Application)
@@ -19,7 +20,7 @@ const collaboratorSchema = new mongoose.Schema(
     status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
     message: { type: String },
   },
-  { timestamps: true } // Enable timestamps for collaborators
+  { timestamps: true } 
 );
 
 // Schema for Version (embedded in Application)
@@ -40,22 +41,22 @@ const metricsSchema = new mongoose.Schema({
 
 // Schema for Author Details (embedded in Application)
 const authorDetailsSchema = new mongoose.Schema({
-  name: { type: String, required: false }, // Make optional
-  portfolioLink: { type: String, required: false }, // Make optional
-  lastUpdate: { type: String, required: false }, // Make optional
-  published: { type: String, required: false }, // Make optional
+  name: { type: String, required: false }, 
+  portfolioLink: { type: String, required: false }, 
+  lastUpdate: { type: String, required: false }, 
+  published: { type: String, required: false }, 
   highResolution: { type: Boolean, default: true },
-  compatibleBrowsers: [{ type: String, required: false }], // Make optional
-  compatibleWith: { type: String, required: false }, // Make optional
-  documentation: { type: String, required: false }, // Make optional
-  layout: { type: String, required: false }, // Make optional
+  compatibleBrowsers: [{ type: String, required: false }], 
+  compatibleWith: { type: String, required: false }, 
+  documentation: { type: String, required: false }, 
+  layout: { type: String, required: false }, 
 });
 
 // Schema for Previews (embedded in Application)
 const previewSchema = new mongoose.Schema({
   type: { type: String, enum: ["image", "video"], required: true },
   url: { type: String, required: true },
-  caption: { type: String, required: false },
+  caption: { type: String, required: false }, 
 });
 
 // Schema for Support Details (embedded in Application)
@@ -67,48 +68,68 @@ const supportDetailsSchema = new mongoose.Schema({
 // Schema for Application
 const applicationSchema = new mongoose.Schema(
   {
+    // Basic Information
     name: { type: String, required: true },
     image: { type: String, required: true },
     description: { type: String, required: true },
-    platform: { type: String, enum: ["Web", "Mobile", "Desktop"], required: false },
+
+    // Technical Details
+    platform: { type: String, enum: ["Web", "Mobile", "Desktop"], required: false }, 
     programmingLanguage: { type: String, required: true },
     framework: { type: String, required: true },
     database: { type: String, required: true },
+
+    // Licensing and Pricing
     licenseType: { type: String, enum: ["Single License", "Multi-License", "Open Source"], required: true },
     price: { type: Number, required: true },
-    demoLink: { type: String, required: false }, // Make optional
-    documentationLink: { type: String, required: false }, // Make optional
-    githubRepo: { type: String, required: false }, // Make optional
-    supportDetails: { type: supportDetailsSchema, required: false }, // Make optional
-    features: [{ type: String, required: false }], // Make optional
-    previews: [{ type: previewSchema, required: false }], // Make optional
+
+    // Links and Support
+    demoLink: { type: String, required: false }, 
+    documentationLink: { type: String, required: false }, 
+    githubRepo: { type: String, required: false }, 
+    supportDetails: { type: supportDetailsSchema, required: false }, 
+
+    // Features and Previews
+    features: [{ type: String, required: false }], 
+    previews: [{ type: previewSchema, required: false }], 
+
+    // Reviews and Ratings
     rating: { type: Number, default: 0 },
     numReviews: { type: Number, default: 0 },
-    reviews: [{ type: reviewSchema }],
-    tags: [{ type: String, required: false }], // Make optional
-    authorDetails: { type: authorDetailsSchema, required: false }, // Make optional
-    collaborators: [{ type: collaboratorSchema }],
-    versions: [{ type: versionSchema }],
+    reviews: [{ type: reviewSchema, default: [] }],
+
+    // Tags and Author Details
+    tags: [{ type: String, required: false }], 
+    authorDetails: { type: authorDetailsSchema, required: false }, 
+
+    // Collaborators and Versions
+    collaborators: [{ type: collaboratorSchema, default: [] }],
+    versions: [{ type: versionSchema, default: [] }],
+
+    // Metrics
     metrics: { type: metricsSchema, default: { views: 0, likes: 0, shares: 0, downloads: 0, purchases: 0 } },
+
+    // User and Availability
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     isAvailable: { type: Boolean, default: true },
-    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Array of user IDs who liked the application
+
+    // Likes and Comments
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", default: [] }],
     comments: [
       {
-        user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // User who commented
-        text: { type: String, required: true }, // Comment text
-        createdAt: { type: Date, default: Date.now }, // Timestamp
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+        text: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
       },
     ],
-    shares: { type: Number, default: 0 }, // Number of shares
-  },
 
-  { timestamps: true }
+    // Shares
+    shares: { type: Number, default: 0 },
+  },
+  { timestamps: true } 
 );
 
+// Create the Application model
 const Application = mongoose.model("Application", applicationSchema);
 
 export default Application;
-
-
-
