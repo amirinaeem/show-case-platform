@@ -95,6 +95,30 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         body: { text },
       }),
       invalidatesTags: ['Application'],
+      async onQueryStarted({ appId, text }, { dispatch, queryFulfilled, getState }) {
+        const { userInfo } = getState().auth;
+        const patchResult = dispatch(
+          applicationsApiSlice.util.updateQueryData('getApplications', undefined, (draft) => {
+            const application = draft.find(app => app._id === appId);
+            if (application) {
+              application.comments.unshift({
+                _id: Date.now().toString(),
+                user: {
+                  _id: userInfo._id,
+                  name: userInfo.name
+                },
+                text,
+                createdAt: new Date().toISOString()
+              });
+            }
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch (error) {
+          patchResult.undo();
+        }
+      }
     }),
 
     // Share an application

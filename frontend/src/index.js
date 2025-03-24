@@ -28,6 +28,7 @@ import UserListScreen from './screens/admin/UserListScreen';
 import UserEditScreen from './screens/admin/UserEditScreen';
 
 
+
 const router = createBrowserRouter(
   createRoutesFromElements(
     
@@ -40,6 +41,7 @@ const router = createBrowserRouter(
       <Route path='/cart' element={<CartScreen />} />
       <Route path='/login' element={<LoginScreen />} />
       <Route path='/register' element={<RegisterScreen />} />
+      <Route path='/:id/comment' element={<HomeScreen />} />
 
       
 

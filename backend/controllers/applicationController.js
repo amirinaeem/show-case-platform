@@ -254,24 +254,47 @@ const likeApplication = asyncHandler(async (req, res) => {
 // @desc    Add a comment to an application
 // @route   POST /api/applications/:id/comment
 // @access  Private
+
+
+// applicationController.js
 const addComment = asyncHandler(async (req, res) => {
-    const { text } = req.body;
+  const { text } = req.body;
+  const application = await Application.findById(req.params.id);
+
+  if (!application) {
+    res.status(404);
+    throw new Error('Application not found');
+  }
+
+  const comment = {
+    user: req.user._id,  // Store reference to user
+    text,
+    createdAt: new Date()
+  };
+
+  application.comments.unshift(comment);
+  await application.save();
+
+  // Populate the user data before returning
+  const populatedApp = await Application.findById(application._id)
+    .populate({
+      path: 'comments.user',
+      select: 'name email'  // Include only necessary fields
+    });
+
+  // Return the newly added comment (first in array)
+  const newComment = populatedApp.comments[0];
   
-    const application = await Application.findById(req.params.id);
-  
-    if (application) {
-      const comment = {
-        user: req.user._id,
-        text,
-      };
-  
-      application.comments.push(comment);
-      await application.save();
-      res.status(201).json({ message: 'Comment added successfully', comment });
-    } else {
-      res.status(404);
-      throw new Error('Application not found');
+  res.status(201).json({
+    message: 'Comment added successfully',
+    comment: {
+      ...newComment.toObject(),
+      user: {
+        _id: newComment.user._id,
+        name: newComment.user.name
+      }
     }
+  });
 });
   
 

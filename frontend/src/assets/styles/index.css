@@ -201,4 +201,49 @@ table th {
 
 /* ApplicationListScreen.css */
 
+/*Comment section */
 
+/* Application Card Styles */
+.app-image {
+  object-fit: cover;
+  width: 100%;
+  height: 260px;
+  transition: transform 0.3s ease;
+}
+
+.app-image:hover {
+  transform: scale(1.02);
+}
+
+.app-title {
+  text-decoration: none;
+  color: inherit;
+}
+
+.app-title:hover {
+  color: #0d6efd;
+}
+
+.live-preview-btn {
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.live-preview-btn:hover {
+  transform: translateY(-1px);
+}
+
+.action-btn {
+  min-width: 120px;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+}
+
+
+
+
+/*Comment section */
