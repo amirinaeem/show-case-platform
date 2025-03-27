@@ -251,50 +251,45 @@ const likeApplication = asyncHandler(async (req, res) => {
     }
   });
 
-// @desc    Add a comment to an application
-// @route   POST /api/applications/:id/comment
-// @access  Private
-
-
-// applicationController.js
+// @desc    add comment
+// @route   PUT/api/applications/:id
+// @access  public
 const addComment = asyncHandler(async (req, res) => {
-  const { text } = req.body;
-  const application = await Application.findById(req.params.id);
+  const { comment } = req.body;
 
-  if (!application) {
-    res.status(404);
-    throw new Error('Application not found');
+  if (!comment || typeof comment !== 'string' || comment.trim().length === 0) {
+    res.status(400);
+    throw new Error('Comment text is required');
   }
 
-  const comment = {
-    user: req.user._id,  // Store reference to user
-    text,
-    createdAt: new Date()
-  };
+  const application = await Application.findById(req.params.id);
 
-  application.comments.unshift(comment);
-  await application.save();
+  if (application) {
+    const newComment = {
+      user: req.user._id,
+      name: req.user.name, 
+      comment,
+    };
 
-  // Populate the user data before returning
-  const populatedApp = await Application.findById(application._id)
-    .populate({
-      path: 'comments.user',
-      select: 'name email'  // Include only necessary fields
+    application.comments.push(newComment);
+    
+    await application.save();
+
+    res.status(201).json({ 
+      message: "Comment added successfully", 
+      comment: {
+        _id: newComment._id,
+        user: newComment.user,
+        name: newComment.name,
+        comment: newComment.comment, // Make sure this is 'comment' not 'text'
+        createdAt: newComment.createdAt
+      }
     });
 
-  // Return the newly added comment (first in array)
-  const newComment = populatedApp.comments[0];
-  
-  res.status(201).json({
-    message: 'Comment added successfully',
-    comment: {
-      ...newComment.toObject(),
-      user: {
-        _id: newComment.user._id,
-        name: newComment.user.name
-      }
-    }
-  });
+  } else {
+    res.status(404);
+    throw new Error("Application not found");
+  }
 });
   
 

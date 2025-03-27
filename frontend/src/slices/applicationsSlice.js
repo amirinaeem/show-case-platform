@@ -70,6 +70,16 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Application'],
     }),
 
+    
+    createComment: builder.mutation({
+    query: (data) => ({
+    url: `${APPLICATIONS_URL}/${data.appId}/comments`,
+    method: 'POST',
+    body: { comment: data.comment },
+     }),
+     invalidatesTags: ['Application'],
+    }),
+
     getTopApplications: builder.query({
       query: () => ({
         url: `${APPLICATIONS_URL}/top`,
@@ -87,39 +97,6 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Application'],
     }),
 
-    // Add a comment to an application
-    addComment: builder.mutation({
-      query: ({ appId, text }) => ({
-        url: `${APPLICATIONS_URL}/${appId}/comment`,
-        method: 'POST',
-        body: { text },
-      }),
-      invalidatesTags: ['Application'],
-      async onQueryStarted({ appId, text }, { dispatch, queryFulfilled, getState }) {
-        const { userInfo } = getState().auth;
-        const patchResult = dispatch(
-          applicationsApiSlice.util.updateQueryData('getApplications', undefined, (draft) => {
-            const application = draft.find(app => app._id === appId);
-            if (application) {
-              application.comments.unshift({
-                _id: Date.now().toString(),
-                user: {
-                  _id: userInfo._id,
-                  name: userInfo.name
-                },
-                text,
-                createdAt: new Date().toISOString()
-              });
-            }
-          })
-        );
-        try {
-          await queryFulfilled;
-        } catch (error) {
-          patchResult.undo();
-        }
-      }
-    }),
 
     // Share an application
     shareApplication: builder.mutation({
@@ -137,11 +114,11 @@ export const {
   useGetApplicationDetailsQuery,
   useCreateApplicationMutation,
   useLikeApplicationMutation,
-  useAddCommentMutation,
   useShareApplicationMutation,
   useUpdateApplicationMutation,
   useUploadApplicationFileMutation,
   useDeleteApplicationMutation,
   useCreateReviewMutation,
+  useCreateCommentMutation,
   useGetTopApplicationsQuery
 } = applicationsApiSlice;

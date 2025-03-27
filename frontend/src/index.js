@@ -31,21 +31,24 @@ import UserEditScreen from './screens/admin/UserEditScreen';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    
     <Route path='/' element={<App />}>
-      <Route index={true} path='/' element={<HomeScreen />} />
+      {/* Public Routes */}
+      <Route index element={<HomeScreen />} />
       <Route path='/search/:keyword' element={<HomeScreen />} />
       <Route path='/page/:pageNumber' element={<HomeScreen />} />
       <Route path='/search/:keyword/page/:pageNumber' element={<HomeScreen />} />
-      <Route path='/application/:id' element={<ApplicationScreen />} />
+      
+      {/* Application Routes */}
+      <Route path='/application/:id' element={<ApplicationScreen />}>
+        <Route path='comments' element={<HomeScreen />} /> {/* Only if needed */}
+      </Route>
+      
       <Route path='/cart' element={<CartScreen />} />
       <Route path='/login' element={<LoginScreen />} />
       <Route path='/register' element={<RegisterScreen />} />
-      <Route path='/:id/comment' element={<HomeScreen />} />
 
-      
-
-      <Route path='' element={<PrivateRoute />}>
+      {/* Private Routes */}
+      <Route element={<PrivateRoute />}>
         <Route path='/billingAddress' element={<BillingAddressScreen />} />
         <Route path='/payment' element={<PaymentScreen />} />
         <Route path='/placeorder' element={<PlaceOrderScreen />} />
@@ -53,18 +56,18 @@ const router = createBrowserRouter(
         <Route path='/profile' element={<ProfileScreen />} />
       </Route>
 
-      <Route path='' element={<AdminRoute />}>
+      {/* Admin Routes */}
+      <Route element={<AdminRoute />}>
         <Route path='/admin/orderlist' element={<OrderListScreen />} />
         <Route path='/admin/applicationlist' element={<ApplicationListScreen />} />
         <Route path='/admin/applicationlist/:pageNumber' element={<ApplicationListScreen />} />
         <Route path='/admin/application/:id/edit' element={<ApplicationEditScreen />} />
-        <Route path='/admin/userslist' element={<UserListScreen />} />
+        <Route path='/admin/userslists' element={<UserListScreen />} />
         <Route path='/admin/user/:id/edit' element={<UserEditScreen />} />
       </Route>
-
     </Route>
   )
-)
+);
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

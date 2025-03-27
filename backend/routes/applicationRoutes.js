@@ -18,8 +18,8 @@ router.route('/').get(getApplications).post(protect, admin, createApplication);
 router.get('/top', getTopApplications)
 router.route('/:id').get(getApplicationById).put(protect, admin, updateApplication).delete(protect, admin, deleteApplication);
 router.route('/:id/like').post(protect, likeApplication);
-router.route('/:id/comment').post(protect, addComment);
 router.route('/:id/share').post(shareApplication);
 router.route('/:id/reviews').post(protect, createApplicationReview);
+router.route('/:id/comments').post(protect, addComment);
 
 export default router;

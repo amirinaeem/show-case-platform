@@ -1,10 +1,13 @@
 import { useSelector } from 'react-redux';
-import { useState, useCallback } from 'react'; // Added useCallback import
+import { useState, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { Card, Row, Col, Badge, Button } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import Rating from './Rating';
-import { useLikeApplicationMutation, useShareApplicationMutation } from '../slices/applicationsSlice';
+import { 
+  useLikeApplicationMutation, 
+  useShareApplicationMutation 
+} from '../slices/applicationsSlice';
 import Comment from './Comment';
 
 function Application({ application: initialApplication }) {
@@ -15,6 +18,11 @@ function Application({ application: initialApplication }) {
   const [currentApplication, setCurrentApplication] = useState(initialApplication);
 
   const handleLike = async () => {
+    if (!userInfo) {
+      toast.error('Please login to like applications');
+      return;
+    }
+
     try {
       const result = await likeApplication(currentApplication._id).unwrap();
       setCurrentApplication(prev => ({
@@ -27,7 +35,7 @@ function Application({ application: initialApplication }) {
       }));
       toast.success('Application liked successfully');
     } catch (error) {
-      toast.error(error?.data?.message || error.error);
+      toast.error(error?.data?.message || 'Failed to like application');
     }
   };
 
@@ -44,43 +52,79 @@ function Application({ application: initialApplication }) {
       }));
       toast.success('Application shared successfully');
     } catch (error) {
-      toast.error(error?.data?.message || error.error);
+      toast.error(error?.data?.message || 'Failed to share application');
     }
   };
 
-  const handleCommentAdded = useCallback((newComment) => {
+  const handleCommentAdded = useCallback((action) => {
     setCurrentApplication(prev => {
-      // Check if comment already exists
-      if (prev.comments?.some(c => c._id === newComment._id)) return prev;
+      // Case 1: Remove comment (on error)
+      if (action.remove) {
+        const newComments = prev.comments?.filter(c => c._id !== action._id) || [];
+        return {
+          ...prev,
+          comments: newComments,
+          metrics: {
+            ...prev.metrics,
+            commentsCount: Math.max((prev.metrics?.commentsCount || 0) - 1, 0)
+          }
+        };
+      }
       
+      // Case 2: Replace optimistic comment with real one
+      if (action.replaceWith) {
+        return {
+          ...prev,
+          comments: prev.comments.map(c => 
+            c._id === action._id ? action.replaceWith : c
+          )
+        };
+      }
+      
+      // Case 3: Add new comment (optimistic or direct)
       return {
         ...prev,
-        comments: [newComment, ...(prev.comments || [])],
+        comments: [action, ...(prev.comments || [])],
+        metrics: {
+          ...prev.metrics,
+          commentsCount: (prev.metrics?.commentsCount || 0) + 1
+        }
       };
     });
   }, []);
 
+  const toggleCommentSection = () => {
+    if (!userInfo) {
+      toast.error('Please login to comment');
+      return;
+    }
+    setShowCommentSection(prev => !prev);
+  };
+
   return (
     <Card className="mb-4 shadow-sm">
       <Row className="g-0 align-items-stretch">
-        {/* Application Image */}
         <Col md={7} className="p-0 d-flex">
           <Link 
             to={`/application/${currentApplication._id}`} 
             className="p-4 w-100 h-100 d-flex"
+            aria-label={`View ${currentApplication.name} details`}
           >
             <Card.Img
               variant="top"
               src={currentApplication.image}
               alt={currentApplication.name}
               className="app-image h-100 object-fit-cover w-100"
+              loading="lazy"
             />
           </Link>
         </Col>
 
-        {/* Application Details */}
         <Col md={5} className="p-3 d-flex flex-column">
-          <Link className="app-title" to={`/application/${currentApplication._id}`}>
+          <Link 
+            className="app-title text-decoration-none" 
+            to={`/application/${currentApplication._id}`}
+          >
             <Card.Title as="h5" className="mb-2 fw-bold">
               {currentApplication.name}
             </Card.Title>
@@ -134,13 +178,14 @@ function Application({ application: initialApplication }) {
         </Col>
       </Row>
 
-      {/* Action Buttons */}
       <Card.Footer className="bg-transparent border-top">
         <div className="d-flex justify-content-between p-4">
           <Button 
             variant="outline-primary" 
             onClick={handleLike}
             className="action-btn"
+            disabled={!userInfo}
+            aria-label="Like this application"
           >
             <i className="fas fa-thumbs-up me-2"></i> 
             Like ({currentApplication.likes?.length || 0})
@@ -148,30 +193,31 @@ function Application({ application: initialApplication }) {
           
           <Button 
             variant={showCommentSection ? "outline-secondary" : "outline-primary"}
-            onClick={() => setShowCommentSection(!showCommentSection)}
+            onClick={toggleCommentSection}
             className="action-btn"
+            aria-label="Toggle comment section"
           >
             <i className="fas fa-comment me-2"></i> 
-            Comment ({currentApplication.comments?.length || 0})
+            Comment ({currentApplication.metrics?.commentsCount || currentApplication.comments?.length || 0})
           </Button>
           
           <Button 
             variant="outline-success" 
             onClick={handleShare}
             className="action-btn"
+            aria-label="Share this application"
           >
             <i className="fas fa-share me-2"></i> 
             Share ({currentApplication.shares || 0})
           </Button>
         </div>
 
-        {/* Comment Section */}
         {showCommentSection && (
           <Comment 
-            application={currentApplication} 
-            userInfo={userInfo}
+            appId={currentApplication._id}
             onClose={() => setShowCommentSection(false)}
             onCommentAdded={handleCommentAdded}
+            currentUser={userInfo}
           />
         )}
       </Card.Footer>
