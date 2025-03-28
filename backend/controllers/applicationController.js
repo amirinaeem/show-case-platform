@@ -1,4 +1,3 @@
-
 import asyncHandler from '../middleware/asyncHandler.js';
 import Application from '../models/applicationModel.js';
 import mongoose from 'mongoose';
@@ -37,7 +36,6 @@ const getApplicationById = asyncHandler(async (req, res) => {
 // @route   POST /api/applications
 // @access  Private/Admin
 const createApplication = asyncHandler(async (req, res) => {
-
     const application = new Application({
         name: 'cyber solution',
         image:  '/images/sample/SHCAPL-logo.jpg',
@@ -55,10 +53,10 @@ const createApplication = asyncHandler(async (req, res) => {
         features:  [ "Responsive design",
           "Product search and filtering",
           "Shopping cart and checkout"],
-      previews: [{
-        type: 'video',
-        url: '/videos/video4.mov',
-        caption: 'Full Demo'
+        previews: [{
+          type: 'video',
+          url: '/videos/video4.mov',
+          caption: 'Full Demo'
         }],
         authorDetails:  {
             name: 'Sample Author',
@@ -73,20 +71,19 @@ const createApplication = asyncHandler(async (req, res) => {
         },
         tags: ["ecommerce", "react", "nodejs", "mongodb"],
         isAvailable:  false,
-      user: req.user._id,
-      likes: [],
-      comments: [],
-      shares: 0,
+        user: req.user._id,
+        likes: [],
+        comments: [],
+        shares: 0,
     });
 
     const createdApplication = await application.save();
     res.status(201).json(createdApplication);
 });
 
-
 // @desc    Update an application
-// @route   GET /api/applications/:id
-// @access  Private/Adin
+// @route   PUT /api/applications/:id
+// @access  Private/Admin
 const updateApplication = asyncHandler(async (req, res) => {
   const {
     name,
@@ -150,7 +147,6 @@ const updateApplication = asyncHandler(async (req, res) => {
     application.versions = versions || application.versions;
     application.metrics = metrics || application.metrics;
 
-    // Save the updated application
     const updatedApplication = await application.save();
     res.status(200).json(updatedApplication);
   } else {
@@ -159,13 +155,10 @@ const updateApplication = asyncHandler(async (req, res) => {
   }
 });
 
-
-
 // @desc    Delete an application
-// @route   Delete/api/applications/:id
-// @access  Private/Adin
+// @route   DELETE /api/applications/:id
+// @access  Private/Admin
 const deleteApplication = asyncHandler(async (req, res) => {
-
   const application = await Application.findById(req.params.id);
 
   if (application) {
@@ -177,9 +170,8 @@ const deleteApplication = asyncHandler(async (req, res) => {
   }
 });
 
-
 // @desc    Create a review
-// @route   PUT/api/applications/:id
+// @route   POST /api/applications/:id/reviews
 // @access  Private
 const createApplicationReview = asyncHandler(async (req, res) => {
   const { rating, comment } = req.body;
@@ -198,7 +190,7 @@ const createApplicationReview = asyncHandler(async (req, res) => {
 
     const review = {
       user: req.user._id,
-      name: req.user.name, // Ensure this matches the schema
+      name: req.user.name,
       rating: Number(rating),
       comment,
     };
@@ -206,7 +198,6 @@ const createApplicationReview = asyncHandler(async (req, res) => {
     application.reviews.push(review);
     application.numReviews = application.reviews.length;
 
-    // Calculate the new average rating
     application.rating =
       application.reviews.reduce((acc, review) => acc + review.rating, 0) /
       application.reviews.length;
@@ -219,8 +210,7 @@ const createApplicationReview = asyncHandler(async (req, res) => {
   }
 });
 
-
-// @desc    Get top rated products
+// @desc    Get top rated applications
 // @route   GET /api/applications/top
 // @access  Public
 const getTopApplications = asyncHandler(async (req, res) => {
@@ -228,87 +218,218 @@ const getTopApplications = asyncHandler(async (req, res) => {
   res.status(200).json(applications)
 });
 
-
 // @desc    Like an application
 // @route   POST /api/applications/:id/like
 // @access  Private
 const likeApplication = asyncHandler(async (req, res) => {
-    const application = await Application.findById(req.params.id);
-  
-    if (application) {
-      // Check if the user already liked the application
-      if (application.likes.includes(req.user._id)) {
-        return res.status(400).json({ message: 'You already liked this application' });
-      }
-  
-      // Add the user to the likes array
-      application.likes.push(req.user._id);
-      await application.save();
-      res.status(200).json({ message: 'Application liked successfully' });
-    } else {
-      res.status(404);
-      throw new Error('Application not found');
-    }
-  });
+  const application = await Application.findById(req.params.id);
 
-// @desc    add comment
-// @route   PUT/api/applications/:id
-// @access  public
+  if (application) {
+    if (application.likes.includes(req.user._id)) {
+      return res.status(400).json({ message: 'You already liked this application' });
+    }
+
+    application.likes.push(req.user._id);
+    application.metrics.likes = application.likes.length;
+    await application.save();
+    res.status(200).json({ 
+      message: 'Application liked successfully',
+      likesCount: application.likes.length 
+    });
+  } else {
+    res.status(404);
+    throw new Error('Application not found');
+  }
+});
+
+// @desc    Add comment to application
+// @route   POST /api/applications/:id/comments
+// @access  Private
 const addComment = asyncHandler(async (req, res) => {
   const { comment } = req.body;
 
-  if (!comment || typeof comment !== 'string' || comment.trim().length === 0) {
+  if (!comment?.trim()) {
     res.status(400);
     throw new Error('Comment text is required');
   }
 
   const application = await Application.findById(req.params.id);
 
-  if (application) {
-    const newComment = {
-      user: req.user._id,
-      name: req.user.name, 
-      comment,
-    };
-
-    application.comments.push(newComment);
-    
-    await application.save();
-
-    res.status(201).json({ 
-      message: "Comment added successfully", 
-      comment: {
-        _id: newComment._id,
-        user: newComment.user,
-        name: newComment.name,
-        comment: newComment.comment, // Make sure this is 'comment' not 'text'
-        createdAt: newComment.createdAt
-      }
-    });
-
-  } else {
+  if (!application) {
     res.status(404);
-    throw new Error("Application not found");
+    throw new Error('Application not found');
   }
+
+  const newComment = {
+    user: req.user._id,
+    name: req.user.name,
+    avatar: req.user.avatar || '',
+    comment,
+  };
+
+  application.comments.push(newComment);
+  await application.save();
+
+  const savedComment = application.comments[application.comments.length - 1];
+
+  res.status(201).json({
+    message: "Comment added successfully",
+    comment: savedComment,
+    metrics: {
+      commentsCount: application.metrics.commentsCount,
+    }
+  });
 });
-  
+
+// @desc    Edit a comment
+// @route   PUT /api/applications/:id/comments
+// @access  Private
+const editComment = asyncHandler(async (req, res) => {
+  const { commentId, newText } = req.body;
+
+  if (!newText?.trim()) {
+    res.status(400);
+    throw new Error('Comment text is required');
+  }
+
+  const application = await Application.findOneAndUpdate(
+    { 
+      _id: req.params.id,
+      'comments._id': commentId,
+      'comments.user': req.user._id
+    },
+    { 
+      $set: { 
+        'comments.$.comment': newText,
+        'comments.$.isEdited': true,
+        'comments.$.editedAt': Date.now()
+      } 
+    },
+    { new: true }
+  );
+
+  if (!application) {
+    res.status(404);
+    throw new Error('Comment not found or unauthorized');
+  }
+
+  const updatedComment = application.comments.id(commentId);
+  res.status(200).json({
+    message: "Comment updated",
+    comment: updatedComment
+  });
+});
+
+// @desc    Delete a comment
+// @route   DELETE /api/applications/:id/comments
+// @access  Private
+const deleteComment = asyncHandler(async (req, res) => {
+  const { commentId } = req.body;
+
+  const application = await Application.findOneAndUpdate(
+    { 
+      _id: req.params.id,
+      'comments._id': commentId,
+      $or: [
+        { 'comments.user': req.user._id },
+        { user: req.user._id }
+      ]
+    },
+    { $pull: { comments: { _id: commentId } } },
+    { new: true }
+  );
+
+  if (!application) {
+    res.status(404);
+    throw new Error('Comment not found or unauthorized');
+  }
+
+  res.status(200).json({
+    message: "Comment deleted",
+    metrics: {
+      commentsCount: application.metrics.commentsCount
+    }
+  });
+});
+
+// @desc    Add reply to comment
+// @route   POST /api/applications/:id/comments/reply
+// @access  Private
+const addReply = asyncHandler(async (req, res) => {
+  const { commentId, reply } = req.body;
+
+  if (!reply?.trim()) {
+    res.status(400);
+    throw new Error('Reply text is required');
+  }
+
+  const application = await Application.findByIdAndUpdate(
+    req.params.id,
+    {
+      $push: {
+        'comments.$[comment].replies': {
+          user: req.user._id,
+          name: req.user.name,
+          avatar: req.user.avatar || '',
+          reply
+        }
+      }
+    },
+    {
+      arrayFilters: [{ 'comment._id': commentId }],
+      new: true
+    }
+  );
+
+  if (!application) {
+    res.status(404);
+    throw new Error('Application or comment not found');
+  }
+
+  const parentComment = application.comments.id(commentId);
+  const newReply = parentComment.replies[parentComment.replies.length - 1];
+
+  res.status(201).json({
+    message: "Reply added successfully",
+    reply: newReply,
+    metrics: {
+      repliesCount: application.metrics.repliesCount
+    }
+  });
+});
 
 // @desc    Share an application
 // @route   POST /api/applications/:id/share
 // @access  Public
 const shareApplication = asyncHandler(async (req, res) => {
-    const application = await Application.findById(req.params.id);
-  
-    if (application) {
-      application.shares += 1;
-      await application.save();
-      res.status(200).json({ message: 'Application shared successfully' });
-    } else {
-      res.status(404);
-      throw new Error('Application not found');
-    }
-  });
+  const application = await Application.findById(req.params.id);
 
+  if (application) {
+    application.shares += 1;
+    application.metrics.shares = application.shares;
+    await application.save();
+    res.status(200).json({ 
+      message: 'Application shared successfully',
+      shares: application.shares 
+    });
+  } else {
+    res.status(404);
+    throw new Error('Application not found');
+  }
+});
 
-
-export { getApplications, getApplicationById, createApplication, likeApplication, addComment, shareApplication, updateApplication, deleteApplication, createApplicationReview, getTopApplications };
+export { 
+  getApplications, 
+  getApplicationById, 
+  createApplication, 
+  updateApplication, 
+  deleteApplication, 
+  createApplicationReview, 
+  getTopApplications, 
+  likeApplication, 
+  addComment, 
+  editComment, 
+  deleteComment, 
+  addReply, 
+  shareApplication 
+};

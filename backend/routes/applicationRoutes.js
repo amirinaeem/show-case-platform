@@ -6,6 +6,9 @@ import {
   createApplication,
   likeApplication,
   addComment,
+  editComment,
+  deleteComment,
+  addReply,
   shareApplication,
   updateApplication,
   deleteApplication,
@@ -14,12 +17,26 @@ import {
 } from '../controllers/applicationController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
-router.route('/').get(getApplications).post(protect, admin, createApplication);
-router.get('/top', getTopApplications)
-router.route('/:id').get(getApplicationById).put(protect, admin, updateApplication).delete(protect, admin, deleteApplication);
+// Public routes
+router.route('/').get(getApplications);
+router.get('/top', getTopApplications);
+router.route('/:id').get(getApplicationById);
+
+// Admin-only routes
+router.route('/').post(protect, admin, createApplication);
+router.route('/:id').put(protect, admin, updateApplication).delete(protect, admin, deleteApplication);
+
+// Authenticated user routes
 router.route('/:id/like').post(protect, likeApplication);
-router.route('/:id/share').post(shareApplication);
+router.route('/:id/share').post(protect, shareApplication);
 router.route('/:id/reviews').post(protect, createApplicationReview);
-router.route('/:id/comments').post(protect, addComment);
+
+// Comment system routes
+router.route('/:id/comments')
+  .post(protect, addComment)          
+  .put(protect, editComment)         
+  .delete(protect, deleteComment);  
+
+router.route('/:id/comments/reply').post(protect, addReply); 
 
 export default router;

@@ -29,7 +29,6 @@ function HomeScreen() {
               <Row>
                 {data.applications.map((app) => (
                   <Col key={app._id} sm={12} md={12} lg={12} xl={12} className="mb-4">
-                    {/* Pass only necessary props */}
                     <Application 
                       application={app} 
                       showComments={false} // Disable comments on home screen
@@ -45,6 +44,5 @@ function HomeScreen() {
     </>
   );
 }
-
 
 export default HomeScreen;

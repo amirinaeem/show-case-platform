@@ -12,22 +12,57 @@ const reviewSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Schema for Comment (without rating)
-const commentSchema = new mongoose.Schema(
+// Schema for Reply (nested in Comment)
+const replySchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    name: { type: String, required: true }, // Changed to true
-    comment: { 
+    name: { type: String, required: true },
+    avatar: { type: String, default: "" },
+    reply: { 
       type: String, 
-      required: true, // Changed to true
-      minlength: 1, // Ensure not empty
-      maxlength: 500 // Prevent overly long comments
+      required: true,
+      minlength: 1,
+      maxlength: 500
     },
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    isEdited: { type: Boolean, default: false },
+    editedAt: { type: Date },
+    status: {
+      type: String,
+      enum: ["active", "flagged", "deleted"],
+      default: "active"
+    }
   },
   { timestamps: true }
 );
 
-// Schema for Collaborator (embedded in Application)
+// Enhanced Schema for Comment
+const commentSchema = new mongoose.Schema(
+  {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    name: { type: String, required: true },
+    avatar: { type: String, default: "" },
+    comment: { 
+      type: String, 
+      required: true,
+      minlength: 1,
+      maxlength: 500
+    },
+    replies: [replySchema],
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    isEdited: { type: Boolean, default: false },
+    editedAt: { type: Date },
+    status: {
+      type: String,
+      enum: ["active", "flagged", "deleted"],
+      default: "active"
+    },
+    pinned: { type: Boolean, default: false }
+  },
+  { timestamps: true }
+);
+
+// Schema for Collaborator
 const collaboratorSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -42,24 +77,25 @@ const collaboratorSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Schema for Version (embedded in Application)
+// Schema for Version
 const versionSchema = new mongoose.Schema({
   versionNumber: { type: String, required: true },
   releaseDate: { type: Date, required: true },
   changelog: [{ type: String, required: true }],
 });
 
-// Schema for Metrics (embedded in Application)
+// Schema for Metrics
 const metricsSchema = new mongoose.Schema({
   views: { type: Number, default: 0 },
   likes: { type: Number, default: 0 },
   shares: { type: Number, default: 0 },
   downloads: { type: Number, default: 0 },
   purchases: { type: Number, default: 0 },
-  commentsCount: { type: Number, default: 0 } // Added for comments tracking
+  commentsCount: { type: Number, default: 0 },
+  repliesCount: { type: Number, default: 0 }
 });
 
-// Schema for Author Details (embedded in Application)
+// Schema for Author Details
 const authorDetailsSchema = new mongoose.Schema({
   name: { type: String },
   portfolioLink: { type: String },
@@ -72,14 +108,14 @@ const authorDetailsSchema = new mongoose.Schema({
   layout: { type: String },
 });
 
-// Schema for Previews (embedded in Application)
+// Schema for Previews
 const previewSchema = new mongoose.Schema({
   type: { type: String, enum: ["image", "video"], required: true },
   url: { type: String, required: true },
   caption: { type: String },
 });
 
-// Schema for Support Details (embedded in Application)
+// Schema for Support Details
 const supportDetailsSchema = new mongoose.Schema({
   type: { type: String, required: true },
   duration: { type: String, required: true },
@@ -126,7 +162,7 @@ const applicationSchema = new mongoose.Schema(
     numReviews: { type: Number, default: 0 },
     reviews: [reviewSchema],
 
-    // Comments (separate from reviews)
+    // Enhanced Comments System
     comments: [commentSchema],
     numComments: { type: Number, default: 0 },
 
@@ -147,7 +183,8 @@ const applicationSchema = new mongoose.Schema(
         shares: 0, 
         downloads: 0, 
         purchases: 0,
-        commentsCount: 0
+        commentsCount: 0,
+        repliesCount: 0
       } 
     },
 
@@ -176,27 +213,22 @@ const applicationSchema = new mongoose.Schema(
   }
 );
 
-// Virtual for likes count
+// Virtuals
 applicationSchema.virtual('likesCount').get(function() {
   return this.likes.length;
 });
 
-// Virtual for comments count (alternative to storing in metrics)
 applicationSchema.virtual('commentsCount').get(function() {
   return this.comments.length;
 });
 
-// Update metrics when comments are added
-applicationSchema.pre('save', function(next) {
-  if (this.isModified('comments')) {
-    this.metrics.commentsCount = this.comments.length;
-    this.numComments = this.comments.length;
-  }
-  next();
+applicationSchema.virtual('repliesCount').get(function() {
+  return this.comments.reduce((total, comment) => total + comment.replies.length, 0);
 });
 
-// Update rating and numReviews when reviews are modified
+// Middleware for automatic counts
 applicationSchema.pre('save', function(next) {
+  // Update reviews count and rating
   if (this.isModified('reviews')) {
     this.numReviews = this.reviews.length;
     if (this.reviews.length > 0) {
@@ -205,10 +237,27 @@ applicationSchema.pre('save', function(next) {
       this.rating = 0;
     }
   }
+
+  // Update comments metrics
+  if (this.isModified('comments')) {
+    this.numComments = this.comments.length;
+    this.metrics.commentsCount = this.comments.length;
+    this.metrics.repliesCount = this.comments.reduce((total, comment) => total + comment.replies.length, 0);
+  }
+
+  // Update replies count if any comment's replies are modified
+  if (this.isModified('comments.replies')) {
+    this.metrics.repliesCount = this.comments.reduce((total, comment) => total + comment.replies.length, 0);
+  }
+
   next();
 });
 
-// Create the Application model
+// Indexes
+applicationSchema.index({ name: 'text', description: 'text', tags: 'text' });
+commentSchema.index({ comment: 'text' });
+replySchema.index({ reply: 'text' });
+
 const Application = mongoose.model("Application", applicationSchema);
 
 export default Application;

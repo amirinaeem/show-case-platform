@@ -8,7 +8,7 @@ import {
   useLikeApplicationMutation, 
   useShareApplicationMutation 
 } from '../slices/applicationsSlice';
-import Comment from './Comment';
+import CommentSection from './CommentSection';
 
 function Application({ application: initialApplication }) {
   const { userInfo } = useSelector((state) => state.auth);
@@ -56,40 +56,58 @@ function Application({ application: initialApplication }) {
     }
   };
 
-  const handleCommentAdded = useCallback((action) => {
+  const handleCommentAction = useCallback((action) => {
     setCurrentApplication(prev => {
-      // Case 1: Remove comment (on error)
-      if (action.remove) {
-        const newComments = prev.comments?.filter(c => c._id !== action._id) || [];
-        return {
-          ...prev,
-          comments: newComments,
-          metrics: {
-            ...prev.metrics,
-            commentsCount: Math.max((prev.metrics?.commentsCount || 0) - 1, 0)
-          }
-        };
+      switch (action.type) {
+        case 'ADD_COMMENT':
+          return {
+            ...prev,
+            comments: [action.comment, ...(prev.comments || [])],
+            metrics: {
+              ...prev.metrics,
+              commentsCount: (prev.metrics?.commentsCount || 0) + 1
+            }
+          };
+        
+        case 'UPDATE_COMMENT':
+          return {
+            ...prev,
+            comments: prev.comments.map(c => 
+              c._id === action.commentId ? { ...c, ...action.updates } : c
+            )
+          };
+        
+        case 'DELETE_COMMENT':
+          return {
+            ...prev,
+            comments: prev.comments.filter(c => c._id !== action.commentId),
+            metrics: {
+              ...prev.metrics,
+              commentsCount: Math.max((prev.metrics?.commentsCount || 0) - 1, 0)
+            }
+          };
+        
+        case 'ADD_REPLY':
+          return {
+            ...prev,
+            comments: prev.comments.map(c => {
+              if (c._id === action.commentId) {
+                return {
+                  ...c,
+                  replies: [action.reply, ...(c.replies || [])]
+                };
+              }
+              return c;
+            }),
+            metrics: {
+              ...prev.metrics,
+              repliesCount: (prev.metrics?.repliesCount || 0) + 1
+            }
+          };
+        
+        default:
+          return prev;
       }
-      
-      // Case 2: Replace optimistic comment with real one
-      if (action.replaceWith) {
-        return {
-          ...prev,
-          comments: prev.comments.map(c => 
-            c._id === action._id ? action.replaceWith : c
-          )
-        };
-      }
-      
-      // Case 3: Add new comment (optimistic or direct)
-      return {
-        ...prev,
-        comments: [action, ...(prev.comments || [])],
-        metrics: {
-          ...prev.metrics,
-          commentsCount: (prev.metrics?.commentsCount || 0) + 1
-        }
-      };
     });
   }, []);
 
@@ -213,10 +231,11 @@ function Application({ application: initialApplication }) {
         </div>
 
         {showCommentSection && (
-          <Comment 
+          <CommentSection 
             appId={currentApplication._id}
+            comments={currentApplication.comments || []}
             onClose={() => setShowCommentSection(false)}
-            onCommentAdded={handleCommentAdded}
+            onCommentAction={handleCommentAction}
             currentUser={userInfo}
           />
         )}
