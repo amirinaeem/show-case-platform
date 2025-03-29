@@ -5,7 +5,7 @@ import {
   useCreateCommentMutation,
   useEditCommentMutation,
   useDeleteCommentMutation,
-  useAddReplyMutation
+  useAddReplyMutation,
 } from '../slices/applicationsSlice';
 import CommentItem from './CommentItem';
 
@@ -70,7 +70,12 @@ function CommentSection({ appId, comments, onClose, onCommentAction, currentUser
     }
   };
 
-  const handleEditComment = async (commentId, newText) => {
+
+  const handleEditToggle = (commentId) => {
+    setEditingComment(editingComment === commentId ? null : commentId);
+  };
+
+  const handleEditSubmit = async (commentId, newText) => {
     try {
       onCommentAction({
         type: 'UPDATE_COMMENT',
@@ -118,8 +123,9 @@ function CommentSection({ appId, comments, onClose, onCommentAction, currentUser
   };
 
   const handleAddReply = async (commentId, replyText) => {
+    const tempId = `optimistic-reply-${Date.now()}`;
     try {
-      const tempId = `optimistic-reply-${Date.now()}`;
+      
       const optimisticReply = {
         _id: tempId,
         user: currentUser._id,
@@ -129,31 +135,38 @@ function CommentSection({ appId, comments, onClose, onCommentAction, currentUser
         createdAt: new Date().toISOString(),
         isOptimistic: true
       };
-
+  
+      // Optimistic update
       onCommentAction({
         type: 'ADD_REPLY',
         commentId,
         reply: optimisticReply
       });
-
+  
+      // API call
       const response = await addReply({
         appId,
         commentId,
         reply: replyText
       }).unwrap();
-
+  
+      // Update with server response
       onCommentAction({
-        type: 'UPDATE_COMMENT',
+        type: 'UPDATE_REPLY',
         commentId,
-        updates: {
-          replies: (comments.find(c => c._id === commentId)?.replies || [])
-            .map(r => r._id === tempId ? response.reply : r)
-        }
+        tempId,
+        reply: response.reply
       });
-
+  
       setReplyingTo(null);
       toast.success('Reply added successfully');
     } catch (error) {
+      // Rollback on error
+      onCommentAction({
+        type: 'DELETE_REPLY',
+        commentId,
+        replyId: tempId
+      });
       toast.error(error?.data?.message || 'Failed to add reply');
     }
   };
@@ -200,7 +213,8 @@ function CommentSection({ appId, comments, onClose, onCommentAction, currentUser
               key={comment._id}
               comment={comment}
               currentUser={currentUser}
-              onEdit={handleEditComment}
+              onEdit={handleEditSubmit}
+              onEditToggle={handleEditToggle}
               onDelete={(id) => {
                 setCommentToDelete(id);
                 setShowDeleteConfirm(true);

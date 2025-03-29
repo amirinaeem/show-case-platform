@@ -37,6 +37,6 @@ router.route('/:id/comments')
   .put(protect, editComment)         
   .delete(protect, deleteComment);  
 
-router.route('/:id/comments/reply').post(protect, addReply); 
+  router.route('/:id/comments/:commentId/reply').post(protect, addReply); 
 
 export default router;

@@ -5,7 +5,8 @@ import { FaEdit, FaTrash, FaReply, FaThumbsUp } from 'react-icons/fa';
 function CommentItem({ 
   comment, 
   currentUser, 
-  onEdit, 
+  onEdit,
+  onEditToggle,
   onDelete, 
   onReply, 
   isReplying, 
@@ -80,12 +81,16 @@ function CommentItem({
         {isOwner && !isEditing && (
           <>
             <Button 
-              variant="outline-primary" 
-              size="sm"
-              onClick={() => onEdit(comment._id)}
-            >
+             variant="outline-primary" 
+             size="sm"
+             onClick={() => {
+                setEditText(comment.comment); // Initialize with current comment
+               onEdit(comment._id);
+               onEditToggle(comment._id)// This should trigger the edit mode
+               }}
+               >
               <FaEdit /> Edit
-            </Button>
+              </Button>
             <Button 
               variant="outline-danger" 
               size="sm"

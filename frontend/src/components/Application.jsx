@@ -104,6 +104,39 @@ function Application({ application: initialApplication }) {
               repliesCount: (prev.metrics?.repliesCount || 0) + 1
             }
           };
+          case 'UPDATE_REPLY':
+            return {
+              ...prev,
+              comments: prev.comments.map(c => {
+                if (c._id === action.commentId) {
+                  return {
+                    ...c,
+                    replies: c.replies.map(r => 
+                      r._id === action.tempId ? action.reply : r
+                    )
+                  };
+                }
+                return c;
+              })
+            };
+    
+          case 'DELETE_REPLY':
+            return {
+              ...prev,
+              comments: prev.comments.map(c => {
+                if (c._id === action.commentId) {
+                  return {
+                    ...c,
+                    replies: c.replies.filter(r => r._id !== action.replyId)
+                  };
+                }
+                return c;
+              }),
+              metrics: {
+                ...prev.metrics,
+                repliesCount: Math.max((prev.metrics?.repliesCount || 0) - 1, 0)
+              }
+            };
         
         default:
           return prev;

@@ -356,7 +356,8 @@ const deleteComment = asyncHandler(async (req, res) => {
 // @route   POST /api/applications/:id/comments/reply
 // @access  Private
 const addReply = asyncHandler(async (req, res) => {
-  const { commentId, reply } = req.body;
+  const { reply } = req.body;
+  const { id: appId, commentId } = req.params;
 
   if (!reply?.trim()) {
     res.status(400);
@@ -364,14 +365,16 @@ const addReply = asyncHandler(async (req, res) => {
   }
 
   const application = await Application.findByIdAndUpdate(
-    req.params.id,
+    appId,
     {
       $push: {
         'comments.$[comment].replies': {
           user: req.user._id,
           name: req.user.name,
           avatar: req.user.avatar || '',
-          reply
+          reply,
+          createdAt: new Date(), // Store as Date object
+          isEdited: false
         }
       }
     },

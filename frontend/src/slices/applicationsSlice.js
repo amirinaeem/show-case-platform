@@ -79,7 +79,10 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body: { comment: data.comment },
       }),
-      invalidatesTags: ['Comment'],
+      invalidatesTags: ( arg) => [
+        { type: 'Application', id: arg.appId },
+        { type: 'Comment', id: arg.appId }
+      ],
     }),
 
     editComment: builder.mutation({
@@ -88,7 +91,10 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'PUT',
         body: { commentId, newText },
       }),
-      invalidatesTags: ['Comment'],
+      invalidatesTags: (arg) => [
+        { type: 'Application', id: arg.appId },
+        { type: 'Comment', id: arg.appId }
+      ],
     }),
 
     deleteComment: builder.mutation({
@@ -97,16 +103,53 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'DELETE',
         body: { commentId },
       }),
-      invalidatesTags: ['Comment'],
+      invalidatesTags: (arg) => [
+        { type: 'Application', id: arg.appId },
+        { type: 'Comment', id: arg.appId }
+      ],
     }),
 
     addReply: builder.mutation({
       query: ({ appId, commentId, reply }) => ({
-        url: `${APPLICATIONS_URL}/${appId}/comments/reply`,
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/reply`,
         method: 'POST',
-        body: { commentId, reply },
+        body: {commentId, reply },
       }),
-      invalidatesTags: ['Comment'],
+      invalidatesTags: (arg) => [
+        { type: 'Application', id: arg.appId },
+        { type: 'Comment', id: arg.appId }
+      ],
+      onQueryStarted: async ({ appId, commentId, reply }, { dispatch, getState, queryFulfilled }) => {
+        // Get current user from Redux state
+        const { userInfo } = getState().auth;
+        
+        const patchResult = dispatch(
+          applicationsApiSlice.util.updateQueryData(
+            'getApplicationDetails', 
+            appId, 
+            (draft) => {
+              const comment = draft.comments.find(c => c._id === commentId);
+              if (comment) {
+                comment.replies = comment.replies || [];
+                comment.replies.unshift({
+                  _id: `optimistic-${Date.now()}`,
+                  user: userInfo._id,
+                  name: userInfo.name,
+                  avatar: userInfo.avatar,
+                  reply,
+                  createdAt: new Date().toString(),
+                  isOptimistic: true
+                });
+              }
+            }
+          )
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      }
     }),
 
     // Get top applications
