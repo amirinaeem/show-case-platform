@@ -15,7 +15,17 @@ function Application({ application: initialApplication }) {
   const [likeApplication] = useLikeApplicationMutation();
   const [shareApplication] = useShareApplicationMutation();
   const [showCommentSection, setShowCommentSection] = useState(false);
-  const [currentApplication, setCurrentApplication] = useState(initialApplication);
+  const [currentApplication, setCurrentApplication] = useState({
+    ...initialApplication,
+    metrics: {
+      likes: initialApplication.likes?.length || 0,
+      commentsCount: initialApplication.comments?.length || 0,
+      repliesCount: initialApplication.comments?.reduce((acc, comment) => 
+        acc + (comment.replies?.length || 0), 0) || 0,
+      shares: initialApplication.shares || 0,
+      ...initialApplication.metrics
+    }
+  });
 
   const handleLike = async () => {
     if (!userInfo) {
@@ -33,7 +43,7 @@ function Application({ application: initialApplication }) {
           likes: result.likes.length
         }
       }));
-      toast.success('Application liked successfully');
+      toast.success(result.message || 'Application liked successfully');
     } catch (error) {
       toast.error(error?.data?.message || 'Failed to like application');
     }
@@ -50,7 +60,7 @@ function Application({ application: initialApplication }) {
           shares: result.shares
         }
       }));
-      toast.success('Application shared successfully');
+      toast.success(result.message || 'Application shared successfully');
     } catch (error) {
       toast.error(error?.data?.message || 'Failed to share application');
     }
@@ -58,89 +68,87 @@ function Application({ application: initialApplication }) {
 
   const handleCommentAction = useCallback((action) => {
     setCurrentApplication(prev => {
+      const newState = { ...prev };
+      
       switch (action.type) {
         case 'ADD_COMMENT':
-          return {
-            ...prev,
-            comments: [action.comment, ...(prev.comments || [])],
-            metrics: {
-              ...prev.metrics,
-              commentsCount: (prev.metrics?.commentsCount || 0) + 1
-            }
-          };
+          newState.comments = [action.comment, ...(prev.comments || [])];
+          newState.metrics.commentsCount = (prev.metrics?.commentsCount || 0) + 1;
+          break;
         
         case 'UPDATE_COMMENT':
-          return {
-            ...prev,
-            comments: prev.comments.map(c => 
-              c._id === action.commentId ? { ...c, ...action.updates } : c
-            )
-          };
+          newState.comments = prev.comments?.map(c => 
+            c._id === action.commentId ? { ...c, ...action.updates } : c
+          );
+          break;
         
         case 'DELETE_COMMENT':
-          return {
-            ...prev,
-            comments: prev.comments.filter(c => c._id !== action.commentId),
-            metrics: {
-              ...prev.metrics,
-              commentsCount: Math.max((prev.metrics?.commentsCount || 0) - 1, 0)
-            }
-          };
+          const commentToDelete = prev.comments?.find(c => c._id === action.commentId);
+          const replyCount = commentToDelete?.replies?.length || 0;
+          newState.comments = prev.comments?.filter(c => c._id !== action.commentId);
+          newState.metrics.commentsCount = Math.max((prev.metrics?.commentsCount || 0) - 1, 0);
+          newState.metrics.repliesCount = Math.max((prev.metrics?.repliesCount || 0) - replyCount, 0);
+          break;
         
         case 'ADD_REPLY':
-          return {
-            ...prev,
-            comments: prev.comments.map(c => {
-              if (c._id === action.commentId) {
-                return {
-                  ...c,
-                  replies: [action.reply, ...(c.replies || [])]
-                };
-              }
-              return c;
-            }),
-            metrics: {
-              ...prev.metrics,
-              repliesCount: (prev.metrics?.repliesCount || 0) + 1
+        case 'ADD_REPLY_TO_REPLY':
+          newState.comments = prev.comments?.map(c => {
+            if (c._id === action.commentId) {
+              return {
+                ...c,
+                replies: [action.reply, ...(c.replies || [])]
+              };
             }
-          };
-          case 'UPDATE_REPLY':
-            return {
-              ...prev,
-              comments: prev.comments.map(c => {
-                if (c._id === action.commentId) {
-                  return {
-                    ...c,
-                    replies: c.replies.map(r => 
-                      r._id === action.tempId ? action.reply : r
-                    )
-                  };
-                }
-                return c;
-              })
-            };
+            return c;
+          });
+          newState.metrics.repliesCount = (prev.metrics?.repliesCount || 0) + 1;
+          break;
+          
+        case 'UPDATE_REPLY':
+          newState.comments = prev.comments?.map(c => {
+            if (c._id === action.commentId) {
+              return {
+                ...c,
+                replies: c.replies?.map(r => 
+                  r._id === (action.replyId || action.tempId) ? 
+                  { ...r, ...action.updates } : r
+                )
+              };
+            }
+            return c;
+          });
+          break;
     
-          case 'DELETE_REPLY':
-            return {
-              ...prev,
-              comments: prev.comments.map(c => {
-                if (c._id === action.commentId) {
-                  return {
-                    ...c,
-                    replies: c.replies.filter(r => r._id !== action.replyId)
-                  };
-                }
-                return c;
-              }),
-              metrics: {
-                ...prev.metrics,
-                repliesCount: Math.max((prev.metrics?.repliesCount || 0) - 1, 0)
-              }
-            };
+        case 'DELETE_REPLY':
+          newState.comments = prev.comments?.map(c => {
+            if (c._id === action.commentId) {
+              return {
+                ...c,
+                replies: c.replies?.filter(r => r._id !== action.replyId)
+              };
+            }
+            return c;
+          });
+          newState.metrics.repliesCount = Math.max((prev.metrics?.repliesCount || 0) - 1, 0);
+          break;
+        
+        case 'TOGGLE_LIKE':
+          newState.comments = prev.comments?.map(c => {
+            if (c._id === action.commentId) {
+              const likes = c.likes || [];
+              const newLikes = action.isLiked ? 
+                [...likes, action.userId] : 
+                likes.filter(id => id !== action.userId);
+              return { ...c, likes: newLikes };
+            }
+            return c;
+          });
+          break;
         
         default:
           return prev;
       }
+      return newState;
     });
   }, []);
 
@@ -232,18 +240,18 @@ function Application({ application: initialApplication }) {
       <Card.Footer className="bg-transparent border-top">
         <div className="d-flex justify-content-between p-4">
           <Button 
-            variant="outline-primary" 
+            variant={currentApplication.likes?.includes(userInfo?._id) ? "primary" : "outline-primary"}
             onClick={handleLike}
             className="action-btn"
             disabled={!userInfo}
             aria-label="Like this application"
           >
             <i className="fas fa-thumbs-up me-2"></i> 
-            Like ({currentApplication.likes?.length || 0})
+            Like ({currentApplication.metrics?.likes || currentApplication.likes?.length || 0})
           </Button>
           
           <Button 
-            variant={showCommentSection ? "outline-secondary" : "outline-primary"}
+            variant={showCommentSection ? "secondary" : "outline-primary"}
             onClick={toggleCommentSection}
             className="action-btn"
             aria-label="Toggle comment section"
@@ -259,7 +267,7 @@ function Application({ application: initialApplication }) {
             aria-label="Share this application"
           >
             <i className="fas fa-share me-2"></i> 
-            Share ({currentApplication.shares || 0})
+            Share ({currentApplication.metrics?.shares || currentApplication.shares || 0})
           </Button>
         </div>
 

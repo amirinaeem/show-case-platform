@@ -2,6 +2,22 @@ import asyncHandler from '../middleware/asyncHandler.js';
 import Application from '../models/applicationModel.js';
 import mongoose from 'mongoose';
 
+// Helper functions
+const validateObjectId = (id) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new Error('Invalid ID format');
+  }
+};
+
+const validateCommentText = (text) => {
+  if (!text || typeof text !== 'string' || !text.trim()) {
+    throw new Error('Text content is required and must be a non-empty string');
+  }
+  if (text.length > 500) {
+    throw new Error('Comment/reply cannot exceed 500 characters');
+  }
+};
+
 // @desc    Fetch all applications
 // @route   GET /api/applications
 // @access  Public
@@ -18,18 +34,15 @@ const getApplications = asyncHandler(async (req, res) => {
 // @route   GET /api/applications/:id
 // @access  Public
 const getApplicationById = asyncHandler(async (req, res) => {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        return res.status(400).json({ message: 'Invalid application ID' });
-    }
+  validateObjectId(req.params.id);
+  const application = await Application.findById(req.params.id);
 
-    const application = await Application.findById(req.params.id);
-
-    if (application) {
-        return res.json(application);
-    } else {
-        res.status(404);
-        throw new Error('Application not found');
-    }
+  if (application) {
+    return res.json(application);
+  } else {
+    res.status(404);
+    throw new Error('Application not found');
+  }
 });
 
 // @desc    Create a new application
@@ -75,6 +88,12 @@ const createApplication = asyncHandler(async (req, res) => {
         likes: [],
         comments: [],
         shares: 0,
+        metrics: {
+          commentsCount: 0,
+          repliesCount: 0,
+          commentLikes: 0,
+          shares: 0
+        }
     });
 
     const createdApplication = await application.save();
@@ -225,16 +244,20 @@ const likeApplication = asyncHandler(async (req, res) => {
   const application = await Application.findById(req.params.id);
 
   if (application) {
-    if (application.likes.includes(req.user._id)) {
-      return res.status(400).json({ message: 'You already liked this application' });
+    const likeIndex = application.likes.indexOf(req.user._id);
+    
+    if (likeIndex === -1) {
+      application.likes.push(req.user._id);
+    } else {
+      application.likes.splice(likeIndex, 1);
     }
-
-    application.likes.push(req.user._id);
+    
     application.metrics.likes = application.likes.length;
     await application.save();
     res.status(200).json({ 
-      message: 'Application liked successfully',
-      likesCount: application.likes.length 
+      message: 'Application like updated',
+      likes: application.likes,
+      metrics: application.metrics
     });
   } else {
     res.status(404);
@@ -246,63 +269,59 @@ const likeApplication = asyncHandler(async (req, res) => {
 // @route   POST /api/applications/:id/comments
 // @access  Private
 const addComment = asyncHandler(async (req, res) => {
-  const { comment } = req.body;
+  validateObjectId(req.params.id);
+  validateCommentText(req.body.comment);
 
-  if (!comment?.trim()) {
-    res.status(400);
-    throw new Error('Comment text is required');
-  }
-
-  const application = await Application.findById(req.params.id);
+  const application = await Application.findByIdAndUpdate(
+    req.params.id,
+    {
+      $push: {
+        comments: {
+          user: req.user._id,
+          name: req.user.name,
+          avatar: req.user.avatar || '',
+          comment: req.body.comment,
+          likes: [],
+          replies: []
+        }
+      },
+      $inc: { 'metrics.commentsCount': 1 }
+    },
+    { new: true }
+  );
 
   if (!application) {
     res.status(404);
     throw new Error('Application not found');
   }
 
-  const newComment = {
-    user: req.user._id,
-    name: req.user.name,
-    avatar: req.user.avatar || '',
-    comment,
-  };
-
-  application.comments.push(newComment);
-  await application.save();
-
-  const savedComment = application.comments[application.comments.length - 1];
-
+  const newComment = application.comments[application.comments.length - 1];
   res.status(201).json({
     message: "Comment added successfully",
-    comment: savedComment,
-    metrics: {
-      commentsCount: application.metrics.commentsCount,
-    }
+    comment: newComment,
+    metrics: application.metrics
   });
 });
 
 // @desc    Edit a comment
-// @route   PUT /api/applications/:id/comments
+// @route   PUT /api/applications/:id/comments/:commentId
 // @access  Private
 const editComment = asyncHandler(async (req, res) => {
-  const { commentId, newText } = req.body;
-
-  if (!newText?.trim()) {
-    res.status(400);
-    throw new Error('Comment text is required');
-  }
+  validateObjectId(req.params.id);
+  validateObjectId(req.params.commentId);
+  validateCommentText(req.body.newText);
 
   const application = await Application.findOneAndUpdate(
     { 
       _id: req.params.id,
-      'comments._id': commentId,
+      'comments._id': req.params.commentId,
       'comments.user': req.user._id
     },
     { 
       $set: { 
-        'comments.$.comment': newText,
+        'comments.$.comment': req.body.newText,
         'comments.$.isEdited': true,
-        'comments.$.editedAt': Date.now()
+        'comments.$.editedAt': new Date()
       } 
     },
     { new: true }
@@ -313,29 +332,35 @@ const editComment = asyncHandler(async (req, res) => {
     throw new Error('Comment not found or unauthorized');
   }
 
-  const updatedComment = application.comments.id(commentId);
+  const updatedComment = application.comments.id(req.params.commentId);
   res.status(200).json({
     message: "Comment updated",
-    comment: updatedComment
+    comment: updatedComment.toObject()
   });
 });
 
 // @desc    Delete a comment
-// @route   DELETE /api/applications/:id/comments
+// @route   DELETE /api/applications/:id/comments/:commentId
 // @access  Private
 const deleteComment = asyncHandler(async (req, res) => {
-  const { commentId } = req.body;
-
+  validateObjectId(req.params.id);
+  validateObjectId(req.params.commentId);
   const application = await Application.findOneAndUpdate(
     { 
       _id: req.params.id,
-      'comments._id': commentId,
+      'comments._id': req.params.commentId,
       $or: [
         { 'comments.user': req.user._id },
         { user: req.user._id }
       ]
     },
-    { $pull: { comments: { _id: commentId } } },
+    { 
+      $pull: { comments: { _id: req.params.commentId } },
+      $inc: { 
+        'metrics.commentsCount': -1,
+        'metrics.repliesCount': -application.comments.id(req.params.commentId).replies.length
+      }
+    },
     { new: true }
   );
 
@@ -346,58 +371,228 @@ const deleteComment = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     message: "Comment deleted",
-    metrics: {
-      commentsCount: application.metrics.commentsCount
-    }
+    metrics: application.metrics
   });
 });
 
-// @desc    Add reply to comment
-// @route   POST /api/applications/:id/comments/reply
+// @desc    Like a comment
+// @route   POST /api/applications/:appId/comments/:commentId/like
 // @access  Private
-const addReply = asyncHandler(async (req, res) => {
-  const { reply } = req.body;
-  const { id: appId, commentId } = req.params;
+const likeComment = asyncHandler(async (req, res) => {
+  const { appId, commentId } = req.params;
+  validateObjectId(appId);
+  validateObjectId(commentId);
 
-  if (!reply?.trim()) {
-    res.status(400);
-    throw new Error('Reply text is required');
-  }
-
-  const application = await Application.findByIdAndUpdate(
-    appId,
-    {
-      $push: {
-        'comments.$[comment].replies': {
-          user: req.user._id,
-          name: req.user.name,
-          avatar: req.user.avatar || '',
-          reply,
-          createdAt: new Date(), // Store as Date object
-          isEdited: false
-        }
-      }
-    },
-    {
-      arrayFilters: [{ 'comment._id': commentId }],
-      new: true
-    }
-  );
+  const application = await Application.findOne({
+    _id: appId,
+    'comments._id': commentId
+  });
 
   if (!application) {
     res.status(404);
     throw new Error('Application or comment not found');
   }
 
-  const parentComment = application.comments.id(commentId);
-  const newReply = parentComment.replies[parentComment.replies.length - 1];
+  const comment = application.comments.id(commentId);
+  const likeIndex = comment.likes.indexOf(req.user._id);
 
+  let update;
+  if (likeIndex === -1) {
+    // Add like
+    update = {
+      $addToSet: { 'comments.$[comment].likes': req.user._id },
+      $inc: { 'metrics.commentLikes': 1 }
+    };
+  } else {
+    // Remove like
+    update = {
+      $pull: { 'comments.$[comment].likes': req.user._id },
+      $inc: { 'metrics.commentLikes': -1 }
+    };
+  }
+
+  const updatedApp = await Application.findOneAndUpdate(
+    { _id: appId, 'comments._id': commentId },
+    update,
+    {
+      arrayFilters: [{ 'comment._id': commentId }],
+      new: true
+    }
+  );
+
+  const updatedComment = updatedApp.comments.id(commentId);
+  res.status(200).json({
+    message: 'Comment like updated',
+    likes: updatedComment.likes,
+    metrics: updatedApp.metrics
+  });
+});
+
+// @desc    Add reply to comment or reply
+// @route   POST /api/applications/:id/comments/:commentId/reply
+// @access  Private
+const addReply = asyncHandler(async (req, res) => {
+  // Validate inputs
+  validateObjectId(req.params.id);
+  validateObjectId(req.params.commentId);
+  validateCommentText(req.body.reply);
+
+  // Prepare reply data
+  const replyData = {
+    _id: new mongoose.Types.ObjectId(),
+    user: req.user._id,
+    name: req.user.name,
+    avatar: req.user.avatar || '',
+    reply: req.body.reply,
+    replyTo: req.body.replyToId || null,
+    isEdited: false,
+    editedAt: null,
+    likes: [],
+    status: 'active',
+    createdAt: new Date()
+  };
+
+  // Build update operation
+  const updateOperation = {
+    $push: {
+      'comments.$[comment].replies': replyData
+    },
+    $inc: { 
+      'metrics.repliesCount': 1
+    }
+  };
+
+  // Execute update
+  const application = await Application.findOneAndUpdate(
+    { 
+      _id: req.params.id,
+      'comments._id': req.params.commentId 
+    },
+    updateOperation,
+    {
+      arrayFilters: [{ 'comment._id': req.params.commentId }],
+      new: true,
+      runValidators: true
+    }
+  ).lean();
+
+  // Handle not found
+  if (!application) {
+    res.status(404);
+    throw new Error('Application or comment not found');
+  }
+
+  // Find the newly added reply
+  const comment = application.comments.find(c => c._id.toString() === req.params.commentId);
+  if (!comment) {
+    res.status(404);
+    throw new Error('Comment not found after update');
+  }
+
+  // The reply will be the last one in the array
+  const newReply = comment.replies[comment.replies.length - 1];
+
+  // Prepare response
   res.status(201).json({
     message: "Reply added successfully",
-    reply: newReply,
+    reply: {
+      _id: newReply._id,
+      user: newReply.user,
+      name: newReply.name,
+      avatar: newReply.avatar,
+      reply: newReply.reply,
+      replyTo: newReply.replyTo,
+      likes: newReply.likes,
+      isEdited: newReply.isEdited,
+      createdAt: newReply.createdAt
+    },
     metrics: {
-      repliesCount: application.metrics.repliesCount
+      repliesCount: application.metrics?.repliesCount || 0
     }
+  });
+});
+
+// @desc    Edit reply
+// @route   PUT /api/applications/:id/comments/:commentId/replies/:replyId
+// @access  Private
+const editReply = asyncHandler(async (req, res) => {
+  validateObjectId(req.params.id);
+  validateObjectId(req.params.commentId);
+  validateObjectId(req.params.replyId);
+  validateCommentText(req.body.newText);
+
+  const application = await Application.findOneAndUpdate(
+    {
+      _id: req.params.id,
+      'comments._id': req.params.commentId,
+      'comments.replies._id': req.params.replyId,
+      'comments.replies.user': req.user._id
+    },
+    {
+      $set: {
+        'comments.$[comment].replies.$[reply].reply': req.body.newText,
+        'comments.$[comment].replies.$[reply].isEdited': true,
+        'comments.$[comment].replies.$[reply].editedAt': new Date()
+      }
+    },
+    {
+      arrayFilters: [
+        { 'comment._id': req.params.commentId },
+        { 'reply._id': req.params.replyId }
+      ],
+      new: true
+    }
+  );
+
+  if (!application) {
+    res.status(404);
+    throw new Error('Reply not found or unauthorized');
+  }
+
+  res.status(200).json({ 
+    message: 'Reply updated',
+    reply: application.comments.id(req.params.commentId).replies.id(req.params.replyId)
+  });
+});
+
+// @desc    Delete reply
+// @route   DELETE /api/applications/:id/comments/:commentId/replies/:replyId
+// @access  Private
+const deleteReply = asyncHandler(async (req, res) => {
+  validateObjectId(req.params.id);
+  validateObjectId(req.params.commentId);
+  validateObjectId(req.params.replyId);
+
+  const application = await Application.findOneAndUpdate(
+    {
+      _id: req.params.id,
+      'comments._id': req.params.commentId,
+      'comments.replies._id': req.params.replyId,
+      $or: [
+        { 'comments.replies.user': req.user._id },
+        { user: req.user._id }
+      ]
+    },
+    {
+      $pull: {
+        'comments.$[comment].replies': { _id: req.params.replyId }
+      },
+      $inc: { 'metrics.repliesCount': -1 }
+    },
+    {
+      arrayFilters: [{ 'comment._id': req.params.commentId }],
+      new: true
+    }
+  );
+
+  if (!application) {
+    res.status(404);
+    throw new Error('Reply not found or unauthorized');
+  }
+
+  res.status(200).json({ 
+    message: 'Reply removed',
+    metrics: application.metrics
   });
 });
 
@@ -405,15 +600,21 @@ const addReply = asyncHandler(async (req, res) => {
 // @route   POST /api/applications/:id/share
 // @access  Public
 const shareApplication = asyncHandler(async (req, res) => {
-  const application = await Application.findById(req.params.id);
+  validateObjectId(req.params.id);
+
+  const application = await Application.findByIdAndUpdate(
+    req.params.id,
+    {
+      $inc: { shares: 1, 'metrics.shares': 1 }
+    },
+    { new: true }
+  );
 
   if (application) {
-    application.shares += 1;
-    application.metrics.shares = application.shares;
-    await application.save();
     res.status(200).json({ 
       message: 'Application shared successfully',
-      shares: application.shares 
+      shares: application.shares,
+      metrics: application.metrics
     });
   } else {
     res.status(404);
@@ -432,7 +633,10 @@ export {
   likeApplication, 
   addComment, 
   editComment, 
-  deleteComment, 
+  deleteComment,
+  likeComment,
   addReply, 
+  editReply,
+  deleteReply,
   shareApplication 
 };

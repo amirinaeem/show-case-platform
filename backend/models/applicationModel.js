@@ -12,7 +12,7 @@ const reviewSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Schema for Reply (nested in Comment)
+// Enhanced Schema for Reply
 const replySchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -24,9 +24,11 @@ const replySchema = new mongoose.Schema(
       minlength: 1,
       maxlength: 500
     },
+    replyTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // For nested replies
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     isEdited: { type: Boolean, default: false },
     editedAt: { type: Date },
+    isOptimistic: { type: Boolean, default: false }, // For optimistic updates
     status: {
       type: String,
       enum: ["active", "flagged", "deleted"],
@@ -52,6 +54,7 @@ const commentSchema = new mongoose.Schema(
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     isEdited: { type: Boolean, default: false },
     editedAt: { type: Date },
+    isOptimistic: { type: Boolean, default: false }, // For optimistic updates
     status: {
       type: String,
       enum: ["active", "flagged", "deleted"],
@@ -84,7 +87,7 @@ const versionSchema = new mongoose.Schema({
   changelog: [{ type: String, required: true }],
 });
 
-// Schema for Metrics
+// Enhanced Schema for Metrics
 const metricsSchema = new mongoose.Schema({
   views: { type: Number, default: 0 },
   likes: { type: Number, default: 0 },
@@ -92,7 +95,8 @@ const metricsSchema = new mongoose.Schema({
   downloads: { type: Number, default: 0 },
   purchases: { type: Number, default: 0 },
   commentsCount: { type: Number, default: 0 },
-  repliesCount: { type: Number, default: 0 }
+  repliesCount: { type: Number, default: 0 },
+  commentLikes: { type: Number, default: 0 } // New metric for comment likes
 });
 
 // Schema for Author Details
@@ -164,7 +168,6 @@ const applicationSchema = new mongoose.Schema(
 
     // Enhanced Comments System
     comments: [commentSchema],
-    numComments: { type: Number, default: 0 },
 
     // Tags and Author Details
     tags: [{ type: String }],
@@ -177,15 +180,16 @@ const applicationSchema = new mongoose.Schema(
     // Metrics
     metrics: { 
       type: metricsSchema, 
-      default: { 
+      default: () => ({
         views: 0, 
         likes: 0, 
         shares: 0, 
         downloads: 0, 
         purchases: 0,
         commentsCount: 0,
-        repliesCount: 0
-      } 
+        repliesCount: 0,
+        commentLikes: 0
+      }) 
     },
 
     // User and Availability
@@ -223,31 +227,42 @@ applicationSchema.virtual('commentsCount').get(function() {
 });
 
 applicationSchema.virtual('repliesCount').get(function() {
-  return this.comments.reduce((total, comment) => total + comment.replies.length, 0);
+  return this.comments.reduce((total, comment) => total + (comment.replies?.length || 0), 0);
 });
 
-// Middleware for automatic counts
+// Middleware for automatic counts and metrics
 applicationSchema.pre('save', function(next) {
   // Update reviews count and rating
   if (this.isModified('reviews')) {
     this.numReviews = this.reviews.length;
-    if (this.reviews.length > 0) {
-      this.rating = this.reviews.reduce((sum, review) => sum + review.rating, 0) / this.reviews.length;
-    } else {
-      this.rating = 0;
-    }
+    this.rating = this.reviews.length > 0 
+      ? this.reviews.reduce((sum, review) => sum + review.rating, 0) / this.reviews.length
+      : 0;
   }
 
   // Update comments metrics
   if (this.isModified('comments')) {
-    this.numComments = this.comments.length;
     this.metrics.commentsCount = this.comments.length;
-    this.metrics.repliesCount = this.comments.reduce((total, comment) => total + comment.replies.length, 0);
+    this.metrics.repliesCount = this.comments.reduce(
+      (total, comment) => total + (comment.replies?.length || 0), 0
+    );
   }
 
-  // Update replies count if any comment's replies are modified
-  if (this.isModified('comments.replies')) {
-    this.metrics.repliesCount = this.comments.reduce((total, comment) => total + comment.replies.length, 0);
+  // Update comment likes count
+  if (this.isModified('comments.likes') || this.isModified('comments.replies.likes')) {
+    let commentLikes = 0;
+    this.comments.forEach(comment => {
+      commentLikes += comment.likes?.length || 0;
+      comment.replies?.forEach(reply => {
+        commentLikes += reply.likes?.length || 0;
+      });
+    });
+    this.metrics.commentLikes = commentLikes;
+  }
+
+  // Update likes count
+  if (this.isModified('likes')) {
+    this.metrics.likes = this.likes.length;
   }
 
   next();
@@ -255,8 +270,9 @@ applicationSchema.pre('save', function(next) {
 
 // Indexes
 applicationSchema.index({ name: 'text', description: 'text', tags: 'text' });
-commentSchema.index({ comment: 'text' });
-replySchema.index({ reply: 'text' });
+applicationSchema.index({ 'comments.comment': 'text', 'comments.replies.reply': 'text' });
+applicationSchema.index({ 'metrics.likes': -1 }); // For sorting by popularity
+applicationSchema.index({ 'metrics.commentsCount': -1 }); // For sorting by engagement
 
 const Application = mongoose.model("Application", applicationSchema);
 

@@ -5,6 +5,7 @@ import {
   getApplicationById,
   createApplication,
   likeApplication,
+  likeComment,  // Add this import
   addComment,
   editComment,
   deleteComment,
@@ -34,9 +35,17 @@ router.route('/:id/reviews').post(protect, createApplicationReview);
 // Comment system routes
 router.route('/:id/comments')
   .post(protect, addComment)          
-  .put(protect, editComment)         
-  .delete(protect, deleteComment);  
 
-  router.route('/:id/comments/:commentId/reply').post(protect, addReply); 
+  // Backend (routes/applicationRoutes.js)
+router.route('/:id/comments/:commentId')
+.put(protect, editComment)  // Now matches the frontend's URL structure
+.delete(protect, deleteComment);
+
+router.route('/:id/comments/:commentId/replies')
+  .post(protect, addReply);
+
+// Add new route for comment likes
+router.route('/:id/comments/:commentId/like')
+  .post(protect, likeComment);
 
 export default router;

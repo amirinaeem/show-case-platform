@@ -79,67 +79,83 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body: { comment: data.comment },
       }),
-      invalidatesTags: ( arg) => [
+      invalidatesTags: (result, error, arg) => [
         { type: 'Application', id: arg.appId },
-        { type: 'Comment', id: arg.appId }
       ],
+      async onQueryStarted({ appId, comment }, { dispatch, queryFulfilled }) {
+        try {
+          const { data: { comment: newComment } } = await queryFulfilled;
+          dispatch(
+            applicationsApiSlice.util.updateQueryData(
+              'getApplicationDetails',
+              appId,
+              (draft) => {
+                draft.comments.unshift(newComment);
+                draft.metrics.commentsCount += 1;
+              }
+            )
+          );
+        } catch (error) {
+          console.error('Failed to create comment:', error);
+        }
+      },
     }),
 
     editComment: builder.mutation({
       query: ({ appId, commentId, newText }) => ({
-        url: `${APPLICATIONS_URL}/${appId}/comments`,
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}`,
         method: 'PUT',
-        body: { commentId, newText },
+        body: { newText },
       }),
-      invalidatesTags: (arg) => [
+      invalidatesTags: (result, error, arg) => [
         { type: 'Application', id: arg.appId },
-        { type: 'Comment', id: arg.appId }
       ],
+      async onQueryStarted({ appId, commentId, newText }, { dispatch, queryFulfilled }) {
+        // Optimistic update
+        const patchResult = dispatch(
+          applicationsApiSlice.util.updateQueryData(
+            'getApplicationDetails',
+            appId,
+            (draft) => {
+              const comment = draft.comments.find(c => c._id === commentId);
+              if (comment) {
+                comment.comment = newText;
+                comment.isEdited = true;
+                comment.editedAt = new Date().toISOString();
+              }
+            }
+          )
+        );
+    
+        try {
+          await queryFulfilled; 
+        } catch {
+          patchResult.undo();
+          
+        }
+      },
     }),
 
     deleteComment: builder.mutation({
       query: ({ appId, commentId }) => ({
-        url: `${APPLICATIONS_URL}/${appId}/comments`,
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}`,
         method: 'DELETE',
-        body: { commentId },
       }),
-      invalidatesTags: (arg) => [
+      invalidatesTags: (result, error, arg) => [
         { type: 'Application', id: arg.appId },
-        { type: 'Comment', id: arg.appId }
       ],
-    }),
-
-    addReply: builder.mutation({
-      query: ({ appId, commentId, reply }) => ({
-        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/reply`,
-        method: 'POST',
-        body: {commentId, reply },
-      }),
-      invalidatesTags: (arg) => [
-        { type: 'Application', id: arg.appId },
-        { type: 'Comment', id: arg.appId }
-      ],
-      onQueryStarted: async ({ appId, commentId, reply }, { dispatch, getState, queryFulfilled }) => {
-        // Get current user from Redux state
-        const { userInfo } = getState().auth;
-        
+      async onQueryStarted({ appId, commentId }, { dispatch, queryFulfilled }) {
         const patchResult = dispatch(
           applicationsApiSlice.util.updateQueryData(
-            'getApplicationDetails', 
-            appId, 
+            'getApplicationDetails',
+            appId,
             (draft) => {
-              const comment = draft.comments.find(c => c._id === commentId);
-              if (comment) {
-                comment.replies = comment.replies || [];
-                comment.replies.unshift({
-                  _id: `optimistic-${Date.now()}`,
-                  user: userInfo._id,
-                  name: userInfo.name,
-                  avatar: userInfo.avatar,
-                  reply,
-                  createdAt: new Date().toString(),
-                  isOptimistic: true
-                });
+              const commentIndex = draft.comments.findIndex(c => c._id === commentId);
+              if (commentIndex !== -1) {
+                const replyCount = draft.comments[commentIndex].replies?.length || 0;
+                draft.comments.splice(commentIndex, 1);
+                draft.metrics.commentsCount -= 1;
+                draft.metrics.repliesCount -= replyCount;
               }
             }
           )
@@ -149,7 +165,189 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         } catch {
           patchResult.undo();
         }
-      }
+      },
+    }),
+
+    likeComment: builder.mutation({
+      query: ({ appId, commentId }) => ({
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/like`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, arg) => [
+        { type: 'Application', id: arg.appId },
+      ],
+      async onQueryStarted({ appId, commentId, userId }, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          applicationsApiSlice.util.updateQueryData(
+            'getApplicationDetails',
+            appId,
+            (draft) => {
+              const comment = draft.comments.find(c => c._id === commentId);
+              if (comment) {
+                const likeIndex = comment.likes.indexOf(userId);
+                if (likeIndex === -1) {
+                  comment.likes.push(userId);
+                  draft.metrics.commentLikes += 1;
+                } else {
+                  comment.likes.splice(likeIndex, 1);
+                  draft.metrics.commentLikes -= 1;
+                }
+              }
+            }
+          )
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
+    }),
+
+    addReply: builder.mutation({
+      query: ({ appId, commentId, reply, replyToId = null }) => ({
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/replies`,
+        method: 'POST',
+        body: { 
+          reply,
+          replyToId 
+        },
+      }),
+      invalidatesTags: (result, error, arg) => [
+        { type: 'Application', id: arg.appId },
+        { type: 'Comment', id: arg.commentId }
+      ],
+      async onQueryStarted({ appId, commentId, reply, replyToId }, { dispatch, queryFulfilled, getState }) {
+        const { userInfo } = getState().auth;
+        const tempId = `optimistic-reply-${Date.now()}`;
+        
+        const optimisticReply = {
+          _id: tempId,
+          user: userInfo._id,
+          name: userInfo.name,
+          avatar: userInfo.avatar || '',
+          reply,
+          replyTo: replyToId || null,
+          likes: [],
+          isEdited: false,
+          isOptimistic: true,
+          createdAt: new Date().toISOString(),
+          status: 'active'
+        };
+    
+        // Optimistic update
+        const patchResult = dispatch(
+          applicationsApiSlice.util.updateQueryData(
+            'getApplicationDetails', 
+            appId, 
+            (draft) => {
+              const comment = draft.comments.find(c => c._id === commentId);
+              if (comment) {
+                comment.replies.unshift(optimisticReply);
+                draft.metrics.repliesCount = (draft.metrics.repliesCount || 0) + 1;
+              }
+            }
+          )
+        );
+    
+        try {
+          const { data } = await queryFulfilled;
+          
+          // Update with server response
+          dispatch(
+            applicationsApiSlice.util.updateQueryData(
+              'getApplicationDetails',
+              appId,
+              (draft) => {
+                const comment = draft.comments.find(c => c._id === commentId);
+                if (comment) {
+                  const replyIndex = comment.replies.findIndex(r => r._id === tempId);
+                  if (replyIndex !== -1) {
+                    comment.replies[replyIndex] = {
+                      ...data.reply,
+                      // Preserve any local-only fields
+                      isOptimistic: false
+                    };
+                  }
+                  draft.metrics.repliesCount = data.metrics.repliesCount;
+                }
+              }
+            )
+          );
+        } catch (error) {
+          patchResult.undo();
+          console.error('Failed to add reply:', error);
+          // Error toast will be handled in the component
+        }
+      },
+    }),
+
+    editReply: builder.mutation({
+      query: ({ appId, commentId, replyId, newText }) => ({
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/replies/${replyId}`,
+        method: 'PUT',
+        body: { newText },
+      }),
+      invalidatesTags: (result, error, arg) => [
+        { type: 'Application', id: arg.appId },
+      ],
+      async onQueryStarted({ appId, commentId, replyId, newText }, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          applicationsApiSlice.util.updateQueryData(
+            'getApplicationDetails',
+            appId,
+            (draft) => {
+              const comment = draft.comments.find(c => c._id === commentId);
+              if (comment) {
+                const reply = comment.replies.find(r => r._id === replyId);
+                if (reply) {
+                  reply.reply = newText;
+                  reply.isEdited = true;
+                  reply.editedAt = new Date().toISOString();
+                }
+              }
+            }
+          )
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
+    }),
+
+    deleteReply: builder.mutation({
+      query: ({ appId, commentId, replyId }) => ({
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/replies/${replyId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, arg) => [
+        { type: 'Application', id: arg.appId },
+      ],
+      async onQueryStarted({ appId, commentId, replyId }, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          applicationsApiSlice.util.updateQueryData(
+            'getApplicationDetails',
+            appId,
+            (draft) => {
+              const comment = draft.comments.find(c => c._id === commentId);
+              if (comment) {
+                const replyIndex = comment.replies.findIndex(r => r._id === replyId);
+                if (replyIndex !== -1) {
+                  comment.replies.splice(replyIndex, 1);
+                  draft.metrics.repliesCount -= 1;
+                }
+              }
+            }
+          )
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
     }),
 
     // Get top applications
@@ -167,8 +365,33 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
       }),
       invalidatesTags: ['Application'],
+      async onQueryStarted(appId, { dispatch, queryFulfilled, getState }) { // Add getState here
+        const patchResult = dispatch(
+          applicationsApiSlice.util.updateQueryData(
+            'getApplicationDetails',
+            appId,
+            (draft) => {
+              draft.likes = draft.likes || [];
+              const userId = getState().auth.userInfo?._id; // Now getState is available
+              if (userId) {
+                const likeIndex = draft.likes.indexOf(userId);
+                if (likeIndex === -1) {
+                  draft.likes.push(userId);
+                } else {
+                  draft.likes.splice(likeIndex, 1);
+                }
+                draft.metrics.likes = draft.likes.length;
+              }
+            }
+          )
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
     }),
-
     // Share an application
     shareApplication: builder.mutation({
       query: (appId) => ({
@@ -176,6 +399,23 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
       }),
       invalidatesTags: ['Application'],
+      async onQueryStarted(appId, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          applicationsApiSlice.util.updateQueryData(
+            'getApplicationDetails',
+            appId,
+            (draft) => {
+              draft.shares = (draft.shares || 0) + 1;
+              draft.metrics.shares = (draft.metrics.shares || 0) + 1;
+            }
+          )
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
     }),
   }),
 });
@@ -191,7 +431,10 @@ export const {
   useCreateCommentMutation,
   useEditCommentMutation,
   useDeleteCommentMutation,
+  useLikeCommentMutation,
   useAddReplyMutation,
+  useEditReplyMutation,
+  useDeleteReplyMutation,
   useGetTopApplicationsQuery,
   useLikeApplicationMutation,
   useShareApplicationMutation,

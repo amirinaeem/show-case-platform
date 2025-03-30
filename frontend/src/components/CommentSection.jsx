@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Button, Form, ListGroup, Modal } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { 
@@ -6,170 +6,242 @@ import {
   useEditCommentMutation,
   useDeleteCommentMutation,
   useAddReplyMutation,
+  useLikeCommentMutation,
+  useEditReplyMutation,
+  useDeleteReplyMutation
 } from '../slices/applicationsSlice';
 import CommentItem from './CommentItem';
+import { 
+  createOptimisticComment,
+  createOptimisticReply
+} from '../utils/optimisticUpdates';
 
-function CommentSection({ appId, comments, onClose, onCommentAction, currentUser }) {
+const CommentSection = ({ 
+  appId, 
+  comments = [], 
+  onClose, 
+  onCommentAction, 
+  currentUser 
+}) => {
   const [commentText, setCommentText] = useState('');
-  const [replyingTo, setReplyingTo] = useState(null);
-  const [editingComment, setEditingComment] = useState(null);
+  const [replyingToId, setReplyingToId] = useState(null);
+  const [editingCommentId, setEditingCommentId] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [commentToDelete, setCommentToDelete] = useState(null);
+  const [commentToDeleteId, setCommentToDeleteId] = useState(null);
 
+  // API mutations
   const [createComment, { isLoading: isCreating }] = useCreateCommentMutation();
-  const [editComment] = useEditCommentMutation(); // Removed unused isEditing
+  const [editComment] = useEditCommentMutation();
   const [deleteComment, { isLoading: isDeleting }] = useDeleteCommentMutation();
-  const [addReply] = useAddReplyMutation(); // Removed unused isReplying
+  const [addReply] = useAddReplyMutation();
+  const [likeComment] = useLikeCommentMutation();
+  const [editReply] = useEditReplyMutation();
+  const [deleteReply] = useDeleteReplyMutation();
 
   const handleSubmitComment = async (e) => {
     e.preventDefault();
     const trimmedComment = commentText.trim();
     if (!trimmedComment) return;
   
-    let tempId;
+    const optimisticComment = createOptimisticComment(currentUser, trimmedComment);
     
     try {
-      tempId = `optimistic-${Date.now()}`;
-      const optimisticComment = {
-        _id: tempId,
-        user: currentUser._id,
-        name: currentUser.name,
-        avatar: currentUser.avatar,
-        comment: trimmedComment,
-        createdAt: new Date().toISOString(),
-        isOptimistic: true,
-        replies: []
-      };
-  
       onCommentAction({
         type: 'ADD_COMMENT',
         comment: optimisticComment
       });
-  
+
       const response = await createComment({
         appId,
         comment: trimmedComment
       }).unwrap();
-  
+
       onCommentAction({
         type: 'UPDATE_COMMENT',
-        commentId: tempId,
+        commentId: optimisticComment._id,
         updates: response.comment
       });
-  
+
       setCommentText('');
       toast.success('Comment added successfully');
     } catch (error) {
-      if (tempId) {
-        onCommentAction({
-          type: 'DELETE_COMMENT',
-          commentId: tempId
-        });
-      }
+      onCommentAction({
+        type: 'DELETE_COMMENT',
+        commentId: optimisticComment._id
+      });
       toast.error(error?.data?.message || 'Failed to add comment');
     }
   };
 
-
-  const handleEditToggle = (commentId) => {
-    setEditingComment(editingComment === commentId ? null : commentId);
-  };
-
-  const handleEditSubmit = async (commentId, newText) => {
+  const handleEditSubmit = useCallback(async (commentId, newText) => {
+    const trimmedText = newText.trim();
+    if (!trimmedText) return;
+  
     try {
-      onCommentAction({
-        type: 'UPDATE_COMMENT',
-        commentId,
-        updates: {
-          comment: newText,
-          isEdited: true,
-          editedAt: new Date().toISOString(),
-          isOptimistic: true
-        }
-      });
-
-      const response = await editComment({
-        appId,
-        commentId,
-        newText
+      await editComment({ 
+        appId, 
+        commentId, 
+        newText: trimmedText 
       }).unwrap();
-
-      onCommentAction({
-        type: 'UPDATE_COMMENT',
-        commentId,
-        updates: response.comment
-      });
-
-      setEditingComment(null);
+  
+      setEditingCommentId(null);
       toast.success('Comment updated successfully');
     } catch (error) {
       toast.error(error?.data?.message || 'Failed to update comment');
     }
-  };
+  }, [appId, editComment]);
 
-  const handleDeleteComment = async (commentId) => {
+  const handleDeleteComment = useCallback(async () => {
+    if (!commentToDeleteId) return;
+    
     try {
-      await deleteComment({ appId, commentId }).unwrap();
       onCommentAction({
         type: 'DELETE_COMMENT',
-        commentId
+        commentId: commentToDeleteId
       });
+
+      await deleteComment({ 
+        appId, 
+        commentId: commentToDeleteId 
+      }).unwrap();
+      
       toast.success('Comment deleted successfully');
     } catch (error) {
       toast.error(error?.data?.message || 'Failed to delete comment');
     } finally {
       setShowDeleteConfirm(false);
+      setCommentToDeleteId(null);
     }
-  };
+  }, [appId, commentToDeleteId, deleteComment, onCommentAction]);
 
-  const handleAddReply = async (commentId, replyText) => {
-    const tempId = `optimistic-reply-${Date.now()}`;
-    try {
-      
-      const optimisticReply = {
-        _id: tempId,
-        user: currentUser._id,
-        name: currentUser.name,
-        avatar: currentUser.avatar,
-        reply: replyText,
-        createdAt: new Date().toISOString(),
-        isOptimistic: true
-      };
+  const handleAddReply = useCallback(async (commentId, replyText) => {
+    const trimmedReply = replyText.trim();
+    if (!trimmedReply) return;
   
-      // Optimistic update
+    const optimisticReply = createOptimisticReply(currentUser, trimmedReply);
+  
+    try {
       onCommentAction({
         type: 'ADD_REPLY',
         commentId,
         reply: optimisticReply
       });
   
-      // API call
       const response = await addReply({
         appId,
         commentId,
-        reply: replyText
+        reply: trimmedReply
       }).unwrap();
   
-      // Update with server response
       onCommentAction({
         type: 'UPDATE_REPLY',
         commentId,
-        tempId,
-        reply: response.reply
+        tempId: optimisticReply._id,
+        updates: {
+          ...response.reply,
+          isOptimistic: false
+        }
       });
   
-      setReplyingTo(null);
+      setReplyingToId(null);
       toast.success('Reply added successfully');
     } catch (error) {
-      // Rollback on error
       onCommentAction({
         type: 'DELETE_REPLY',
         commentId,
-        replyId: tempId
+        replyId: optimisticReply._id
       });
       toast.error(error?.data?.message || 'Failed to add reply');
     }
-  };
+  }, [appId, addReply, currentUser, onCommentAction]);
+
+  const handleEditReply = useCallback(async (commentId, replyId, newText) => {
+    const trimmedText = newText.trim();
+    if (!trimmedText) return;
+
+    try {
+      onCommentAction({
+        type: 'UPDATE_REPLY',
+        commentId,
+        replyId,
+        updates: {
+          reply: trimmedText,
+          isEdited: true,
+          editedAt: new Date().toISOString(),
+          isOptimistic: true
+        }
+      });
+
+      const response = await editReply({
+        appId,
+        commentId,
+        replyId,
+        newText: trimmedText
+      }).unwrap();
+
+      onCommentAction({
+        type: 'UPDATE_REPLY',
+        commentId,
+        replyId,
+        updates: response.reply
+      });
+
+      toast.success('Reply updated successfully');
+    } catch (error) {
+      toast.error(error?.data?.message || 'Failed to update reply');
+    }
+  }, [appId, editReply, onCommentAction]);
+
+  const handleDeleteReply = useCallback(async (commentId, replyId) => {
+    try {
+      onCommentAction({
+        type: 'DELETE_REPLY',
+        commentId,
+        replyId
+      });
+
+      await deleteReply({
+        appId,
+        commentId,
+        replyId
+      }).unwrap();
+
+      toast.success('Reply deleted successfully');
+    } catch (error) {
+      toast.error(error?.data?.message || 'Failed to delete reply');
+    }
+  }, [appId, deleteReply, onCommentAction]);
+
+  const handleLikeComment = useCallback(async (commentId) => {
+    try {
+      const comment = comments.find(c => c._id === commentId);
+      const isLiked = comment?.likes?.includes(currentUser._id);
+      
+      onCommentAction({
+        type: 'TOGGLE_LIKE',
+        commentId,
+        userId: currentUser._id,
+        isLiked: !isLiked
+      });
+
+      await likeComment({
+        appId,
+        commentId
+      }).unwrap();
+    } catch (error) {
+      const comment = comments.find(c => c._id === commentId);
+      const isLiked = comment?.likes?.includes(currentUser._id);
+      
+      onCommentAction({
+        type: 'TOGGLE_LIKE',
+        commentId,
+        userId: currentUser._id,
+        isLiked: !isLiked
+      });
+
+      toast.error(error?.data?.message || 'Failed to update like');
+    }
+  }, [appId, comments, currentUser, likeComment, onCommentAction]);
 
   return (
     <div className="mt-3 p-3">
@@ -183,6 +255,7 @@ function CommentSection({ appId, comments, onClose, onCommentAction, currentUser
             placeholder="Write your comment..."
             maxLength={500}
             disabled={isCreating}
+            aria-label="Comment text area"
           />
           <Form.Text className="text-muted">
             {commentText.length}/500 characters
@@ -193,6 +266,7 @@ function CommentSection({ appId, comments, onClose, onCommentAction, currentUser
             variant="secondary" 
             onClick={onClose}
             disabled={isCreating}
+            aria-label="Close comment section"
           >
             Close
           </Button>
@@ -200,6 +274,7 @@ function CommentSection({ appId, comments, onClose, onCommentAction, currentUser
             type="submit" 
             variant="primary" 
             disabled={!commentText.trim() || isCreating}
+            aria-label="Post comment"
           >
             {isCreating ? 'Posting...' : 'Post Comment'}
           </Button>
@@ -214,15 +289,19 @@ function CommentSection({ appId, comments, onClose, onCommentAction, currentUser
               comment={comment}
               currentUser={currentUser}
               onEdit={handleEditSubmit}
-              onEditToggle={handleEditToggle}
+              onEditToggle={setEditingCommentId}
               onDelete={(id) => {
-                setCommentToDelete(id);
+                setCommentToDeleteId(id);
                 setShowDeleteConfirm(true);
               }}
-              onReply={setReplyingTo}
-              isReplying={replyingTo === comment._id}
+              onReply={setReplyingToId}
+              isReplying={replyingToId === comment._id}
               onAddReply={handleAddReply}
-              isEditing={editingComment === comment._id}
+              isEditing={editingCommentId === comment._id}
+              onLike={handleLikeComment}
+              onEditReply={handleEditReply}
+              onDeleteReply={handleDeleteReply}
+              setEditingCommentId={setEditingCommentId}
             />
           ))
         ) : (
@@ -238,13 +317,18 @@ function CommentSection({ appId, comments, onClose, onCommentAction, currentUser
         </Modal.Header>
         <Modal.Body>Are you sure you want to delete this comment?</Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
+          <Button 
+            variant="secondary" 
+            onClick={() => setShowDeleteConfirm(false)}
+            aria-label="Cancel delete"
+          >
             Cancel
           </Button>
           <Button 
             variant="danger" 
-            onClick={() => handleDeleteComment(commentToDelete)}
+            onClick={handleDeleteComment}
             disabled={isDeleting}
+            aria-label="Confirm delete"
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
           </Button>
@@ -252,6 +336,6 @@ function CommentSection({ appId, comments, onClose, onCommentAction, currentUser
       </Modal>
     </div>
   );
-}
+};
 
 export default CommentSection;
