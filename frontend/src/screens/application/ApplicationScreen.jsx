@@ -4,11 +4,11 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Row, Col, Image, ListGroup, Card, Button, Badge, Form } from "react-bootstrap";
-import Loader from "../components/Loader";
-import Message from "../components/Message";
-import Rating from "../components/Rating";
-import { useGetApplicationDetailsQuery, useCreateReviewMutation } from "../slices/applicationsSlice";
-import { addToCart } from "../slices/cartSlice";
+import Loader from "../../components/helpers/Loader";
+import Message from "../../components/helpers/Message";
+import Rating from "../../components/helpers/Rating";
+import { useGetApplicationDetailsQuery, useCreateReviewMutation } from "../../slices/applicationsSlice";
+import { addToCart } from "../../slices/cartSlice";
 
 function ApplicationScreen() {
   const { id: appId } = useParams();

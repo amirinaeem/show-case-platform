@@ -9,8 +9,8 @@ import {
   Card,
 } from 'react-bootstrap';
 import { FaTrash } from 'react-icons/fa';
-import Message from '../components/Message';
-import { removeFromCart } from '../slices/cartSlice';
+import Message from '../../components/helpers/Message';
+import { removeFromCart } from '../../slices/cartSlice';
 
 const CartScreen = () => {
   const navigate = useNavigate();

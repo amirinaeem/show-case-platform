@@ -4,9 +4,9 @@ import { Row, Col, ListGroup, Image, Button, Card } from 'react-bootstrap';
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { PayPalButtons, usePayPalScriptReducer } from '@paypal/react-paypal-js';
-import Message from "../components/Message";
-import Loader from "../components/Loader";
-import { useGetOrderDetailsQuery, usePayOrderMutation, useGetPayPalClientIdQuery, useDeliverOrderMutation } from "../slices/ordersApiSlice";
+import Message from "../../components/helpers/Message";
+import Loader from "../../components/helpers/Loader";
+import { useGetOrderDetailsQuery, usePayOrderMutation, useGetPayPalClientIdQuery, useDeliverOrderMutation } from "../../slices/ordersApiSlice";
 
 function OrderScreen() {
   const { id: orderId } = useParams();

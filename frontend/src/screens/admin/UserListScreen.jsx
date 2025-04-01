@@ -1,9 +1,9 @@
 import { LinkContainer } from 'react-router-bootstrap';
 import { Table, Button } from 'react-bootstrap';
 import { FaTimes, FaCheck, FaEdit, FaTrash } from 'react-icons/fa';
-import Loader from '../../components/Loader';
+import Loader from '../../components/helpers/Loader';
 import { toast } from 'react-toastify';
-import Message from '../../components/Message';
+import Message from '../../components/helpers/Message';
 import { useGetUsersQuery, useDeleteUserMutation } from '../../slices/usersApiSlice';
 
 function UserListScreen() {

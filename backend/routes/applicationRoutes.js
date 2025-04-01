@@ -10,6 +10,8 @@ import {
   editComment,
   deleteComment,
   addReply,
+  editReply,
+  deleteReply,
   shareApplication,
   updateApplication,
   deleteApplication,
@@ -43,6 +45,10 @@ router.route('/:id/comments/:commentId')
 
 router.route('/:id/comments/:commentId/replies')
   .post(protect, addReply);
+
+router.route('/:id/comments/:commentId/replies/:replyId')
+  .put(protect, editReply)
+  .delete(protect, deleteReply);
 
 // Add new route for comment likes
 router.route('/:id/comments/:commentId/like')

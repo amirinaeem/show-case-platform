@@ -1,11 +1,11 @@
 import { Container, Row, Col } from 'react-bootstrap';
 import { Link, useParams } from 'react-router-dom';
-import Application from '../components/Application';
-import { useGetApplicationsQuery } from '../slices/applicationsSlice';
-import Paginate from '../components/Paginate';
-import Loader from '../components/Loader';
-import Message from '../components/Message';
-import ApplicationCarousel from '../components/ApplicationCarousel.jsx'
+import Application from '../../components/application/Application.jsx';
+import { useGetApplicationsQuery } from '../../slices/applicationsSlice.js';
+import Paginate from '../../components/helpers/Paginate.jsx';
+import Loader from '../../components/helpers/Loader.jsx';
+import Message from '../../components/helpers/Message.jsx';
+import ApplicationCarousel from '../../components/application/ApplicationCarousel.jsx'
 
 function HomeScreen() {
   const { pageNumber, keyword } = useParams();

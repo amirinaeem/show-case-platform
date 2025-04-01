@@ -3,11 +3,11 @@ import { LinkContainer } from 'react-router-bootstrap';
 import { useParams } from 'react-router-dom';
 import { Table, Button, Row, Col } from 'react-bootstrap';
 import { FaTimes, FaEdit, FaTrash, FaCheck } from 'react-icons/fa';
-import Loader from '../../components/Loader';
+import Loader from '../../components/helpers/Loader';
 import { toast } from 'react-toastify';
-import Message from '../../components/Message';
+import Message from '../../components/helpers/Message';
 import { useGetApplicationsQuery, useCreateApplicationMutation, useDeleteApplicationMutation } from '../../slices/applicationsSlice';
-import Paginate from '../../components/Paginate';
+import Paginate from '../../components/helpers/Paginate';
 
 
 

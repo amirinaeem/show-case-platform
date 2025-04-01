@@ -247,3 +247,12 @@ table th {
 
 
 /*Comment section */
+
+/*User avatar*/
+.avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  border: #6a11cb 2px solid;
+}

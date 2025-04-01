@@ -72,6 +72,73 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Application'],
     }),
 
+    // Get top applications
+    getTopApplications: builder.query({
+          query: () => ({
+            url: `${APPLICATIONS_URL}/top`,
+          }),
+          keepUnusedDataFor: 5,
+     }),
+    
+    // Like an application
+    likeApplication: builder.mutation({
+          query: (appId) => ({
+            url: `${APPLICATIONS_URL}/${appId}/like`,
+            method: 'POST',
+          }),
+          invalidatesTags: ['Application'],
+          async onQueryStarted(appId, { dispatch, queryFulfilled, getState }) { // Add getState here
+            const patchResult = dispatch(
+              applicationsApiSlice.util.updateQueryData(
+                'getApplicationDetails',
+                appId,
+                (draft) => {
+                  draft.likes = draft.likes || [];
+                  const userId = getState().auth.userInfo?._id; // Now getState is available
+                  if (userId) {
+                    const likeIndex = draft.likes.indexOf(userId);
+                    if (likeIndex === -1) {
+                      draft.likes.push(userId);
+                    } else {
+                      draft.likes.splice(likeIndex, 1);
+                    }
+                    draft.metrics.likes = draft.likes.length;
+                  }
+                }
+              )
+            );
+            try {
+              await queryFulfilled;
+            } catch {
+              patchResult.undo();
+            }
+          },
+    }),
+    // Share an application
+    shareApplication: builder.mutation({
+          query: (appId) => ({
+            url: `${APPLICATIONS_URL}/${appId}/share`,
+            method: 'POST',
+          }),
+          invalidatesTags: ['Application'],
+          async onQueryStarted(appId, { dispatch, queryFulfilled }) {
+            const patchResult = dispatch(
+              applicationsApiSlice.util.updateQueryData(
+                'getApplicationDetails',
+                appId,
+                (draft) => {
+                  draft.shares = (draft.shares || 0) + 1;
+                  draft.metrics.shares = (draft.metrics.shares || 0) + 1;
+                }
+              )
+            );
+            try {
+              await queryFulfilled;
+            } catch {
+              patchResult.undo();
+            }
+          },
+        }),
     // Comment system endpoints
     createComment: builder.mutation({
       query: (data) => ({
@@ -101,6 +168,13 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       },
     }),
 
+
+
+
+
+
+
+    
     editComment: builder.mutation({
       query: ({ appId, commentId, newText }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}`,
@@ -350,73 +424,6 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       },
     }),
 
-    // Get top applications
-    getTopApplications: builder.query({
-      query: () => ({
-        url: `${APPLICATIONS_URL}/top`,
-      }),
-      keepUnusedDataFor: 5,
-    }),
-
-    // Like an application
-    likeApplication: builder.mutation({
-      query: (appId) => ({
-        url: `${APPLICATIONS_URL}/${appId}/like`,
-        method: 'POST',
-      }),
-      invalidatesTags: ['Application'],
-      async onQueryStarted(appId, { dispatch, queryFulfilled, getState }) { // Add getState here
-        const patchResult = dispatch(
-          applicationsApiSlice.util.updateQueryData(
-            'getApplicationDetails',
-            appId,
-            (draft) => {
-              draft.likes = draft.likes || [];
-              const userId = getState().auth.userInfo?._id; // Now getState is available
-              if (userId) {
-                const likeIndex = draft.likes.indexOf(userId);
-                if (likeIndex === -1) {
-                  draft.likes.push(userId);
-                } else {
-                  draft.likes.splice(likeIndex, 1);
-                }
-                draft.metrics.likes = draft.likes.length;
-              }
-            }
-          )
-        );
-        try {
-          await queryFulfilled;
-        } catch {
-          patchResult.undo();
-        }
-      },
-    }),
-    // Share an application
-    shareApplication: builder.mutation({
-      query: (appId) => ({
-        url: `${APPLICATIONS_URL}/${appId}/share`,
-        method: 'POST',
-      }),
-      invalidatesTags: ['Application'],
-      async onQueryStarted(appId, { dispatch, queryFulfilled }) {
-        const patchResult = dispatch(
-          applicationsApiSlice.util.updateQueryData(
-            'getApplicationDetails',
-            appId,
-            (draft) => {
-              draft.shares = (draft.shares || 0) + 1;
-              draft.metrics.shares = (draft.metrics.shares || 0) + 1;
-            }
-          )
-        );
-        try {
-          await queryFulfilled;
-        } catch {
-          patchResult.undo();
-        }
-      },
-    }),
   }),
 });
 

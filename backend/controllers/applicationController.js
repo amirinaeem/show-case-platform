@@ -549,9 +549,13 @@ const editReply = asyncHandler(async (req, res) => {
     throw new Error('Reply not found or unauthorized');
   }
 
+  const updatedReply = application.comments
+    .id(req.params.commentId)
+    .replies.id(req.params.replyId);
+
   res.status(200).json({ 
     message: 'Reply updated',
-    reply: application.comments.id(req.params.commentId).replies.id(req.params.replyId)
+    reply: updatedReply
   });
 });
 

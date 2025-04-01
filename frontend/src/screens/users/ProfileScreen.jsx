@@ -3,12 +3,12 @@ import { Table, Form, Button, Row, Col } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import Message from '../components/Message';
-import Loader from '../components/Loader';
+import Message from '../../components/helpers/Message';
+import Loader from '../../components/helpers/Loader';
 import { FaTimes } from 'react-icons/fa';
-import { uesProfileMutation, useProfileMutation } from '../slices/usersApiSlice';
-import { setCredentials } from '../slices/authSlice';
-import { useGetMyOrdersQuery } from '../slices/ordersApiSlice';
+import { uesProfileMutation, useProfileMutation } from '../../slices/usersApiSlice';
+import { setCredentials } from '../../slices/authSlice';
+import { useGetMyOrdersQuery } from '../../slices/ordersApiSlice';
 
 
 

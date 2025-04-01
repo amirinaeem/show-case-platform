@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Carousel, Image } from 'react-bootstrap';
-import Message from './Message';
-import { useGetTopApplicationsQuery } from '../slices/applicationsSlice';
+import Message from '../helpers/Message';
+import { useGetTopApplicationsQuery } from '../../slices/applicationsSlice';
 
 const ApplicationCarousel = () => {
   const { data: applications, isLoading, error } = useGetTopApplicationsQuery();

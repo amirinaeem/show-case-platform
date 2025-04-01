@@ -5,9 +5,13 @@ const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    avatar: { type: String, required: true, default: false },
-    password: {type: String, required: true},
-    isAdmin: {type: Boolean, required: true, default: false},
+    avatar: { 
+      type: String, 
+      required: true, 
+      default: "SHCAPL-logo.jpg" // Set default avatar path
+    },
+    password: { type: String, required: true },
+    isAdmin: { type: Boolean, required: true, default: false },
   },
   { timestamps: true } 
 );

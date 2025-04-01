@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Form, Button } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux'; 
 import { useNavigate } from 'react-router-dom';
-import FormContainer from '../components/FormContainer';
-import { saveBillingAddress } from '../slices/cartSlice';
-import CheckoutSteps from '../components/CheckoutSteps';
+import FormContainer from '../../components/application/FormContainer';
+import { saveBillingAddress } from '../../slices/cartSlice';
+import CheckoutSteps from '../../components/application/CheckoutSteps';
 
 function BillingAddressScreen() {
     const cart = useSelector((state) => state.cart);

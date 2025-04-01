@@ -1,8 +1,8 @@
 import { LinkContainer } from 'react-router-bootstrap';
 import { Table, Button } from 'react-bootstrap';
 import { FaTimes } from 'react-icons/fa';
-import Loader from '../../components/Loader';
-import Message from '../../components/Message';
+import Loader from '../../components/helpers/Loader';
+import Message from '../../components/helpers/Message';
 import {useGetOrdersQuery } from '../../slices/ordersApiSlice';
 
 function OrderListScreen() {
