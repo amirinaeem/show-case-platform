@@ -1,27 +1,27 @@
-
-export const createOptimisticComment = (user, text) => ({
-  _id: `temp-${Date.now()}`,
-  text,
-  user: {
-    _id: user._id,
-    name: user.name,
-    avatar: user.avatar
+export const optimisticLikeUpdate = {
+  // Optimistic update for like toggle
+  onLikeToggle: (draft, userId) => {
+    draft.likes = draft.likes || [];
+    const likeIndex = draft.likes.indexOf(userId);
+    
+    if (likeIndex === -1) {
+      draft.likes.push(userId); // Add like
+    } else {
+      draft.likes.splice(likeIndex, 1); // Remove like
+    }
+    
+    draft.metrics.likes = draft.likes.length; // Update count
+    return draft;
   },
-  likes: [],
-  replies: [],
-  createdAt: new Date().toISOString(),
-  isOptimistic: true
-});
 
-export const createOptimisticReply = (user, text) => ({
-  _id: `temp-reply-${Date.now()}`,
-  text,
-  user: {
-    _id: user._id,
-    name: user.name,
-    avatar: user.avatar
-  },
-  likes: [],
-  createdAt: new Date().toISOString(),
-  isOptimistic: true
-});
+  // Optimistic UI state update
+  getUpdatedLikeState: (currentState, userId) => {
+    const isLiked = currentState.likes?.includes(userId);
+    const likeCount = currentState.metrics?.likes || currentState.likes?.length || 0;
+    
+    return {
+      isLiked: !isLiked,
+      likeCount: isLiked ? likeCount - 1 : likeCount + 1
+    };
+  }
+};
