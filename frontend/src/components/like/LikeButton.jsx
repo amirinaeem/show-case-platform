@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLikeApplicationMutation } from '../../slices/applicationsSlice';
 import { optimisticLikeUpdate } from '../../utils/optimisticUpdates';
 
+
 const LikeButton = ({ application, userInfo, onLikeSuccess }) => {
   const [likeApplication] = useLikeApplicationMutation();
   const [isLiked, setIsLiked] = useState(false);
@@ -18,7 +19,9 @@ const LikeButton = ({ application, userInfo, onLikeSuccess }) => {
   }, [userInfo, application.likes]);
 
   const handleLike = async () => {
+    
     if (!userInfo) {
+      console.log("Redirecting to login...");
       toast.error('Please login to like applications');
       navigate('/login'); // Redirect to login page
       return;
@@ -46,10 +49,8 @@ const LikeButton = ({ application, userInfo, onLikeSuccess }) => {
     <Button 
       variant={isLiked ? "primary" : "outline-primary"}
       onClick={handleLike}
-      disabled={!userInfo}
       aria-label={isLiked ? 'Unlike' : 'Like'}
     >
-      <i className={`bi ${isLiked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'}`} />
       <span className="ms-1">Like</span>
       {likeCount > 0 && <span className="ms-1">({likeCount})</span>}
     </Button>

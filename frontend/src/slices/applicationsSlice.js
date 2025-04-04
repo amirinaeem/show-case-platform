@@ -86,16 +86,16 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
 
           // In your API slice
     likeApplication: builder.mutation({
-         query: (appId) => ({
+        query: (appId) => ({
          url: `${APPLICATIONS_URL}/${appId}/like`,
          method: 'POST',
         }),
-  invalidatesTags: ['Application'],
-  async onQueryStarted(appId, { dispatch, queryFulfilled, getState }) {
-    const userId = getState().auth.userInfo?._id;
-    if (!userId) return;
+       invalidatesTags: ['Application'],
+       async onQueryStarted(appId, { dispatch, queryFulfilled, getState }) {
+        const userId = getState().auth.userInfo?._id;
+       if (!userId) return;
 
-    const patchResult = dispatch(
+       const patchResult = dispatch(
       applicationsApiSlice.util.updateQueryData(
         'getApplicationDetails',
         appId,
@@ -108,8 +108,8 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
     } catch {
       patchResult.undo();
     }
-  },
-     }),
+     },
+  }),
     // Share an application
     shareApplication: builder.mutation({
           query: (appId) => ({
