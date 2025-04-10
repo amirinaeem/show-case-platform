@@ -9,11 +9,11 @@ const validateObjectId = (id) => {
   }
 };
 
-const validateCommentText = (text) => {
-  if (!text || typeof text !== 'string' || !text.trim()) {
-    throw new Error('Text content is required and must be a non-empty string');
+const validateCommentText = (comment) => {
+  if (!comment || typeof comment !== 'string' || !comment.trim()) {
+    throw new Error('comment content is required and must be a non-empty string');
   }
-  if (text.length > 500) {
+  if (comment.length > 500) {
     throw new Error('Comment/reply cannot exceed 500 characters');
   }
 };
@@ -269,37 +269,51 @@ const likeApplication = asyncHandler(async (req, res) => {
 // @route   POST /api/applications/:id/comments
 // @access  Private
 const addComment = asyncHandler(async (req, res) => {
-  validateObjectId(req.params.id);
-  validateCommentText(req.body.comment);
+  const { comment } = req.body;
+  const appId = req.params.id;
 
-  const application = await Application.findByIdAndUpdate(
-    req.params.id,
-    {
-      $push: {
-        comments: {
-          user: req.user._id,
-          name: req.user.name,
-          avatar: req.user.avatar || '',
-          comment: req.body.comment,
-          likes: [],
-          replies: []
-        }
-      },
-      $inc: { 'metrics.commentsCount': 1 }
-    },
-    { new: true }
-  );
-
-  if (!application) {
-    res.status(404);
-    throw new Error('Application not found');
+  if (!comment || !comment.trim()) {
+    res.status(400);
+    throw new Error("Comment text is required");
   }
 
-  const newComment = application.comments[application.comments.length - 1];
+  const application = await Application.findById(appId);
+  if (!application) {
+    res.status(404);
+    throw new Error("Application not found");
+  }
+
+  const newComment = {
+    _id: new mongoose.Types.ObjectId(), // Ensure we have an ID
+    user: req.user._id,
+    name: req.user.name,
+    avatar: req.user.avatar || '/default-avatar.png',
+    comment: comment.trim(),
+    replies: [],
+    likes: [],
+    isEdited: false,
+    isOptimistic: false,
+    status: "active",
+    pinned: false,
+    createdAt: new Date()
+  };
+
+  application.comments.unshift(newComment);
+  
+  // Initialize metrics if they don't exist
+  if (!application.metrics) {
+    application.metrics = { commentsCount: 0 };
+  }
+  application.metrics.commentsCount = application.comments.length;
+  
+  await application.save();
+
   res.status(201).json({
     message: "Comment added successfully",
     comment: newComment,
-    metrics: application.metrics
+    metrics: {
+      commentsCount: application.metrics.commentsCount
+    }
   });
 });
 

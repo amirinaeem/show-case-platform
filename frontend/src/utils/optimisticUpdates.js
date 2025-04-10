@@ -25,3 +25,31 @@ export const optimisticLikeUpdate = {
     };
   }
 };
+
+
+export const optimisticCommentUpdates = {
+  onCommentAdd: (draft, { comment, currentUser, optimisticId }) => {
+    draft.comments = draft.comments || [];
+    
+    const newComment = {
+      _id: optimisticId,
+      user: currentUser._id,
+      name: currentUser.name,
+      avatar: currentUser.avatar || '',
+      comment: comment,
+      replies: [],
+      likes: [],
+      isEdited: false,
+      isOptimistic: true,
+      status: "active",
+      pinned: false,
+      createdAt: new Date().toISOString()
+    };
+
+    draft.comments.unshift(newComment);
+    
+    if (draft.metrics) {
+      draft.metrics.commentsCount = (draft.metrics.commentsCount || 0) + 1;
+    }
+  }
+};

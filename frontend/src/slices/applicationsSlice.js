@@ -1,6 +1,7 @@
 import { APPLICATIONS_URL, UPLOAD_URL } from '../constants';
 import { apiSlice } from './apiSlice';
-import { optimisticLikeUpdate } from '../utils/optimisticUpdates';
+import { optimisticLikeUpdate, optimisticCommentUpdates } from '../utils/optimisticUpdates';
+
 
 export const applicationsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -109,7 +110,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       patchResult.undo();
     }
      },
-  }),
+     }),
     // Share an application
     shareApplication: builder.mutation({
           query: (appId) => ({
@@ -136,32 +137,57 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
           },
         }),
     // Comment system endpoints
-    createComment: builder.mutation({
-      query: (data) => ({
-        url: `${APPLICATIONS_URL}/${data.appId}/comments`,
+    addComment: builder.mutation({
+      query: ({ appId, comment }) => ({
+        url: `${APPLICATIONS_URL}/${appId}/comments`,
         method: 'POST',
-        body: { comment: data.comment },
+        body: { comment },
       }),
-      invalidatesTags: (result, error, arg) => [
-        { type: 'Application', id: arg.appId },
-      ],
-      async onQueryStarted({ appId, comment }, { dispatch, queryFulfilled }) {
+      async onQueryStarted({ appId, comment }, { dispatch, queryFulfilled, getState }) {
+        
+        const { auth } = getState();
+        const currentUser = auth?.userInfo;
+        const optimisticId = `optimistic-${Date.now()}`;
+    
+        if (!currentUser) return;
+    
+        const patchResult = dispatch(
+          apiSlice.util.updateQueryData('getApplicationDetails', appId, (draft) => {
+            optimisticCommentUpdates.onCommentAdd(draft, {
+              comment,
+              currentUser,
+              optimisticId
+            });
+          })
+        );
+    
         try {
-          const { data: { comment: newComment } } = await queryFulfilled;
+          const result = await queryFulfilled(); // Wait for the query to complete
+          
+          // Replace optimistic with real data
           dispatch(
-            applicationsApiSlice.util.updateQueryData(
-              'getApplicationDetails',
-              appId,
-              (draft) => {
-                draft.comments.unshift(newComment);
-                draft.metrics.commentsCount += 1;
+            apiSlice.util.updateQueryData('getApplicationDetails', appId, (draft) => {
+              const optimisticIndex = draft.comments.findIndex(
+                c => c._id === optimisticId
+              );
+              if (optimisticIndex !== -1) {
+                draft.comments[optimisticIndex] = {
+                  ...draft.comments[optimisticIndex], // Keep optimistic fields
+                  ...result.data.comment,             // Use result.data instead of data
+                  isOptimistic: false
+                };
               }
-            )
+            })
           );
         } catch (error) {
-          console.error('Failed to create comment:', error);
+          patchResult.undo();
+          // You can either throw the error or let the component handle it
+          throw error;
         }
       },
+      invalidatesTags: (result, error, { appId }) => [
+        { type: 'Application', id: appId }
+      ]
     }),
 
 
@@ -431,7 +457,7 @@ export const {
   useUploadApplicationFileMutation,
   useDeleteApplicationMutation,
   useCreateReviewMutation,
-  useCreateCommentMutation,
+  useAddCommentMutation,
   useEditCommentMutation,
   useDeleteCommentMutation,
   useLikeCommentMutation,

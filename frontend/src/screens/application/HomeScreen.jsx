@@ -31,7 +31,6 @@ function HomeScreen() {
                   <Col key={app._id} sm={12} md={12} lg={12} xl={12} className="mb-4">
                     <Application 
                       application={app} 
-                      showComments={false} // Disable comments on home screen
                     />
                   </Col>
                 ))}

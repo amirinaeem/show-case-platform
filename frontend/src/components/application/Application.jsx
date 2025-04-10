@@ -3,34 +3,22 @@ import { useState } from 'react';
 import { Card, Row, Col, Badge, Button } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import Rating from '../helpers/Rating';
-import CommentSection from '../comment/commentComponents/CommentLayout';
-import ApplicationActions from './ApplicationsActions';
+import AppFooterHandlers from './AppFooterHandlers';
+import CommentsList from '../comment/CommentList';
 
 function Application({ application: initialApplication }) {
   const { userInfo } = useSelector((state) => state.auth);
-  const [showCommentSection, setShowCommentSection] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  
   const [currentApplication, setCurrentApplication] = useState({
     ...initialApplication,
+    comments: initialApplication.comments || [],
     metrics: {
       likes: initialApplication.likes?.length || 0,
-      commentsCount: initialApplication.comments?.length || 0,
-      repliesCount: initialApplication.comments?.reduce((acc, comment) => 
-        acc + (comment.replies?.length || 0), 0) || 0,
       shares: initialApplication.shares || 0,
       ...initialApplication.metrics
     }
   });
-
-  const calculateTotalComments = () => {
-    return currentApplication.comments?.length || 0;
-  };
-
-  const calculateTotalReplies = () => {
-    return currentApplication.comments?.reduce(
-      (sum, comment) => sum + (comment.replies?.length || 0), 
-      0
-    ) || 0;
-  };
 
   const handleLikeSuccess = (result) => {
     setCurrentApplication(prev => ({
@@ -43,6 +31,27 @@ function Application({ application: initialApplication }) {
     }));
   };
 
+  const handleCommentSuccess = (result) => {
+    setCurrentApplication(prev => {
+      // Ensure we have a proper comments array
+      const existingComments = Array.isArray(prev.comments) ? prev.comments : [];
+      
+      return {
+        ...prev,
+        comments: [result.comment, ...existingComments],
+        metrics: {
+          ...prev.metrics,
+          commentsCount: result.metrics.commentsCount
+        }
+      };
+    });
+    
+    // Keep comments visible after posting
+    if (!showComments) {
+      setShowComments(true);
+    }
+  }
+
   const handleShareSuccess = (result) => {
     setCurrentApplication(prev => ({
       ...prev,
@@ -54,15 +63,7 @@ function Application({ application: initialApplication }) {
     }));
   };
 
-  const toggleCommentSection = () => {
-    setShowCommentSection(prev => !prev);
-  };
-
-  const handleCommentAction = () => {
-    console.log('I will make it later');
-  };
-
-  const totalComments = calculateTotalComments() + calculateTotalReplies();
+  const toggleComments = () => setShowComments(prev => !prev);
 
   return (
     <Card className="mb-4 shadow-sm">
@@ -141,27 +142,26 @@ function Application({ application: initialApplication }) {
         </Col>
       </Row>
 
-      <Card.Footer className="bg-transparent border-top">
-        <ApplicationActions
+      
+
+      <Card.Footer className="bg-transparent border-top position-relative">
+        <AppFooterHandlers
           application={currentApplication}
           userInfo={userInfo}
-          showCommentSection={showCommentSection}
-          toggleCommentSection={toggleCommentSection}
-          totalComments={totalComments}
           onLikeSuccess={handleLikeSuccess}
+          onCommentSuccess={handleCommentSuccess}
           onShareSuccess={handleShareSuccess}
+          onToggleComments={toggleComments}
+          showComments={showComments}
         />
-
-        {showCommentSection && (
-          <CommentSection 
-            appId={currentApplication._id}
-            comments={currentApplication.comments || []}
-            onClose={() => setShowCommentSection(false)}
-            onCommentAction={handleCommentAction}
-            currentUser={userInfo}
-          />
-        )}
       </Card.Footer>
+      {showComments && (
+        <CommentsList 
+          comments={currentApplication.comments} 
+          appId={currentApplication._id}
+          onCommentSuccess={handleCommentSuccess}
+        />
+      )}
     </Card>
   );
 }
