@@ -17,7 +17,7 @@ const replySchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     name: { type: String, required: true },
-    avatar: { type: String, default: "" },
+    avatar: { type: String, default: "/SHCAPL-logo.jpg" },
     reply: { 
       type: String, 
       required: true,

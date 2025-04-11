@@ -143,14 +143,24 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body: { comment },
       }),
-      async onQueryStarted({ appId, comment }, { dispatch, queryFulfilled, getState }) {
+      onQueryStarted: async ({ appId, comment }, api) => {
+        // Destructure with safety checks
+        const { dispatch, getState, queryFulfilled } = api;
         
+        if (typeof queryFulfilled !== 'function') {
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn('RTK Query: queryFulfilled not available - this is normal during development checks');
+          }
+          return;
+        }
+    
         const { auth } = getState();
         const currentUser = auth?.userInfo;
-        const optimisticId = `optimistic-${Date.now()}`;
-    
         if (!currentUser) return;
     
+        const optimisticId = `optimistic-${Date.now()}`;
+    
+        // Optimistic update using your separate function
         const patchResult = dispatch(
           apiSlice.util.updateQueryData('getApplicationDetails', appId, (draft) => {
             optimisticCommentUpdates.onCommentAdd(draft, {
@@ -162,26 +172,11 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         );
     
         try {
-          const result = await queryFulfilled(); // Wait for the query to complete
-          
-          // Replace optimistic with real data
-          dispatch(
-            apiSlice.util.updateQueryData('getApplicationDetails', appId, (draft) => {
-              const optimisticIndex = draft.comments.findIndex(
-                c => c._id === optimisticId
-              );
-              if (optimisticIndex !== -1) {
-                draft.comments[optimisticIndex] = {
-                  ...draft.comments[optimisticIndex], // Keep optimistic fields
-                  ...result.data.comment,             // Use result.data instead of data
-                  isOptimistic: false
-                };
-              }
-            })
-          );
+          // Just await the query without destructuring
+          await queryFulfilled;
         } catch (error) {
-          patchResult.undo();
-          // You can either throw the error or let the component handle it
+          // Only undo if we did an optimistic update
+          if (patchResult) patchResult.undo();
           throw error;
         }
       },

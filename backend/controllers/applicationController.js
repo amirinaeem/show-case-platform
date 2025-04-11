@@ -287,7 +287,7 @@ const addComment = asyncHandler(async (req, res) => {
     _id: new mongoose.Types.ObjectId(), // Ensure we have an ID
     user: req.user._id,
     name: req.user.name,
-    avatar: req.user.avatar || '/default-avatar.png',
+    avatar: req.user.avatar || '/SHCAPL-logo.jpg',
     comment: comment.trim(),
     replies: [],
     likes: [],

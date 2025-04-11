@@ -11,9 +11,9 @@ const AddComment = ({ appId, onCommentSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
-
+  
     toastId.current = toast.loading('Posting comment...');
-
+  
     try {
       const result = await addComment({ 
         appId, 
@@ -21,7 +21,9 @@ const AddComment = ({ appId, onCommentSuccess }) => {
       }).unwrap();
       
       setCommentText('');
-      onCommentSuccess(result);
+      if (onCommentSuccess) {
+        onCommentSuccess(result);
+      }
       toast.update(toastId.current, {
         render: 'Comment posted successfully!',
         type: 'success',

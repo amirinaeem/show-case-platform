@@ -35,7 +35,7 @@ export const optimisticCommentUpdates = {
       _id: optimisticId,
       user: currentUser._id,
       name: currentUser.name,
-      avatar: currentUser.avatar || '',
+      avatar: currentUser.avatar || '/SHCAPL-logo.jpg',
       comment: comment,
       replies: [],
       likes: [],

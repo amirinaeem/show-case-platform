@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema(
     avatar: { 
       type: String, 
       required: true, 
-      default: "SHCAPL-logo.jpg" // Set default avatar path
+      default: "/SHCAPL-logo.jpg" // Set default avatar path
     },
     password: { type: String, required: true },
     isAdmin: { type: Boolean, required: true, default: false },
