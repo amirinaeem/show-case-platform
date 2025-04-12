@@ -3,15 +3,10 @@ import { Button } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useLikeApplicationMutation } from '../../slices/applicationsSlice';
-import { optimisticLikeUpdate } from '../../utils/optimisticUpdates';
-
 
 const LikeButton = ({ application, userInfo, onLikeSuccess }) => {
   const [likeApplication] = useLikeApplicationMutation();
   const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(
-    application.metrics?.likes || application.likes?.length || 0
-  );
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,31 +14,22 @@ const LikeButton = ({ application, userInfo, onLikeSuccess }) => {
   }, [userInfo, application.likes]);
 
   const handleLike = async () => {
-    
     if (!userInfo) {
-      console.log("Redirecting to login...");
       toast.error('Please login to like applications');
-      navigate('/login'); // Redirect to login page
+      navigate('/login');
       return;
     }
-
-    const { isLiked: newLikedState, likeCount: newLikeCount } = 
-      optimisticLikeUpdate.getUpdatedLikeState(application, userInfo._id);
-
-    // Optimistic update
-    setIsLiked(newLikedState);
-    setLikeCount(newLikeCount);
 
     try {
       const result = await likeApplication(application._id).unwrap();
       onLikeSuccess?.(result);
     } catch (error) {
-      // Revert on error
-      setIsLiked(!newLikedState);
-      setLikeCount(newLikedState ? newLikeCount - 1 : newLikeCount + 1);
       toast.error(error.data?.message || 'Failed to update like');
     }
   };
+
+  // Get like count from application metrics or likes array
+  const likeCount = application.metrics?.likes || application.likes?.length || 0;
 
   return (
     <Button 
@@ -57,4 +43,4 @@ const LikeButton = ({ application, userInfo, onLikeSuccess }) => {
   );
 };
 
-export default LikeButton
+export default LikeButton;

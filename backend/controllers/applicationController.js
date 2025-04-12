@@ -358,19 +358,10 @@ const editComment = asyncHandler(async (req, res) => {
 // @route   DELETE /api/applications/:id/comments/:commentId
 // @access  Private
 
-
-// backend/controllers/commentController.js
 const deleteComment = asyncHandler(async (req, res) => {
   const { id, commentId } = req.params;
-
-  console.log('Processing deletion for:', {
-    id,
-    commentId,
-    user: req.user._id
-  });
-
   try {
-    // First verify the comment exists
+    
     const application = await Application.findOne({
       _id: id,
       'comments._id': commentId

@@ -1,7 +1,6 @@
 import { APPLICATIONS_URL, UPLOAD_URL } from '../constants';
 import { apiSlice } from './apiSlice';
-import { optimisticLikeUpdate, optimisticCommentUpdates } from '../utils/optimisticUpdates';
-
+import optimisticHandler from '../utils/optimisticHandler';
 
 export const applicationsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -76,113 +75,57 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
 
     // Get top applications
     getTopApplications: builder.query({
-          query: () => ({
-            url: `${APPLICATIONS_URL}/top`,
-          }),
-          keepUnusedDataFor: 5,
-     }),
-    
+      query: () => ({
+        url: `${APPLICATIONS_URL}/top`,
+      }),
+      keepUnusedDataFor: 5,
+    }),
+
     // Like an application
-    
-
-          // In your API slice
     likeApplication: builder.mutation({
-        query: (appId) => ({
-         url: `${APPLICATIONS_URL}/${appId}/like`,
-         method: 'POST',
-        }),
-       invalidatesTags: ['Application'],
-       async onQueryStarted(appId, { dispatch, queryFulfilled, getState }) {
-        const userId = getState().auth.userInfo?._id;
-       if (!userId) return;
-
-       const patchResult = dispatch(
-      applicationsApiSlice.util.updateQueryData(
-        'getApplicationDetails',
-        appId,
-        (draft) => optimisticLikeUpdate.onLikeToggle(draft, userId)
+      query: (appId) => ({
+        url: `${APPLICATIONS_URL}/${appId}/like`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Application'],
+      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
+        optimisticHandler.actions.likeToggle,
+        (appId, { getState }) => ({ userId: getState().auth.userInfo?._id })
       )
-    );
+    }),
 
-    try {
-      await queryFulfilled;
-    } catch {
-      patchResult.undo();
-    }
-     },
-     }),
     // Share an application
     shareApplication: builder.mutation({
-          query: (appId) => ({
-            url: `${APPLICATIONS_URL}/${appId}/share`,
-            method: 'POST',
-          }),
-          invalidatesTags: ['Application'],
-          async onQueryStarted(appId, { dispatch, queryFulfilled }) {
-            const patchResult = dispatch(
-              applicationsApiSlice.util.updateQueryData(
-                'getApplicationDetails',
-                appId,
-                (draft) => {
-                  draft.shares = (draft.shares || 0) + 1;
-                  draft.metrics.shares = (draft.metrics.shares || 0) + 1;
-                }
-              )
-            );
-            try {
-              await queryFulfilled;
-            } catch {
-              patchResult.undo();
-            }
-          },
-        }),
+      query: (appId) => ({
+        url: `${APPLICATIONS_URL}/${appId}/share`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Application'],
+      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
+        (draft) => {
+          draft.shares = (draft.shares || 0) + 1;
+          if (draft.metrics) {
+            draft.metrics.shares = (draft.metrics.shares || 0) + 1;
+          }
+        },
+        () => ({}) // No data needed for share
+      )
+    }),
+
     // Comment system endpoints
     addComment: builder.mutation({
       query: ({ appId, comment }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments`,
         method: 'POST',
-        body: { comment },
+        body: { comment }
       }),
       invalidatesTags: (result, error, { appId }) => [
         { type: 'Application', id: appId }
       ],
-      onQueryStarted: async ({ appId, comment }, api) => {
-        // Destructure with safety checks
-        const { dispatch, getState, queryFulfilled } = api;
-        
-        if (typeof queryFulfilled !== 'function') {
-          if (process.env.NODE_ENV !== 'production') {
-            console.warn('RTK Query: queryFulfilled not available - this is normal during development checks');
-          }
-          return;
-        }
-    
-        const { auth } = getState();
-        const currentUser = auth?.userInfo;
-        if (!currentUser) return;
-    
-        const optimisticId = `optimistic-${Date.now()}`;
-    
-        // Optimistic update using your separate function
-        const patchResult = dispatch(
-          apiSlice.util.updateQueryData('getApplicationDetails', appId, (draft) => {
-            optimisticCommentUpdates.onCommentAdd(draft, {
-              comment,
-              currentUser,
-              optimisticId
-            });
-          })
-        );
-    
-        try {
-          // Just await the query without destructuring
-          await queryFulfilled;
-        } catch (error) {
-          // Only undo if we did an optimistic update
-          if (patchResult) patchResult.undo();
-          throw error;
-        }
-      },
+      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
+        optimisticHandler.actions.commentAdd,
+        optimisticHandler.preparers.commentAdd
+      )
     }),
 
     editComment: builder.mutation({
@@ -194,30 +137,17 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, arg) => [
         { type: 'Application', id: arg.appId },
       ],
-      async onQueryStarted({ appId, commentId, newText }, { dispatch, queryFulfilled }) {
-        // Optimistic update
-        const patchResult = dispatch(
-          applicationsApiSlice.util.updateQueryData(
-            'getApplicationDetails',
-            appId,
-            (draft) => {
-              const comment = draft.comments.find(c => c._id === commentId);
-              if (comment) {
-                comment.comment = newText;
-                comment.isEdited = true;
-                comment.editedAt = new Date().toISOString();
-              }
-            }
-          )
-        );
-    
-        try {
-          await queryFulfilled; 
-        } catch {
-          patchResult.undo();
-          
-        }
-      },
+      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
+        (draft, { commentId, newText }) => {
+          const comment = draft.comments.find(c => c._id === commentId);
+          if (comment) {
+            comment.comment = newText;
+            comment.isEdited = true;
+            comment.editedAt = new Date().toISOString();
+          }
+        },
+        (arg) => ({ commentId: arg.commentId, newText: arg.newText })
+      )
     }),
 
     deleteComment: builder.mutation({
@@ -226,137 +156,69 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'DELETE'
       }),
       invalidatesTags: (result, error, { appId }) => [
-        { type: 'Application', id: appId },
-        'Comments' // Broad invalidation as fallback
+        { type: 'Application', id: appId }
       ],
-      onQueryStarted: async ({ appId, commentId }, { dispatch, queryFulfilled }) => {
-        const patchResult = dispatch(
-          apiSlice.util.updateQueryData('getApplicationDetails', appId, (draft) => {
-            optimisticCommentUpdates.onCommentDelete(draft, { commentId });
-          })
-        );
-    
-        try {
-          await queryFulfilled;
-        } catch (error) {
-          patchResult.undo();
-        }
-      },
-      
+      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
+        optimisticHandler.actions.commentDelete,
+        optimisticHandler.preparers.commentDelete
+      )
     }),
 
     likeComment: builder.mutation({
       query: ({ appId, commentId }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/like`,
-        method: 'POST',
+        method: 'POST'
       }),
-      invalidatesTags: (result, error, arg) => [
-        { type: 'Application', id: arg.appId },
+      invalidatesTags: (result, error, { appId }) => [
+        { type: 'Application', id: appId }
       ],
-      async onQueryStarted({ appId, commentId, userId }, { dispatch, queryFulfilled }) {
-        const patchResult = dispatch(
-          applicationsApiSlice.util.updateQueryData(
-            'getApplicationDetails',
-            appId,
-            (draft) => {
-              const comment = draft.comments.find(c => c._id === commentId);
-              if (comment) {
-                const likeIndex = comment.likes.indexOf(userId);
-                if (likeIndex === -1) {
-                  comment.likes.push(userId);
-                  draft.metrics.commentLikes += 1;
-                } else {
-                  comment.likes.splice(likeIndex, 1);
-                  draft.metrics.commentLikes -= 1;
-                }
-              }
-            }
-          )
-        );
-        try {
-          await queryFulfilled;
-        } catch {
-          patchResult.undo();
-        }
-      },
+      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
+        optimisticHandler.actions.commentLikeToggle,
+        (arg, { getState }) => ({
+          commentId: arg.commentId,
+          userId: getState().auth.userInfo?._id
+        })
+      )
     }),
 
     addReply: builder.mutation({
       query: ({ appId, commentId, reply, replyToId = null }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/replies`,
         method: 'POST',
-        body: { 
-          reply,
-          replyToId 
-        },
+        body: { reply, replyToId },
       }),
       invalidatesTags: (result, error, arg) => [
         { type: 'Application', id: arg.appId },
         { type: 'Comment', id: arg.commentId }
       ],
-      async onQueryStarted({ appId, commentId, reply, replyToId }, { dispatch, queryFulfilled, getState }) {
-        const { userInfo } = getState().auth;
-        const tempId = `optimistic-reply-${Date.now()}`;
-        
-        const optimisticReply = {
-          _id: tempId,
-          user: userInfo._id,
-          name: userInfo.name,
-          avatar: userInfo.avatar || '',
-          reply,
-          replyTo: replyToId || null,
-          likes: [],
-          isEdited: false,
-          isOptimistic: true,
-          createdAt: new Date().toISOString(),
-          status: 'active'
-        };
-    
-        // Optimistic update
-        const patchResult = dispatch(
-          applicationsApiSlice.util.updateQueryData(
-            'getApplicationDetails', 
-            appId, 
-            (draft) => {
-              const comment = draft.comments.find(c => c._id === commentId);
-              if (comment) {
-                comment.replies.unshift(optimisticReply);
-                draft.metrics.repliesCount = (draft.metrics.repliesCount || 0) + 1;
-              }
+      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
+        (draft, { commentId, optimisticReply }) => {
+          const comment = draft.comments.find(c => c._id === commentId);
+          if (comment) {
+            comment.replies.unshift(optimisticReply);
+            draft.metrics.repliesCount = (draft.metrics.repliesCount || 0) + 1;
+          }
+        },
+        (arg, { getState }) => {
+          const { userInfo } = getState().auth;
+          return {
+            commentId: arg.commentId,
+            optimisticReply: {
+              _id: `optimistic-reply-${Date.now()}`,
+              user: userInfo._id,
+              name: userInfo.name,
+              avatar: userInfo.avatar || '',
+              reply: arg.reply,
+              replyTo: arg.replyToId || null,
+              likes: [],
+              isEdited: false,
+              isOptimistic: true,
+              createdAt: new Date().toISOString(),
+              status: 'active'
             }
-          )
-        );
-    
-        try {
-          const { data } = await queryFulfilled;
-          
-          // Update with server response
-          dispatch(
-            applicationsApiSlice.util.updateQueryData(
-              'getApplicationDetails',
-              appId,
-              (draft) => {
-                const comment = draft.comments.find(c => c._id === commentId);
-                if (comment) {
-                  const replyIndex = comment.replies.findIndex(r => r._id === tempId);
-                  if (replyIndex !== -1) {
-                    comment.replies[replyIndex] = {
-                      ...data.reply,
-                      // Preserve any local-only fields
-                      isOptimistic: false
-                    };
-                  }
-                  draft.metrics.repliesCount = data.metrics.repliesCount;
-                }
-              }
-            )
-          );
-        } catch (error) {
-          patchResult.undo();
-          console.error('Failed to add reply:', error);
-          // Error toast will be handled in the component
+          };
         }
-      },
+      )
     }),
 
     editReply: builder.mutation({
@@ -368,30 +230,24 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, arg) => [
         { type: 'Application', id: arg.appId },
       ],
-      async onQueryStarted({ appId, commentId, replyId, newText }, { dispatch, queryFulfilled }) {
-        const patchResult = dispatch(
-          applicationsApiSlice.util.updateQueryData(
-            'getApplicationDetails',
-            appId,
-            (draft) => {
-              const comment = draft.comments.find(c => c._id === commentId);
-              if (comment) {
-                const reply = comment.replies.find(r => r._id === replyId);
-                if (reply) {
-                  reply.reply = newText;
-                  reply.isEdited = true;
-                  reply.editedAt = new Date().toISOString();
-                }
-              }
+      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
+        (draft, { commentId, replyId, newText }) => {
+          const comment = draft.comments.find(c => c._id === commentId);
+          if (comment) {
+            const reply = comment.replies.find(r => r._id === replyId);
+            if (reply) {
+              reply.reply = newText;
+              reply.isEdited = true;
+              reply.editedAt = new Date().toISOString();
             }
-          )
-        );
-        try {
-          await queryFulfilled;
-        } catch {
-          patchResult.undo();
-        }
-      },
+          }
+        },
+        (arg) => ({
+          commentId: arg.commentId,
+          replyId: arg.replyId,
+          newText: arg.newText
+        })
+      )
     }),
 
     deleteReply: builder.mutation({
@@ -402,31 +258,23 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, arg) => [
         { type: 'Application', id: arg.appId },
       ],
-      async onQueryStarted({ appId, commentId, replyId }, { dispatch, queryFulfilled }) {
-        const patchResult = dispatch(
-          applicationsApiSlice.util.updateQueryData(
-            'getApplicationDetails',
-            appId,
-            (draft) => {
-              const comment = draft.comments.find(c => c._id === commentId);
-              if (comment) {
-                const replyIndex = comment.replies.findIndex(r => r._id === replyId);
-                if (replyIndex !== -1) {
-                  comment.replies.splice(replyIndex, 1);
-                  draft.metrics.repliesCount -= 1;
-                }
-              }
+      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
+        (draft, { commentId, replyId }) => {
+          const comment = draft.comments.find(c => c._id === commentId);
+          if (comment) {
+            const replyIndex = comment.replies.findIndex(r => r._id === replyId);
+            if (replyIndex !== -1) {
+              comment.replies.splice(replyIndex, 1);
+              draft.metrics.repliesCount -= 1;
             }
-          )
-        );
-        try {
-          await queryFulfilled;
-        } catch {
-          patchResult.undo();
-        }
-      },
+          }
+        },
+        (arg) => ({
+          commentId: arg.commentId,
+          replyId: arg.replyId
+        })
+      )
     }),
-
   }),
 });
 
