@@ -143,6 +143,9 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body: { comment },
       }),
+      invalidatesTags: (result, error, { appId }) => [
+        { type: 'Application', id: appId }
+      ],
       onQueryStarted: async ({ appId, comment }, api) => {
         // Destructure with safety checks
         const { dispatch, getState, queryFulfilled } = api;
@@ -180,18 +183,8 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
           throw error;
         }
       },
-      invalidatesTags: (result, error, { appId }) => [
-        { type: 'Application', id: appId }
-      ]
     }),
 
-
-
-
-
-
-
-    
     editComment: builder.mutation({
       query: ({ appId, commentId, newText }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}`,
@@ -230,33 +223,26 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
     deleteComment: builder.mutation({
       query: ({ appId, commentId }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}`,
-        method: 'DELETE',
+        method: 'DELETE'
       }),
-      invalidatesTags: (result, error, arg) => [
-        { type: 'Application', id: arg.appId },
+      invalidatesTags: (result, error, { appId }) => [
+        { type: 'Application', id: appId },
+        'Comments' // Broad invalidation as fallback
       ],
-      async onQueryStarted({ appId, commentId }, { dispatch, queryFulfilled }) {
+      onQueryStarted: async ({ appId, commentId }, { dispatch, queryFulfilled }) => {
         const patchResult = dispatch(
-          applicationsApiSlice.util.updateQueryData(
-            'getApplicationDetails',
-            appId,
-            (draft) => {
-              const commentIndex = draft.comments.findIndex(c => c._id === commentId);
-              if (commentIndex !== -1) {
-                const replyCount = draft.comments[commentIndex].replies?.length || 0;
-                draft.comments.splice(commentIndex, 1);
-                draft.metrics.commentsCount -= 1;
-                draft.metrics.repliesCount -= replyCount;
-              }
-            }
-          )
+          apiSlice.util.updateQueryData('getApplicationDetails', appId, (draft) => {
+            optimisticCommentUpdates.onCommentDelete(draft, { commentId });
+          })
         );
+    
         try {
           await queryFulfilled;
-        } catch {
+        } catch (error) {
           patchResult.undo();
         }
       },
+      
     }),
 
     likeComment: builder.mutation({

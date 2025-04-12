@@ -5,7 +5,7 @@ import {
   getApplicationById,
   createApplication,
   likeApplication,
-  likeComment,  // Add this import
+  likeComment,
   addComment,
   editComment,
   deleteComment,
@@ -18,40 +18,59 @@ import {
   createApplicationReview,
   getTopApplications
 } from '../controllers/applicationController.js';
-import { protect, admin } from '../middleware/authMiddleware.js';
+import { protect, admin, commentOwnerOrAdmin } from '../middleware/authMiddleware.js';
 
-// Public routes
-router.route('/').get(getApplications);
+// ======================
+// Public Routes
+// ======================
+router.route('/')
+  .get(getApplications);
+
 router.get('/top', getTopApplications);
-router.route('/:id').get(getApplicationById);
 
-// Admin-only routes
-router.route('/').post(protect, admin, createApplication);
-router.route('/:id').put(protect, admin, updateApplication).delete(protect, admin, deleteApplication);
+router.route('/:id')
+  .get(getApplicationById);
 
-// Authenticated user routes
-router.route('/:id/like').post(protect, likeApplication);
-router.route('/:id/share').post(protect, shareApplication);
-router.route('/:id/reviews').post(protect, createApplicationReview);
+// ======================
+// Admin-only Routes
+// ======================
+router.route('/')
+  .post(protect, admin, createApplication);
 
-// Comment system routes
+router.route('/:id')
+  .put(protect, admin, updateApplication)
+  .delete(protect, admin, deleteApplication);
+
+// ======================
+// Authenticated User Routes
+// ======================
+router.route('/:id/like')
+  .post(protect, likeApplication);
+
+router.route('/:id/share')
+  .post(protect, shareApplication);
+
+router.route('/:id/reviews')
+  .post(protect, createApplicationReview);
+
+// ======================
+// Comment System Routes
+// ======================
 router.route('/:id/comments')
-  .post(protect, addComment)          
+  .post(protect, addComment);
 
-  // Backend (routes/applicationRoutes.js)
 router.route('/:id/comments/:commentId')
-.put(protect, editComment)  // Now matches the frontend's URL structure
-.delete(protect, deleteComment);
+  .put(protect, commentOwnerOrAdmin, editComment)
+  .delete(protect, commentOwnerOrAdmin, deleteComment);
+
+router.route('/:id/comments/:commentId/like')
+  .post(protect, likeComment);
 
 router.route('/:id/comments/:commentId/replies')
   .post(protect, addReply);
 
 router.route('/:id/comments/:commentId/replies/:replyId')
-  .put(protect, editReply)
-  .delete(protect, deleteReply);
-
-// Add new route for comment likes
-router.route('/:id/comments/:commentId/like')
-  .post(protect, likeComment);
+  .put(protect, commentOwnerOrAdmin, editReply)
+  .delete(protect, commentOwnerOrAdmin, deleteReply);
 
 export default router;

@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { Button } from 'react-bootstrap';
 import LikeButton from '../like/LikeButton';
 import ShareButton from '../share/ShareButton';
 import AddComment from '../comment/AddComment';
+
 
 const AppFooterHandlers = ({
   application,
@@ -15,10 +18,21 @@ const AppFooterHandlers = ({
 }) => {
   const [showCommentForm, setShowCommentForm] = useState(false);
 
+  const navigate = useNavigate();
+
   const handleCommentButtonClick = () => {
+
+    if (!userInfo) {
+          console.log("Redirecting to login...");
+          toast.error('Please login to comment applications');
+          navigate('/login'); // Redirect to login page
+          return;
+    }
+    
     onToggleComments()
     setShowCommentForm(prev => !prev);
     setShowCommentForm(true);
+
   };
 
   const handleCommentSuccess = (result) => {

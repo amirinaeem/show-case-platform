@@ -1,20 +1,20 @@
-export const optimisticLikeUpdate = {
-  // Optimistic update for like toggle
+
+ const optimisticLikeUpdate = {
   onLikeToggle: (draft, userId) => {
-    draft.likes = draft.likes || [];
+    if (!draft.likes) draft.likes = [];
     const likeIndex = draft.likes.indexOf(userId);
     
     if (likeIndex === -1) {
-      draft.likes.push(userId); // Add like
+      draft.likes.push(userId);
     } else {
-      draft.likes.splice(likeIndex, 1); // Remove like
+      draft.likes.splice(likeIndex, 1);
     }
     
-    draft.metrics.likes = draft.likes.length; // Update count
-    return draft;
+    if (draft.metrics) {
+      draft.metrics.likes = draft.likes.length;
+    }
   },
 
-  // Optimistic UI state update
   getUpdatedLikeState: (currentState, userId) => {
     const isLiked = currentState.likes?.includes(userId);
     const likeCount = currentState.metrics?.likes || currentState.likes?.length || 0;
@@ -26,17 +26,17 @@ export const optimisticLikeUpdate = {
   }
 };
 
-
-export const optimisticCommentUpdates = {
+// Comment additions
+ const optimisticCommentUpdates = {
   onCommentAdd: (draft, { comment, currentUser, optimisticId }) => {
-    draft.comments = draft.comments || [];
+    if (!draft.comments) draft.comments = [];
     
-    const newComment = {
+    draft.comments.unshift({
       _id: optimisticId,
       user: currentUser._id,
       name: currentUser.name,
       avatar: currentUser.avatar || '/SHCAPL-logo.jpg',
-      comment: comment,
+      comment,
       replies: [],
       likes: [],
       isEdited: false,
@@ -44,12 +44,35 @@ export const optimisticCommentUpdates = {
       status: "active",
       pinned: false,
       createdAt: new Date().toISOString()
-    };
-
-    draft.comments.unshift(newComment);
+    });
     
     if (draft.metrics) {
       draft.metrics.commentsCount = (draft.metrics.commentsCount || 0) + 1;
     }
+   },
+   onCommentDelete: (draft, { commentId }) => {
+    if (!draft?.comments) return;
+    
+    // Create NEW array reference (crucial for React updates)
+    const updatedComments = draft.comments.filter(c => c._id !== commentId);
+    
+    // Only proceed if something changed
+    if (updatedComments.length !== draft.comments.length) {
+      draft.comments = updatedComments; // This assignment triggers update
+      
+      // Safely update count
+      if (draft.metrics?.commentsCount) {
+        draft.metrics.commentsCount = updatedComments.length;
+      }
+    }
   }
 };
+
+// Comment deletion (standalone export)
+
+
+
+export {
+  optimisticLikeUpdate,
+  optimisticCommentUpdates,
+ }

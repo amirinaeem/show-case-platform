@@ -4,9 +4,9 @@ import mongoose from 'mongoose';
 
 // Helper functions
 const validateObjectId = (id) => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new Error('Invalid ID format');
-  }
+  if (!id) return false;
+  return mongoose.Types.ObjectId.isValid(id) && 
+         (new mongoose.Types.ObjectId(id)).toString() === id;
 };
 
 const validateCommentText = (comment) => {
@@ -269,6 +269,7 @@ const likeApplication = asyncHandler(async (req, res) => {
 // @route   POST /api/applications/:id/comments
 // @access  Private
 const addComment = asyncHandler(async (req, res) => {
+
   const { comment } = req.body;
   const appId = req.params.id;
 
@@ -356,38 +357,66 @@ const editComment = asyncHandler(async (req, res) => {
 // @desc    Delete a comment
 // @route   DELETE /api/applications/:id/comments/:commentId
 // @access  Private
+
+
+// backend/controllers/commentController.js
 const deleteComment = asyncHandler(async (req, res) => {
-  validateObjectId(req.params.id);
-  validateObjectId(req.params.commentId);
-  const application = await Application.findOneAndUpdate(
-    { 
-      _id: req.params.id,
-      'comments._id': req.params.commentId,
-      $or: [
-        { 'comments.user': req.user._id },
-        { user: req.user._id }
-      ]
-    },
-    { 
-      $pull: { comments: { _id: req.params.commentId } },
-      $inc: { 
-        'metrics.commentsCount': -1,
-        'metrics.repliesCount': -application.comments.id(req.params.commentId).replies.length
-      }
-    },
-    { new: true }
-  );
+  const { id, commentId } = req.params;
 
-  if (!application) {
-    res.status(404);
-    throw new Error('Comment not found or unauthorized');
-  }
-
-  res.status(200).json({
-    message: "Comment deleted",
-    metrics: application.metrics
+  console.log('Processing deletion for:', {
+    id,
+    commentId,
+    user: req.user._id
   });
+
+  try {
+    // First verify the comment exists
+    const application = await Application.findOne({
+      _id: id,
+      'comments._id': commentId
+    });
+
+    if (!application) {
+      console.log('Application not found:', appId);
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    const commentIndex = application.comments.findIndex(
+      c => c._id.toString() === commentId
+    );
+
+    if (commentIndex === -1) {
+      console.log('Comment not found in application:', {
+        searchedId: commentId,
+        existingIds: application.comments.map(c => c._id.toString())
+      });
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    // Remove the comment
+    application.comments.splice(commentIndex, 1);
+    
+    // Update metrics
+    if (application.metrics?.commentsCount) {
+      application.metrics.commentsCount--;
+    }
+
+    await application.save();
+
+    res.status(200).json({
+      message: "Comment deleted successfully",
+      deletedCommentId: commentId
+    });
+
+  } catch (error) {
+    console.error('Deletion error:', error);
+    res.status(500).json({ 
+      message: 'Server error',
+      error: error.message 
+    });
+  }
 });
+
 
 // @desc    Like a comment
 // @route   POST /api/applications/:appId/comments/:commentId/like

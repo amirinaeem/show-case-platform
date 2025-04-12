@@ -1,15 +1,20 @@
 import { useSelector } from 'react-redux';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Row, Col, Badge, Button } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import Rating from '../helpers/Rating';
 import AppFooterHandlers from './AppFooterHandlers';
 import CommentsList from '../comment/CommentList';
+import { useGetApplicationDetailsQuery } from '../../slices/applicationsSlice';
 
 function Application({ application: initialApplication }) {
   const { userInfo } = useSelector((state) => state.auth);
   const [showComments, setShowComments] = useState(false);
   
+  // Use RTK Query to get fresh data
+  const { data: fetchedApplication, refetch } = useGetApplicationDetailsQuery(initialApplication._id);
+  
+  // Maintain local state that syncs with both initial props and RTK Query data
   const [currentApplication, setCurrentApplication] = useState({
     ...initialApplication,
     comments: initialApplication.comments || [],
@@ -20,6 +25,21 @@ function Application({ application: initialApplication }) {
     }
   });
 
+  // Sync state when new data arrives from RTK Query
+  useEffect(() => {
+    if (fetchedApplication) {
+      setCurrentApplication({
+        ...fetchedApplication,
+        comments: fetchedApplication.comments || [],
+        metrics: {
+          likes: fetchedApplication.likes?.length || 0,
+          shares: fetchedApplication.shares || 0,
+          ...fetchedApplication.metrics
+        }
+      });
+    }
+  }, [fetchedApplication]);
+
   const handleLikeSuccess = (result) => {
     setCurrentApplication(prev => ({
       ...prev,
@@ -29,11 +49,11 @@ function Application({ application: initialApplication }) {
         likes: result.likes.length
       }
     }));
+    refetch(); // Ensure we have fresh data
   };
 
   const handleCommentSuccess = (result) => {
     setCurrentApplication(prev => {
-      // Ensure we have a proper comments array
       const existingComments = Array.isArray(prev.comments) ? prev.comments : [];
       
       return {
@@ -46,11 +66,11 @@ function Application({ application: initialApplication }) {
       };
     });
     
-    // Keep comments visible after posting
     if (!showComments) {
       setShowComments(true);
     }
-  }
+    refetch(); // Ensure we have fresh data
+  };
 
   const handleShareSuccess = (result) => {
     setCurrentApplication(prev => ({
@@ -142,8 +162,6 @@ function Application({ application: initialApplication }) {
         </Col>
       </Row>
 
-      
-
       <Card.Footer className="bg-transparent border-top position-relative">
         <AppFooterHandlers
           application={currentApplication}
@@ -155,11 +173,15 @@ function Application({ application: initialApplication }) {
           showComments={showComments}
         />
       </Card.Footer>
+      
       {showComments && (
         <CommentsList 
-          comments={currentApplication.comments} 
+          comments={currentApplication.comments || []} 
           appId={currentApplication._id}
+          currentUserId={userInfo?._id}
+          isAdmin={userInfo?.isAdmin || false}
           onCommentSuccess={handleCommentSuccess}
+          onCommentDelete={() => refetch()} 
         />
       )}
     </Card>
