@@ -4,7 +4,7 @@ import optimisticHandler from '../utils/optimisticHandler';
 
 export const applicationsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // Fetch all applications
+    // Basic Application Endpoints
     getApplications: builder.query({
       query: ({ keyword, pageNumber }) => ({
         url: APPLICATIONS_URL,
@@ -14,7 +14,6 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       providesTags: ['Application'],
     }),
 
-    // Fetch a single application by ID
     getApplicationDetails: builder.query({
       query: (appId) => ({
         url: `${APPLICATIONS_URL}/${appId}`,
@@ -26,7 +25,6 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       ],
     }),
 
-    // Create a new application
     createApplication: builder.mutation({
       query: () => ({
         url: APPLICATIONS_URL,
@@ -35,7 +33,6 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Application'],
     }),
 
-    // Update an application
     updateApplication: builder.mutation({
       query: ({ appId, ...data }) => ({
         url: `${APPLICATIONS_URL}/${appId}`,
@@ -45,7 +42,6 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Application'],
     }),
 
-    // Upload application file
     uploadApplicationFile: builder.mutation({
       query: ({ file, fileType }) => ({
         url: `${UPLOAD_URL}/${fileType}`,
@@ -54,7 +50,6 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    // Delete an application
     deleteApplication: builder.mutation({
       query: (appId) => ({
         url: `${APPLICATIONS_URL}/${appId}`,
@@ -63,7 +58,6 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Application'],
     }),
 
-    // Create a review
     createReview: builder.mutation({
       query: (data) => ({
         url: `${APPLICATIONS_URL}/${data.appId}/reviews`,
@@ -73,7 +67,6 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Application'],
     }),
 
-    // Get top applications
     getTopApplications: builder.query({
       query: () => ({
         url: `${APPLICATIONS_URL}/top`,
@@ -81,38 +74,35 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       keepUnusedDataFor: 5,
     }),
 
-    // Like an application
     likeApplication: builder.mutation({
       query: (appId) => ({
         url: `${APPLICATIONS_URL}/${appId}/like`,
         method: 'POST',
       }),
       invalidatesTags: ['Application'],
-      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
-        optimisticHandler.actions.likeToggle,
-        (appId, { getState }) => ({ userId: getState().auth.userInfo?._id })
+      onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
+        'likeToggle',
+        optimisticHandler.preparers.likeToggle
       )
     }),
 
-    // Share an application
     shareApplication: builder.mutation({
       query: (appId) => ({
         url: `${APPLICATIONS_URL}/${appId}/share`,
         method: 'POST',
       }),
       invalidatesTags: ['Application'],
-      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
+      onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         (draft) => {
           draft.shares = (draft.shares || 0) + 1;
           if (draft.metrics) {
             draft.metrics.shares = (draft.metrics.shares || 0) + 1;
           }
         },
-        () => ({}) // No data needed for share
+        () => ({})
       )
     }),
 
-    // Comment system endpoints
     addComment: builder.mutation({
       query: ({ appId, comment }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments`,
@@ -122,8 +112,8 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, { appId }) => [
         { type: 'Application', id: appId }
       ],
-      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
-        optimisticHandler.actions.commentAdd,
+      onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
+        'commentAdd',
         optimisticHandler.preparers.commentAdd
       )
     }),
@@ -132,21 +122,15 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       query: ({ appId, commentId, newText }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}`,
         method: 'PUT',
-        body: { newText },
+        body: { newText }
       }),
-      invalidatesTags: (result, error, arg) => [
-        { type: 'Application', id: arg.appId },
+      invalidatesTags: (result, error, { appId }) => [
+        { type: 'Application', id: appId },
+        'Comment'
       ],
-      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
-        (draft, { commentId, newText }) => {
-          const comment = draft.comments.find(c => c._id === commentId);
-          if (comment) {
-            comment.comment = newText;
-            comment.isEdited = true;
-            comment.editedAt = new Date().toISOString();
-          }
-        },
-        (arg) => ({ commentId: arg.commentId, newText: arg.newText })
+      onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
+        'commentEdit',
+        optimisticHandler.preparers.commentEdit
       )
     }),
 
@@ -158,8 +142,8 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, { appId }) => [
         { type: 'Application', id: appId }
       ],
-      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
-        optimisticHandler.actions.commentDelete,
+      onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
+        'commentDelete',
         optimisticHandler.preparers.commentDelete
       )
     }),
@@ -172,12 +156,9 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, { appId }) => [
         { type: 'Application', id: appId }
       ],
-      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
-        optimisticHandler.actions.commentLikeToggle,
-        (arg, { getState }) => ({
-          commentId: arg.commentId,
-          userId: getState().auth.userInfo?._id
-        })
+      onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
+        'commentLikeToggle',
+        optimisticHandler.preparers.commentLikeToggle
       )
     }),
 
@@ -191,33 +172,9 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         { type: 'Application', id: arg.appId },
         { type: 'Comment', id: arg.commentId }
       ],
-      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
-        (draft, { commentId, optimisticReply }) => {
-          const comment = draft.comments.find(c => c._id === commentId);
-          if (comment) {
-            comment.replies.unshift(optimisticReply);
-            draft.metrics.repliesCount = (draft.metrics.repliesCount || 0) + 1;
-          }
-        },
-        (arg, { getState }) => {
-          const { userInfo } = getState().auth;
-          return {
-            commentId: arg.commentId,
-            optimisticReply: {
-              _id: `optimistic-reply-${Date.now()}`,
-              user: userInfo._id,
-              name: userInfo.name,
-              avatar: userInfo.avatar || '',
-              reply: arg.reply,
-              replyTo: arg.replyToId || null,
-              likes: [],
-              isEdited: false,
-              isOptimistic: true,
-              createdAt: new Date().toISOString(),
-              status: 'active'
-            }
-          };
-        }
+      onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
+        'replyAdd',
+        optimisticHandler.preparers.replyAdd
       )
     }),
 
@@ -230,7 +187,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, arg) => [
         { type: 'Application', id: arg.appId },
       ],
-      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
+      onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         (draft, { commentId, replyId, newText }) => {
           const comment = draft.comments.find(c => c._id === commentId);
           if (comment) {
@@ -258,14 +215,14 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, arg) => [
         { type: 'Application', id: arg.appId },
       ],
-      onQueryStarted: optimisticHandler.handler(apiSlice).prepare(
+      onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         (draft, { commentId, replyId }) => {
           const comment = draft.comments.find(c => c._id === commentId);
           if (comment) {
             const replyIndex = comment.replies.findIndex(r => r._id === replyId);
             if (replyIndex !== -1) {
               comment.replies.splice(replyIndex, 1);
-              draft.metrics.repliesCount -= 1;
+              draft.metrics.repliesCount = Math.max(0, (draft.metrics.repliesCount || 0) - 1);
             }
           }
         },
@@ -278,22 +235,34 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
   }),
 });
 
+// Export hooks in a consistent order
 export const {
+  // Query hooks
   useGetApplicationsQuery,
   useGetApplicationDetailsQuery,
+  useGetTopApplicationsQuery,
+  
+  // Application CRUD mutations
   useCreateApplicationMutation,
   useUpdateApplicationMutation,
-  useUploadApplicationFileMutation,
   useDeleteApplicationMutation,
+  useUploadApplicationFileMutation,
+  
+  // Review mutations
   useCreateReviewMutation,
+  
+  // Engagement mutations
+  useLikeApplicationMutation,
+  useShareApplicationMutation,
+  
+  // Comment system mutations
   useAddCommentMutation,
   useEditCommentMutation,
   useDeleteCommentMutation,
   useLikeCommentMutation,
+  
+  // Reply system mutations
   useAddReplyMutation,
   useEditReplyMutation,
   useDeleteReplyMutation,
-  useGetTopApplicationsQuery,
-  useLikeApplicationMutation,
-  useShareApplicationMutation,
 } = applicationsApiSlice;

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { useAddCommentMutation } from '../../slices/applicationsSlice';
 import { Button, Form } from 'react-bootstrap';
@@ -6,24 +7,23 @@ import { Button, Form } from 'react-bootstrap';
 const AddComment = ({ appId, onCommentSuccess }) => {
   const [commentText, setCommentText] = useState('');
   const [addComment, { isLoading }] = useAddCommentMutation();
+  const { userInfo } = useSelector(state => state.auth);
   const toastId = React.useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!commentText.trim()) return;
+    if (!commentText.trim() || isLoading) return;
   
     toastId.current = toast.loading('Posting comment...');
   
     try {
-      const result = await addComment({ 
+      await addComment({ 
         appId, 
-        comment: commentText 
+        comment: commentText,
+        userId: userInfo._id // Required for optimistic update
       }).unwrap();
       
       setCommentText('');
-      if (onCommentSuccess) {
-        onCommentSuccess(result);
-      }
       toast.update(toastId.current, {
         render: 'Comment posted successfully!',
         type: 'success',
@@ -31,7 +31,6 @@ const AddComment = ({ appId, onCommentSuccess }) => {
         autoClose: 3000
       });
     } catch (error) {
-      console.error('Failed to post comment:', error);
       toast.update(toastId.current, {
         render: error.data?.message || 'Failed to post comment',
         type: 'error',
@@ -39,10 +38,6 @@ const AddComment = ({ appId, onCommentSuccess }) => {
         autoClose: 3000
       });
     }
-  };
-
-  const handleCancel = () => {
-    setCommentText('');
   };
 
   return (
@@ -62,7 +57,7 @@ const AddComment = ({ appId, onCommentSuccess }) => {
           variant="outline-secondary"
           size="sm"
           className="me-2"
-          onClick={handleCancel}
+          onClick={() => setCommentText('')}
           disabled={isLoading}
           type="button"
         >
@@ -81,4 +76,4 @@ const AddComment = ({ appId, onCommentSuccess }) => {
   );
 };
 
-export default AddComment;
+export default React.memo(AddComment);

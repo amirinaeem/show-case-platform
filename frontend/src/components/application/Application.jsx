@@ -52,23 +52,7 @@ function Application({ application: initialApplication }) {
     refetch(); // Ensure we have fresh data
   };
 
-  const handleCommentSuccess = (result) => {
-    setCurrentApplication(prev => {
-      const existingComments = Array.isArray(prev.comments) ? prev.comments : [];
-      
-      return {
-        ...prev,
-        comments: [result.comment, ...existingComments],
-        metrics: {
-          ...prev.metrics,
-          commentsCount: result.metrics.commentsCount
-        }
-      };
-    });
-    
-    if (!showComments) {
-      setShowComments(true);
-    }
+  const handleCommentSuccess = () => {
     refetch(); // Ensure we have fresh data
   };
 
