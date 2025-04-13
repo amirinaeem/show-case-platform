@@ -34,7 +34,7 @@ const CommentsList = ({
             Comments ({filteredComments.length})
           </Card.Title>
           {filteredComments.map((comment) => (
-            <div key={comment._id} className="mb-3 p-2 border-bottom">
+            <div key={comment._id} className="mb-3 p-2">
               <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex align-items-center">
                   <img 

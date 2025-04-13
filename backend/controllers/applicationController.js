@@ -257,7 +257,10 @@ const likeApplication = asyncHandler(async (req, res) => {
     res.status(200).json({ 
       message: 'Application like updated',
       likes: application.likes,
-      metrics: application.metrics
+      metrics: {
+        ...application.metrics,
+        likes: application.likes.length
+      }
     });
   } else {
     res.status(404);

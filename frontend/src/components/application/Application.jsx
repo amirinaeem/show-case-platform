@@ -43,10 +43,10 @@ function Application({ application: initialApplication }) {
   const handleLikeSuccess = (result) => {
     setCurrentApplication(prev => ({
       ...prev,
-      likes: result.likes,
+      likes: result.likes || prev.likes,
       metrics: {
         ...prev.metrics,
-        likes: result.likes.length
+        likes: result.likes.length || prev.metrics.likes
       }
     }));
     refetch(); // Ensure we have fresh data
