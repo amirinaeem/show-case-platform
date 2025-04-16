@@ -5,13 +5,9 @@ import {
   getApplicationById,
   createApplication,
   likeApplication,
-  likeComment,
   addComment,
   editComment,
   deleteComment,
-  addReply,
-  editReply,
-  deleteReply,
   shareApplication,
   updateApplication,
   deleteApplication,
@@ -63,14 +59,5 @@ router.route('/:id/comments/:commentId')
   .put(protect, commentOwnerOrAdmin, editComment)
   .delete(protect, commentOwnerOrAdmin, deleteComment);
 
-router.route('/:id/comments/:commentId/like')
-  .post(protect, likeComment);
-
-router.route('/:id/comments/:commentId/replies')
-  .post(protect, addReply);
-
-router.route('/:id/comments/:commentId/replies/:replyId')
-  .put(protect, commentOwnerOrAdmin, editReply)
-  .delete(protect, commentOwnerOrAdmin, deleteReply);
 
 export default router;

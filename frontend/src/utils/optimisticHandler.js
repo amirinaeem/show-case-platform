@@ -94,31 +94,6 @@ const optimisticHandler = {
       draft.comments = draft.comments.filter(c => c._id !== commentId);
     },
 
-    commentLikeToggle(draft, { commentId, userId }) {
-      const comment = draft.comments?.find(c => c._id === commentId);
-      if (!comment) return;
-      
-      comment.likes = comment.likes || [];
-      const likeIndex = comment.likes.indexOf(userId);
-      
-      if (likeIndex === -1) {
-        comment.likes.push(userId);
-      } else {
-        comment.likes.splice(likeIndex, 1);
-      }
-    },
-
-    replyAdd(draft, { commentId, optimisticReply }) {
-      const comment = draft.comments?.find(c => c._id === commentId);
-      if (!comment) return;
-      
-      comment.replies = comment.replies || [];
-      comment.replies.unshift(optimisticReply);
-      
-      if (draft.metrics) {
-        draft.metrics.repliesCount = (draft.metrics.repliesCount || 0) + 1;
-      }
-    }
   },
 
   // Data preparers
@@ -150,31 +125,6 @@ const optimisticHandler = {
       };
     },
     
-    commentLikeToggle(arg, _, { getState }) {
-      return { 
-        commentId: arg.commentId, 
-        userId: getState().auth.userInfo?._id 
-      };
-    },
-    
-    replyAdd(arg, currentUser) {
-      return {
-        commentId: arg.commentId,
-        optimisticReply: {
-          _id: `optimistic-reply-${Date.now()}`,
-          user: currentUser._id,
-          name: currentUser.name,
-          avatar: currentUser.avatar || '',
-          reply: arg.reply,
-          replyTo: arg.replyToId || null,
-          likes: [],
-          isEdited: false,
-          isOptimistic: true,
-          createdAt: new Date().toISOString(),
-          status: 'active'
-        }
-      };
-    }
   }
 };
 

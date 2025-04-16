@@ -22,7 +22,7 @@ const replySchema = new mongoose.Schema(
       type: String, 
       required: true,
       minlength: 1,
-      maxlength: 500
+      maxlength: 5000
     },
     replyTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // For nested replies
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
@@ -48,7 +48,7 @@ const commentSchema = new mongoose.Schema(
       type: String, 
       required: true,
       minlength: 1,
-      maxlength: 500
+      maxlength: 5000
     },
     replies: [replySchema],
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],

@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import { useAddCommentMutation } from '../../slices/applicationsSlice';
 import { Button, Form } from 'react-bootstrap';
 
-const AddComment = ({ appId, onCommentSuccess }) => {
+const AddComment = ({ appId }) => {
   const [commentText, setCommentText] = useState('');
   const [addComment, { isLoading }] = useAddCommentMutation();
   const { userInfo } = useSelector(state => state.auth);
