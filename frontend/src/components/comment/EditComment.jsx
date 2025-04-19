@@ -8,7 +8,7 @@ const EditComment = ({
   appId, 
   commentId, 
   currentText,
-  onSuccess,
+  onEditComment,
   onCancel 
 }) => {
   const [editComment] = useEditCommentMutation();
@@ -21,14 +21,14 @@ const EditComment = ({
 
     setIsSubmitting(true);
     try {
-      const result = await editComment({ 
+      const editedComment = await editComment({ 
         appId, 
         commentId, 
         newText: text 
       }).unwrap();
       
       toast.success('Comment updated successfully');
-      onSuccess(result);
+      onEditComment(editedComment);
     } catch (error) {
       toast.error(error.data?.message || error.message || 'Failed to update comment');
     } finally {
@@ -69,6 +69,6 @@ const EditComment = ({
       </div>
     </Form>
   );
-};
+}
 
 export default EditComment;

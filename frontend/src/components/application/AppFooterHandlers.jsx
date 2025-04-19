@@ -11,7 +11,7 @@ const AppFooterHandlers = ({
   application,
   userInfo,
   onLikeSuccess,
-  onCommentSuccess,
+  onCommentUpdate,
   onShareSuccess,
   onToggleComments,
   showComments
@@ -35,8 +35,8 @@ const AppFooterHandlers = ({
 
   };
 
-  const handleCommentSuccess = (result) => {
-    onCommentSuccess(result);
+  const handleAddComment = (newComment) => {
+    onCommentUpdate(newComment);
     setShowCommentForm(true);
     if (!showComments) {
       onToggleComments()
@@ -59,7 +59,7 @@ const AppFooterHandlers = ({
         >
        <i className="far fa-comment me-1"></i> Comment
        {application.metrics?.commentsCount > 0 && (
-        <span className="ms-1">({application.metrics.commentsCount})</span>
+        <span className="ms-1">({application.metrics.commentsCount + application.metrics.repliesCount})</span>
         )}
       </Button>
         
@@ -73,7 +73,7 @@ const AppFooterHandlers = ({
       {showComments && showCommentForm && (
         <AddComment
           appId={application._id}
-          onCommentSuccess={handleCommentSuccess}
+          onAddComment={handleAddComment}
           onCancel={() => setShowCommentForm(false)}
         />
       )}

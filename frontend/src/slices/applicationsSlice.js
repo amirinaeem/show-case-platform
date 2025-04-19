@@ -2,6 +2,7 @@ import { APPLICATIONS_URL, UPLOAD_URL } from '../constants';
 import { apiSlice } from './apiSlice';
 import optimisticHandler from '../utils/optimisticHandler';
 
+
 export const applicationsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // Basic Application Endpoints
@@ -148,6 +149,25 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       )
     }),
 
+    replyToComment: builder.mutation({
+      query: ({ appId, commentId, reply }) => ({
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}`,
+        method: 'POST',
+        body: { reply },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}` // Ensure auth header
+        }
+      }),
+      invalidatesTags: (result, error, { appId }) => [
+        { type: 'Application', id: appId }
+      ],
+      onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
+        'commentReply',
+        optimisticHandler.preparers.commentReply
+      )
+    }),
+
   }),
 });
 
@@ -175,5 +195,6 @@ export const {
   useAddCommentMutation,
   useEditCommentMutation,
   useDeleteCommentMutation,
+  useReplyToCommentMutation
 
 } = applicationsApiSlice;

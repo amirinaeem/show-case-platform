@@ -268,6 +268,32 @@ const likeApplication = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Share an application
+// @route   POST /api/applications/:id/share
+// @access  Public
+const shareApplication = asyncHandler(async (req, res) => {
+  validateObjectId(req.params.id);
+
+  const application = await Application.findByIdAndUpdate(
+    req.params.id,
+    {
+      $inc: { shares: 1, 'metrics.shares': 1 }
+    },
+    { new: true }
+  );
+
+  if (application) {
+    res.status(200).json({ 
+      message: 'Application shared successfully',
+      shares: application.shares,
+      metrics: application.metrics
+    });
+  } else {
+    res.status(404);
+    throw new Error('Application not found');
+  }
+});
+
 // @desc    Add comment to application
 // @route   POST /api/applications/:id/comments
 // @access  Private
@@ -313,8 +339,16 @@ const addComment = asyncHandler(async (req, res) => {
   await application.save();
 
   res.status(201).json({
-    message: "Comment added successfully",
-    comment: newComment,
+    _id: newComment._id,
+    user: newComment.user,
+    name: newComment.name,
+    avatar: newComment.avatar,
+    comment: newComment.comment,
+    replies: [],
+    likes: [],
+    isEdited: false,
+    status: "active",
+    createdAt: newComment.createdAt,
     metrics: {
       commentsCount: application.metrics.commentsCount
     }
@@ -412,31 +446,72 @@ const deleteComment = asyncHandler(async (req, res) => {
 });
 
 
-// @desc    Share an application
-// @route   POST /api/applications/:id/share
-// @access  Public
-const shareApplication = asyncHandler(async (req, res) => {
-  validateObjectId(req.params.id);
+// @desc    Reply to Comment
+// @route   POST /api/applications/:id/comments
+// @access  Private
+const replyToComment = asyncHandler(async (req, res) => {
+  const { id: appId, commentId } = req.params;
+  const { reply } = req.body;
 
-  const application = await Application.findByIdAndUpdate(
-    req.params.id,
-    {
-      $inc: { shares: 1, 'metrics.shares': 1 }
-    },
-    { new: true }
-  );
-
-  if (application) {
-    res.status(200).json({ 
-      message: 'Application shared successfully',
-      shares: application.shares,
-      metrics: application.metrics
-    });
-  } else {
-    res.status(404);
-    throw new Error('Application not found');
+  // Validate inputs
+  if (!mongoose.Types.ObjectId.isValid(appId) || !mongoose.Types.ObjectId.isValid(commentId)) {
+    res.status(400);
+    throw new Error("Invalid ID format");
   }
-});
+
+  if (!reply || !reply.trim()) {
+    res.status(400);
+    throw new Error("Reply text is required");
+  }
+
+  const application = await Application.findById(appId);
+  if (!application) {
+    res.status(404);
+    throw new Error("Application not found");
+  }
+
+  // Find the comment to reply to
+  const comment = application.comments.id(commentId);
+  if (!comment) {
+    res.status(404);
+    throw new Error("Comment not found");
+  }
+
+  // Verify the original comment user exists
+  if (!comment.user) {
+    res.status(404);
+    throw new Error("Original comment author not found");
+  }
+
+  // Create new reply
+  const newReply = {
+    _id: new mongoose.Types.ObjectId(),
+    user: req.user._id, // Current authenticated user
+    name: req.user.name,
+    avatar: req.user.avatar || '/SHCAPL-logo.jpg',
+    reply: reply.trim(),
+    replyTo: comment.user, // Original comment author
+    likes: [],
+    isEdited: false,
+    status: "active",
+    createdAt: new Date()
+  };
+
+  // Add the reply
+  comment.replies.unshift(newReply);
+  
+  // Update metrics
+  application.metrics = application.metrics || { commentsCount: 0, repliesCount: 0 };
+  application.metrics.repliesCount = (application.metrics.repliesCount || 0) + 1;
+  
+  await application.save();
+
+  // Return the parent comment with updated replies
+  res.status(201).json(comment);
+})
+
+
+
 
 export { 
   getApplications, 
@@ -447,8 +522,9 @@ export {
   createApplicationReview, 
   getTopApplications, 
   likeApplication, 
+  shareApplication,
   addComment, 
   editComment, 
   deleteComment,
-  shareApplication 
+  replyToComment
 };

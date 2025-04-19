@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import { useAddCommentMutation } from '../../slices/applicationsSlice';
 import { Button, Form } from 'react-bootstrap';
 
-const AddComment = ({ appId }) => {
+const AddComment = ({ appId, onAddComment }) => {
   const [commentText, setCommentText] = useState('');
   const [addComment, { isLoading }] = useAddCommentMutation();
   const { userInfo } = useSelector(state => state.auth);
@@ -17,19 +17,22 @@ const AddComment = ({ appId }) => {
     toastId.current = toast.loading('Posting comment...');
   
     try {
-      await addComment({ 
+      const newComment = await addComment({ 
         appId, 
         comment: commentText,
-        userId: userInfo._id // Required for optimistic update
+        userId: userInfo._id
       }).unwrap();
       
       setCommentText('');
+      onAddComment(newComment);
+
       toast.update(toastId.current, {
         render: 'Comment posted successfully!',
         type: 'success',
         isLoading: false,
         autoClose: 3000
       });
+      
     } catch (error) {
       toast.update(toastId.current, {
         render: error.data?.message || 'Failed to post comment',

@@ -94,6 +94,30 @@ const optimisticHandler = {
       draft.comments = draft.comments.filter(c => c._id !== commentId);
     },
 
+    commentReply(draft, { commentId, reply, currentUser, optimisticId }) {
+      const comment = draft.comments?.find(c => c._id === commentId);
+      if (!comment) return;
+      
+      comment.replies = comment.replies || [];
+      comment.replies.unshift({
+        _id: optimisticId,
+        user: currentUser._id,
+        name: currentUser.name,
+        avatar: currentUser.avatar || '/SHCAPL-logo.jpg',
+        reply,
+        replyTo: comment.user,
+        likes: [],
+        isEdited: false,
+        isOptimistic: true,
+        status: "active",
+        createdAt: new Date().toISOString()
+      });
+      
+      if (draft.metrics) {
+        draft.metrics.repliesCount = (draft.metrics.repliesCount || 0) + 1;
+      }
+    },
+
   },
 
   // Data preparers
@@ -124,6 +148,15 @@ const optimisticHandler = {
         commentId: arg.commentId 
       };
     },
+
+    commentReply(arg, currentUser) {
+      return {
+        commentId: arg.commentId,
+        reply: arg.reply,
+        currentUser,
+        optimisticId: `optimistic-reply-${Date.now()}`
+      };
+    }
     
   }
 };

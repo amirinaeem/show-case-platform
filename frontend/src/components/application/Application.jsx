@@ -52,9 +52,48 @@ function Application({ application: initialApplication }) {
     refetch(); // Ensure we have fresh data
   };
 
-  const handleCommentSuccess = () => {
-    refetch(); // Ensure we have fresh data
-  };
+ // Simplified and cleaned up handleComment
+const handleCommentUpdate = (updatedData) => {
+  // Update local state immediately
+  setCurrentApplication(prev => {
+    let newComments = [...prev.comments];
+    
+    // Handle different operation types
+    if (updatedData._id && updatedData.replies) {
+      // Reply case - update parent comment's replies
+      newComments = newComments.map(comment => 
+        comment._id === updatedData._id ? updatedData : comment
+      );
+    } 
+    else if (updatedData._id && updatedData.comment) {
+      // Edit case - update the comment
+      newComments = newComments.map(comment =>
+        comment._id === updatedData._id ? updatedData : comment
+      );
+    }
+    else if (updatedData._id) {
+      // New comment case
+      newComments = [updatedData, ...newComments];
+    }
+    
+    return {
+      ...prev,
+      comments: newComments,
+      metrics: {
+        ...prev.metrics,
+        ...updatedData.metrics
+      }
+    };
+  });
+
+  refetch(); // Always sync with server
+};
+
+// In the return statement:
+<CommentsList 
+  onCommentUpdate={handleCommentUpdate}
+  // ... other props
+/>
 
   const handleShareSuccess = (result) => {
     setCurrentApplication(prev => ({
@@ -151,7 +190,7 @@ function Application({ application: initialApplication }) {
           application={currentApplication}
           userInfo={userInfo}
           onLikeSuccess={handleLikeSuccess}
-          onCommentSuccess={handleCommentSuccess}
+          onCommentUpdate={handleCommentUpdate}
           onShareSuccess={handleShareSuccess}
           onToggleComments={toggleComments}
           showComments={showComments}
@@ -160,11 +199,11 @@ function Application({ application: initialApplication }) {
       
       {showComments && (
         <CommentsList 
-          comments={currentApplication.comments || []} 
+          comments={currentApplication.comments || []}
           appId={currentApplication._id}
           currentUserId={userInfo?._id}
           isAdmin={userInfo?.isAdmin || false}
-          onCommentSuccess={handleCommentSuccess}
+          onCommentUpdate={handleCommentUpdate}
           onCommentDelete={() => refetch()} 
         />
       )}

@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useDeleteCommentMutation } from '../../slices/applicationsSlice';
 
-const DeleteComment = ({ commentId, appId, userId, commentUserId, isAdmin = false }) => {
+const DeleteComment = ({ commentId, onDeleteComment, appId, userId, commentUserId, isAdmin = false }) => {
   const [deleteComment, { isLoading }] = useDeleteCommentMutation();
 
 
@@ -19,8 +19,8 @@ const DeleteComment = ({ commentId, appId, userId, commentUserId, isAdmin = fals
     }
 
     try {
-      const result = await deleteComment({ appId, commentId }).unwrap();
-      console.log('Deletion successful:', result);
+      const deletedComment = await deleteComment({ appId, commentId }).unwrap();
+      onDeleteComment(deletedComment);
     } catch (error) {
       console.error('Deletion failed:', {
         status: error.status,

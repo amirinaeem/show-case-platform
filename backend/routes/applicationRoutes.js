@@ -8,6 +8,7 @@ import {
   addComment,
   editComment,
   deleteComment,
+  replyToComment,
   shareApplication,
   updateApplication,
   deleteApplication,
@@ -15,6 +16,7 @@ import {
   getTopApplications
 } from '../controllers/applicationController.js';
 import { protect, admin, commentOwnerOrAdmin } from '../middleware/authMiddleware.js';
+
 
 // ======================
 // Public Routes
@@ -57,7 +59,8 @@ router.route('/:id/comments')
 
 router.route('/:id/comments/:commentId')
   .put(protect, commentOwnerOrAdmin, editComment)
-  .delete(protect, commentOwnerOrAdmin, deleteComment);
+  .delete(protect, commentOwnerOrAdmin, deleteComment)
+  .post(protect, replyToComment);
 
 
 export default router;
