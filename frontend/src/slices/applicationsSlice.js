@@ -2,10 +2,8 @@ import { APPLICATIONS_URL, UPLOAD_URL } from '../constants';
 import { apiSlice } from './apiSlice';
 import optimisticHandler from '../utils/optimisticHandler';
 
-
 export const applicationsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // Basic Application Endpoints
     getApplications: builder.query({
       query: ({ keyword, pageNumber }) => ({
         url: APPLICATIONS_URL,
@@ -83,7 +81,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Application'],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'likeToggle',
-        optimisticHandler.preparers.likeToggle
+        'likeToggle'
       )
     }),
 
@@ -94,13 +92,8 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Application'],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
-        (draft) => {
-          draft.shares = (draft.shares || 0) + 1;
-          if (draft.metrics) {
-            draft.metrics.shares = (draft.metrics.shares || 0) + 1;
-          }
-        },
-        () => ({})
+        'shareIncrement',
+        'shareIncrement'
       )
     }),
 
@@ -115,7 +108,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       ],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'commentAdd',
-        optimisticHandler.preparers.commentAdd
+        'commentAdd'
       )
     }),
 
@@ -131,7 +124,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       ],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'commentEdit',
-        optimisticHandler.preparers.commentEdit
+        'commentEdit'
       )
     }),
 
@@ -145,56 +138,55 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       ],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'commentDelete',
-        optimisticHandler.preparers.commentDelete
+        'commentDelete'
       )
     }),
 
     replyToComment: builder.mutation({
       query: ({ appId, commentId, reply }) => ({
-        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}`,
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/reply`,
         method: 'POST',
-        body: { reply },
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}` // Ensure auth header
-        }
+        body: { reply }
       }),
       invalidatesTags: (result, error, { appId }) => [
         { type: 'Application', id: appId }
       ],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'commentReply',
-        optimisticHandler.preparers.commentReply
+        'commentReply'
       )
     }),
 
+    likeComment: builder.mutation({
+      query: ({ appId, commentId }) => ({
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/like`,
+        method: 'POST'
+      }),
+      invalidatesTags: (result, error, { appId }) => [
+        { type: 'Application', id: appId }
+      ],
+      onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
+        'commentLike',
+        'commentLike'
+      )
+    }),
   }),
 });
 
-// Export hooks in a consistent order
 export const {
-  // Query hooks
   useGetApplicationsQuery,
   useGetApplicationDetailsQuery,
   useGetTopApplicationsQuery,
-  
-  // Application CRUD mutations
   useCreateApplicationMutation,
   useUpdateApplicationMutation,
   useDeleteApplicationMutation,
   useUploadApplicationFileMutation,
-  
-  // Review mutations
   useCreateReviewMutation,
-  
-  // Engagement mutations
   useLikeApplicationMutation,
   useShareApplicationMutation,
-  
-  // Comment system mutations
   useAddCommentMutation,
   useEditCommentMutation,
   useDeleteCommentMutation,
-  useReplyToCommentMutation
-
+  useReplyToCommentMutation,
+  useLikeCommentMutation
 } = applicationsApiSlice;

@@ -2,16 +2,31 @@ import { toast } from 'react-toastify';
 
 const optimisticHandler = {
   createHandler: (apiSlice) => ({
-    execute: (actionName, dataPreparer) => async (arg, { dispatch, getState, queryFulfilled }) => {
+    execute: (actionName, preparerName) => async (arg, { dispatch, getState, queryFulfilled }) => {
       try {
+        
+        if (!optimisticHandler.actions[actionName]) {
+          throw new Error(`Action ${actionName} not found`);
+        }
+        if (!optimisticHandler.preparers[preparerName]) {
+          throw new Error(`Preparer ${preparerName} not found`);
+        }
+
         const state = getState();
         const currentUser = state.auth?.userInfo;
+
+        if (!currentUser?._id) {
+          throw new Error('User not authenticated');
+        }
         
-        // Prepare optimistic data - pass both state and getState
+       
+        const dataPreparer = optimisticHandler.preparers[preparerName];
+        
+        
         const context = { state, getState };
         const optimisticData = dataPreparer(arg, currentUser, context);
         
-        // Apply optimistic update
+       
         const patchResult = dispatch(
           apiSlice.util.updateQueryData(
             'getApplicationDetails',
@@ -27,6 +42,7 @@ const optimisticHandler = {
           await queryFulfilled;
         } catch (error) {
           patchResult.undo();
+          toast.error(error.message || 'Operation failed');
           throw error;
         }
       } catch (error) {
@@ -118,6 +134,27 @@ const optimisticHandler = {
       }
     },
 
+    commentLike(draft, { commentId, userId }) {
+      if (!draft.comments) return;
+      
+      const comment = draft.comments.find(c => c._id === commentId);
+      if (!comment) return;
+      
+      comment.likes = comment.likes || [];
+      const likeIndex = comment.likes.indexOf(userId);
+      if (likeIndex === -1) {
+        comment.likes.push(userId);
+      } else {
+        comment.likes.splice(likeIndex, 1);
+      }
+    },
+
+    shareIncrement(draft) {
+      draft.shares = (draft.shares || 0) + 1;
+      if (draft.metrics) {
+        draft.metrics.shares = (draft.metrics.shares || 0) + 1;
+      }
+    }
   },
 
   // Data preparers
@@ -156,8 +193,18 @@ const optimisticHandler = {
         currentUser,
         optimisticId: `optimistic-reply-${Date.now()}`
       };
-    }
+    },
+
+    commentLike(arg, currentUser) {
+      return {
+        commentId: arg.commentId,
+        userId: currentUser._id
+      };
+    },
     
+    shareIncrement() {
+      return {};
+    }
   }
 };
 

@@ -510,6 +510,54 @@ const replyToComment = asyncHandler(async (req, res) => {
   res.status(201).json(comment);
 })
 
+// @desc    Like or unlike a comment
+// @route   POST /api/applications/:id/comments/:commentId/like
+// @access  Private
+const likeComment = asyncHandler(async (req, res) => {
+  const { id: appId, commentId } = req.params;
+  const userId = req.user._id;
+
+  // Validate inputs
+  if (!mongoose.Types.ObjectId.isValid(appId) || 
+      !mongoose.Types.ObjectId.isValid(commentId)) {
+    res.status(400);
+    throw new Error("Invalid ID format");
+  }
+
+  const application = await Application.findById(appId);
+  if (!application) {
+    res.status(404);
+    throw new Error("Application not found");
+  }
+
+  const comment = application.comments.id(commentId);
+  if (!comment) {
+    res.status(404);
+    throw new Error("Comment not found");
+  }
+
+  // Check if user already liked the comment
+  const likeIndex = comment.likes.indexOf(userId);
+  const isLiked = likeIndex !== -1;
+
+  // Toggle like status
+  if (isLiked) {
+    comment.likes.splice(likeIndex, 1);
+  } else {
+    comment.likes.push(userId);
+  }
+
+  // Save only the comment changes (no metrics update needed for individual likes)
+  await application.save();
+
+  res.status(200).json({
+    success: true,
+    action: isLiked ? "unliked" : "liked",
+    commentId: comment._id,
+    likes: comment.likes,
+    likeCount: comment.likes.length
+  });
+});
 
 
 
@@ -526,5 +574,6 @@ export {
   addComment, 
   editComment, 
   deleteComment,
-  replyToComment
+  replyToComment,
+  likeComment
 };

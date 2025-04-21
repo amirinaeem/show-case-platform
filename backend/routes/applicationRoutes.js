@@ -5,18 +5,18 @@ import {
   getApplicationById,
   createApplication,
   likeApplication,
-  addComment,
-  editComment,
-  deleteComment,
-  replyToComment,
   shareApplication,
   updateApplication,
   deleteApplication,
   createApplicationReview,
-  getTopApplications
+  getTopApplications,
+  addComment,
+  editComment,
+  deleteComment,
+  replyToComment,
+  likeComment
 } from '../controllers/applicationController.js';
 import { protect, admin, commentOwnerOrAdmin } from '../middleware/authMiddleware.js';
-
 
 // ======================
 // Public Routes
@@ -59,8 +59,12 @@ router.route('/:id/comments')
 
 router.route('/:id/comments/:commentId')
   .put(protect, commentOwnerOrAdmin, editComment)
-  .delete(protect, commentOwnerOrAdmin, deleteComment)
+  .delete(protect, commentOwnerOrAdmin, deleteComment);
+
+router.route('/:id/comments/:commentId/reply')
   .post(protect, replyToComment);
 
+router.route('/:id/comments/:commentId/like')
+  .post(protect, likeComment);
 
 export default router;

@@ -52,9 +52,8 @@ function Application({ application: initialApplication }) {
     refetch(); // Ensure we have fresh data
   };
 
- // Simplified and cleaned up handleComment
-const handleCommentUpdate = (updatedData) => {
-  // Update local state immediately
+   // Simplified and cleaned up handleComment
+   const handleCommentUpdate = (updatedData) => {
   setCurrentApplication(prev => {
     let newComments = [...prev.comments];
     
@@ -72,8 +71,19 @@ const handleCommentUpdate = (updatedData) => {
       );
     }
     else if (updatedData._id) {
-      // New comment case
-      newComments = [updatedData, ...newComments];
+      // Check if this is a like update (has likes but no other changes)
+      const existingComment = newComments.find(c => c._id === updatedData._id);
+      if (existingComment && updatedData.likes) {
+        // Like update case
+        newComments = newComments.map(comment =>
+          comment._id === updatedData._id 
+            ? { ...comment, likes: updatedData.likes }
+            : comment
+        );
+      } else {
+        // New comment case
+        newComments = [updatedData, ...newComments];
+      }
     }
     
     return {
@@ -87,13 +97,8 @@ const handleCommentUpdate = (updatedData) => {
   });
 
   refetch(); // Always sync with server
-};
+   };
 
-// In the return statement:
-<CommentsList 
-  onCommentUpdate={handleCommentUpdate}
-  // ... other props
-/>
 
   const handleShareSuccess = (result) => {
     setCurrentApplication(prev => ({

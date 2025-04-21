@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import User from "./userModel.js";
+
 
 // Schema for Review (with rating)
 const reviewSchema = new mongoose.Schema(
