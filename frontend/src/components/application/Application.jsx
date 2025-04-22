@@ -54,50 +54,70 @@ function Application({ application: initialApplication }) {
 
    // Simplified and cleaned up handleComment
    const handleCommentUpdate = (updatedData) => {
-  setCurrentApplication(prev => {
-    let newComments = [...prev.comments];
-    
-    // Handle different operation types
-    if (updatedData._id && updatedData.replies) {
-      // Reply case - update parent comment's replies
-      newComments = newComments.map(comment => 
-        comment._id === updatedData._id ? updatedData : comment
-      );
-    } 
-    else if (updatedData._id && updatedData.comment) {
-      // Edit case - update the comment
-      newComments = newComments.map(comment =>
-        comment._id === updatedData._id ? updatedData : comment
-      );
-    }
-    else if (updatedData._id) {
-      // Check if this is a like update (has likes but no other changes)
-      const existingComment = newComments.find(c => c._id === updatedData._id);
-      if (existingComment && updatedData.likes) {
-        // Like update case
+    setCurrentApplication(prev => {
+      let newComments = [...prev.comments];
+  
+      // Case 1: Reply like update
+      if (updatedData._id && updatedData.replyId && updatedData.replyLikes) {
+        newComments = newComments.map(comment => {
+          if (comment._id === updatedData._id) {
+            return {
+              ...comment,
+              replies: comment.replies.map(reply =>
+                reply._id === updatedData.replyId
+                  ? { ...reply, likes: updatedData.replyLikes }
+                  : reply
+              )
+            };
+          }
+          return comment;
+        });
+      }
+  
+      // Case 2: New reply (includes replies array)
+      else if (updatedData._id && updatedData.replies) {
         newComments = newComments.map(comment =>
-          comment._id === updatedData._id 
+          comment._id === updatedData._id ? updatedData : comment
+        );
+      }
+  
+      // Case 3: Comment edit
+      else if (updatedData._id && updatedData.comment) {
+        newComments = newComments.map(comment =>
+          comment._id === updatedData._id ? updatedData : comment
+        );
+      }
+  
+      // Case 4: Comment like
+      else if (updatedData._id && updatedData.likes) {
+        newComments = newComments.map(comment =>
+          comment._id === updatedData._id
             ? { ...comment, likes: updatedData.likes }
             : comment
         );
-      } else {
-        // New comment case
-        newComments = [updatedData, ...newComments];
       }
-    }
-    
-    return {
-      ...prev,
-      comments: newComments,
-      metrics: {
-        ...prev.metrics,
-        ...updatedData.metrics
+  
+      // Case 5: New comment
+      else if (updatedData._id) {
+        const exists = newComments.some(c => c._id === updatedData._id);
+        if (!exists) {
+          newComments = [updatedData, ...newComments];
+        }
       }
-    };
-  });
-
-  refetch(); // Always sync with server
-   };
+  
+      return {
+        ...prev,
+        comments: newComments,
+        metrics: {
+          ...prev.metrics,
+          ...updatedData.metrics
+        }
+      };
+    });
+  
+    refetch(); // Always sync with server
+  };
+  
 
 
   const handleShareSuccess = (result) => {
@@ -209,7 +229,8 @@ function Application({ application: initialApplication }) {
           currentUserId={userInfo?._id}
           isAdmin={userInfo?.isAdmin || false}
           onCommentUpdate={handleCommentUpdate}
-          onCommentDelete={() => refetch()} 
+          onCommentDelete={() => refetch()}
+          onLikeToReply={handleCommentUpdate}
         />
       )}
     </Card>

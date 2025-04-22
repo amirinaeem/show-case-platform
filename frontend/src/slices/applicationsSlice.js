@@ -144,7 +144,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
 
     replyToComment: builder.mutation({
       query: ({ appId, commentId, reply }) => ({
-        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/reply`,
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/replies`,
         method: 'POST',
         body: { reply }
       }),
@@ -159,7 +159,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
 
     likeComment: builder.mutation({
       query: ({ appId, commentId }) => ({
-        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/like`,
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/likeComment`,
         method: 'POST'
       }),
       invalidatesTags: (result, error, { appId }) => [
@@ -168,6 +168,20 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'commentLike',
         'commentLike'
+      )
+    }),
+
+    likeToReply: builder.mutation({
+      query: ({ appId, commentId, replyId }) => ({
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/replies/${replyId}/likeReply`,
+        method: 'POST'
+      }),
+      invalidatesTags: (result, error, { appId }) => [
+        { type: 'Application', id: appId }
+      ],
+      onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
+        'replyLike',
+        'replyLike'
       )
     }),
   }),
@@ -188,5 +202,6 @@ export const {
   useEditCommentMutation,
   useDeleteCommentMutation,
   useReplyToCommentMutation,
-  useLikeCommentMutation
+  useLikeCommentMutation,
+  useLikeToReplyMutation,
 } = applicationsApiSlice;

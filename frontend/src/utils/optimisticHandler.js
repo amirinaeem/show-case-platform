@@ -149,6 +149,25 @@ const optimisticHandler = {
       }
     },
 
+    replyLike(draft, { commentId, replyId, userId }) {
+      if (!draft.comments) return;
+      
+      const comment = draft.comments.find(c => c._id === commentId);
+      if (!comment || !comment.replies) return;
+
+      const reply = comment.replies.find(r => r._id === replyId);
+      if (!reply) return;
+      
+      reply.likes = reply.likes || [];
+      const likeIndex = reply.likes.indexOf(userId);
+      
+      if (likeIndex === -1) {
+        reply.likes.push(userId);
+      } else {
+        reply.likes.splice(likeIndex, 1);
+      }
+    },
+
     shareIncrement(draft) {
       draft.shares = (draft.shares || 0) + 1;
       if (draft.metrics) {
@@ -204,6 +223,13 @@ const optimisticHandler = {
     
     shareIncrement() {
       return {};
+    },
+    replyLike(arg, currentUser) {
+      return {
+        commentId: arg.commentId,
+        replyId: arg.replyId,
+        userId: currentUser._id
+      };
     }
   }
 };

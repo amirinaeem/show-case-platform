@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faReply, faThumbsUp } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faReply, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import DeleteComment from './DeleteComment';
 import EditComment from './EditComment';
 import ReplyToComment from './ReplyToComment';
 import LikeToComment from './LikeToComment';
+import LikeToReply from './LikeToReply';
 import { formatDistanceToNow } from 'date-fns';
 import '../../assets/styles/commentList.css';
 
@@ -31,6 +32,20 @@ const CommentsList = ({
     }));
   };
 
+  const getCommentAuthorName = (comment) => {
+    if (!comment?.name) return 'Anonymous';
+    return comment.name[0].toUpperCase() + comment.name.slice(1);
+  };
+
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return isNaN(date.getTime()) ? 'Just now' : formatDistanceToNow(date, { addSuffix: true });
+    } catch {
+      return 'Just now';
+    }
+  };
+
   const totalCommentsCount = comments.reduce((total, comment) => {
     return total + 1 + (comment.replies?.length || 0);
   }, 0);
@@ -55,10 +70,10 @@ const CommentsList = ({
                 <div className="comment-content-wrapper">
                   <div className="comment-header">
                     <div className="comment-author">
-                      <strong>{comment.name[0].toUpperCase() + comment.name.slice(1) || 'Anonymous'}</strong>
+                      <strong>{getCommentAuthorName(comment)}</strong>
                       {comment.isAuthor && <span className="author-title">▼ Author</span>}
                       <span className="comment-time">
-                        {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                        {formatDate(comment.createdAt)}
                         {comment.isEdited && <span className="edited-badge"> (edited)</span>}
                       </span>
                     </div>
@@ -103,15 +118,14 @@ const CommentsList = ({
                   </div>
 
                   <div className="comment-footer">
-                    
-                  <LikeToComment
+                    <LikeToComment
                       appId={appId}
                       commentId={comment._id}
                       likes={comment.likes || []}
                       onLikeToComment={(likedComment) => {
-                      onCommentUpdate?.(likedComment);
+                        onCommentUpdate?.(likedComment);
                       }}
-                     />
+                    />
 
                     <button 
                       className="comment-action-btn"
@@ -146,7 +160,7 @@ const CommentsList = ({
                     onClick={() => toggleReplies(comment._id)}
                   >
                     <FontAwesomeIcon 
-                      icon={collapsedReplies[comment._id] } 
+                      icon={collapsedReplies[comment._id] ? faChevronDown : faChevronUp} 
                     />
                     {comment.replies.length} {comment.replies.length === 1 ? 'Reply' : 'Replies'}
                   </button>
@@ -178,7 +192,7 @@ const CommentsList = ({
                                 <div className="comment-author">
                                   <strong>{reply.name || 'Anonymous'}</strong>
                                   <span className="comment-time">
-                                    {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
+                                    {formatDate(reply.createdAt)}
                                     {reply.isEdited && <span className="edited-badge"> (edited)</span>}
                                   </span>
                                 </div>
@@ -189,10 +203,15 @@ const CommentsList = ({
                               </div>
                               
                               <div className="comment-footer">
-                                <button className="comment-action-btn">
-                                  <FontAwesomeIcon icon={faThumbsUp} />
-                                  <span className="action-count">{reply.likes?.length || 0}</span>
-                                </button>
+                                <LikeToReply
+                                  appId={appId}
+                                  commentId={comment._id}
+                                  replyId={reply._id}
+                                  likes={reply.likes || []}
+                                  onLikeToReply={(likedReply) => {
+                                    onCommentUpdate?.(likedReply);
+                                  }}
+                                />
                               </div>
                             </div>
                           </div>

@@ -447,7 +447,7 @@ const deleteComment = asyncHandler(async (req, res) => {
 
 
 // @desc    Reply to Comment
-// @route   POST /api/applications/:id/comments
+// @route   POST /api/applications/:id/comments/:commentId/replies
 // @access  Private
 const replyToComment = asyncHandler(async (req, res) => {
   const { id: appId, commentId } = req.params;
@@ -559,6 +559,63 @@ const likeComment = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Like or unlike a reply
+// @route   POST /api/applications/:id/comments/:commentId/replies/:replyId/like
+// @access  Private
+const likeToReply = asyncHandler(async (req, res) => {
+  const { id: appId, commentId, replyId } = req.params;
+  const userId = req.user._id;
+
+  // Validate inputs
+  if (!mongoose.Types.ObjectId.isValid(appId) || 
+      !mongoose.Types.ObjectId.isValid(commentId) || !mongoose.Types.ObjectId.isValid(replyId)) {
+    res.status(400);
+    throw new Error("Invalid ID format");
+  }
+
+  const application = await Application.findById(appId);
+  if (!application) {
+    res.status(404);
+    throw new Error("Application not found");
+  }
+
+  const comment = application.comments.id(commentId);
+  if (!comment) {
+    res.status(404);
+    throw new Error("Comment not found");
+  }
+
+  // Correct way to find the reply
+  const reply = comment.replies.id(replyId);
+  if (!reply) {
+    res.status(404);
+    throw new Error("Reply not found"); // Fixed error message
+  }
+
+  // Check if user already liked the reply
+  const likeIndex = reply.likes.indexOf(userId);
+  const isLiked = likeIndex !== -1;
+
+  // Toggle like status
+  if (isLiked) {
+    reply.likes.splice(likeIndex, 1);
+  } else {
+    reply.likes.push(userId);
+  }
+
+  await application.save();
+
+  res.status(200).json({
+    _id: comment._id,      
+    replyId: reply._id,     
+    replyLikes: reply.likes || [], 
+    comments: application.comments.map(c => ({
+      ...c.toObject(),
+      replies: c.replies || [] 
+    }))
+  });
+});
+
 
 
 export { 
@@ -575,5 +632,6 @@ export {
   editComment, 
   deleteComment,
   replyToComment,
-  likeComment
+  likeComment,
+  likeToReply
 };
