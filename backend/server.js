@@ -1,9 +1,9 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import path from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';
-import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-dotenv.config();
 import connectDB from './config/mdb.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import { createProxyMiddleware } from 'http-proxy-middleware';
@@ -17,6 +17,11 @@ const port = process.env.PORT || 5000;
 // Connect to database
 connectDB();
 
+
+if (!process.env.MONGODB_URI) {
+    console.error('❌ MONGODB_URI is missing! Check your .env file.');
+  }
+  
 // Initialize Express app
 const app = express();
 

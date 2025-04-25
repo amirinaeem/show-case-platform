@@ -173,7 +173,21 @@ const optimisticHandler = {
       if (draft.metrics) {
         draft.metrics.shares = (draft.metrics.shares || 0) + 1;
       }
+    },
+
+    replyEdit(draft, { commentId, replyId, newText }) {
+      const comment = draft.comments?.find(c => c._id === commentId);
+      if (!comment) return;
+    
+      const reply = comment.replies?.find(r => r._id === replyId);
+      if (reply) {
+        reply.reply = newText;
+        reply.isEdited = true;
+        reply.editedAt = new Date().toISOString();
+        reply.status = "edited";
+      }
     }
+    
   },
 
   // Data preparers
@@ -230,7 +244,16 @@ const optimisticHandler = {
         replyId: arg.replyId,
         userId: currentUser._id
       };
+    },
+
+    replyEdit(arg) {
+      return {
+        commentId: arg.commentId,
+        replyId: arg.replyId,
+        newText: arg.newText
+      };
     }
+    
   }
 };
 

@@ -616,6 +616,57 @@ const likeToReply = asyncHandler(async (req, res) => {
   });
 });
 
+const editReply = asyncHandler(async (req, res) => {
+  const { id: appId, commentId, replyId } = req.params;
+  const { newText } = req.body;
+
+  // Validate Object IDs
+  validateObjectId(appId);
+  validateObjectId(commentId);
+  validateObjectId(replyId);
+
+  // Find the application
+  const application = await Application.findById(appId);
+  if (!application) {
+    res.status(404);
+    throw new Error('Application not found');
+  }
+
+  // Find the comment
+  const comment = application.comments.id(commentId);
+  if (!comment) {
+    res.status(404);
+    throw new Error('Comment not found');
+  }
+
+  // Find the reply
+  const reply = comment.replies.id(replyId);
+  if (!reply) {
+    res.status(404);
+    throw new Error('Reply not found');
+  }
+
+  // Update the reply
+  reply.reply = newText;
+  reply.isEdited = true;
+  reply.editedAt = Date.now();
+
+  // Save the application
+  const updatedApplication = await application.save();
+
+  // Find and return the updated reply
+  const updatedComment = updatedApplication.comments.id(commentId);
+  const updatedReply = updatedComment.replies.id(replyId);
+
+  res.status(200).json({
+    _id: commentId,
+    replyId: replyId,
+    updatedReplyText: updatedReply.reply,
+    isEdited: updatedReply.isEdited,
+    editedAt: updatedReply.editedAt
+  });
+});
+
 
 
 export { 
@@ -633,5 +684,6 @@ export {
   deleteComment,
   replyToComment,
   likeComment,
-  likeToReply
+  likeToReply,
+  editReply
 };

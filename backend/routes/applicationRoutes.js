@@ -15,9 +15,10 @@ import {
   deleteComment,
   replyToComment,
   likeComment,
-  likeToReply,  // Make sure this is imported
+  likeToReply,
+  editReply,  // Make sure this is imported
 } from '../controllers/applicationController.js';
-import { protect, admin, commentOwnerOrAdmin } from '../middleware/authMiddleware.js';
+import { protect, admin, commentOwnerOrAdmin, replyOwnerOrAdmin } from '../middleware/authMiddleware.js';
 
 // ======================
 // Public Routes
@@ -62,12 +63,13 @@ router.route('/:id/comments/:commentId')
   .put(protect, commentOwnerOrAdmin, editComment)
   .delete(protect, commentOwnerOrAdmin, deleteComment);
 
-router.route('/:id/comments/:commentId/replies')
-  .post(protect, replyToComment);
 
 router.route('/:id/comments/:commentId/likeComment')
   .post(protect, likeComment);
 
+router.route('/:id/comments/:commentId/replies/:replyId')
+  .post(protect, replyToComment).put(protect, replyOwnerOrAdmin, editReply)
+  
 // Fixed this route - was pointing to likeComment instead of likeToReply
 router.route('/:id/comments/:commentId/replies/:replyId/likeReply')
   .post(protect, likeToReply);  // Changed from likeComment to likeToReply

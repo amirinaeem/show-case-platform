@@ -184,6 +184,21 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         'replyLike'
       )
     }),
+
+    editReply: builder.mutation({
+      query: ({ appId, commentId, replyId, newText }) => ({
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/replies/${replyId}`,
+        method: 'PUT',
+        body: { newText }
+      }),
+      invalidatesTags: (result, error, { appId }) => [
+        { type: 'Application', id: appId }
+      ],
+      onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
+        'replyEdit',
+        'replyEdit'
+      )
+    }), 
   }),
 });
 
@@ -204,4 +219,5 @@ export const {
   useReplyToCommentMutation,
   useLikeCommentMutation,
   useLikeToReplyMutation,
+  useEditReplyMutation
 } = applicationsApiSlice;

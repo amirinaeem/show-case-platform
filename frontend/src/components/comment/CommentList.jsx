@@ -6,6 +6,7 @@ import EditComment from './EditComment';
 import ReplyToComment from './ReplyToComment';
 import LikeToComment from './LikeToComment';
 import LikeToReply from './LikeToReply';
+import EditReply from './EditReply';
 import { formatDistanceToNow } from 'date-fns';
 import '../../assets/styles/commentList.css';
 
@@ -17,6 +18,7 @@ const CommentsList = ({
   onCommentUpdate 
 }) => {
   const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingReplyId, setEditingReplyId] = useState(null);
   const [replyingToCommentId, setReplyingToCommentId] = useState(null);
   const [collapsedReplies, setCollapsedReplies] = useState(
     comments.reduce((acc, comment) => {
@@ -196,10 +198,39 @@ const CommentsList = ({
                                     {reply.isEdited && <span className="edited-badge"> (edited)</span>}
                                   </span>
                                 </div>
+                                
+                                {(currentUserId === reply.user || isAdmin) && (
+                                  <div className="comment-actions">
+                                    {editingReplyId === reply._id ? null : (
+                                      <>
+                                        <button
+                                          className="comment-action-btn edit-btn"
+                                          onClick={() => setEditingReplyId(reply._id)}
+                                        >
+                                          <FontAwesomeIcon icon={faEdit} />
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                               
                               <div className="comment-content">
-                                <p>{reply.reply}</p>
+                                {editingReplyId === reply._id ? (
+                                  <EditReply
+                                    appId={appId}
+                                    commentId={comment._id}
+                                    replyId={reply._id}
+                                    currentText={reply.reply}
+                                    onEditReply={(editedReply) => {
+                                      setEditingReplyId(null);
+                                      onCommentUpdate?.(editedReply);
+                                    }}
+                                    onCancel={() => setEditingReplyId(null)}
+                                  />
+                                ) : (
+                                  <p>{reply.reply}</p>
+                                )}
                               </div>
                               
                               <div className="comment-footer">

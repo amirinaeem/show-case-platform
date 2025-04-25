@@ -57,8 +57,25 @@ function Application({ application: initialApplication }) {
     setCurrentApplication(prev => {
       let newComments = [...prev.comments];
   
+      // NEW: Handle editing a reply
+      if (updatedData._id && updatedData.replyId && updatedData.updatedReplyText) {
+        newComments = newComments.map(comment => {
+          if (comment._id === updatedData._id) {
+            return {
+              ...comment,
+              replies: comment.replies.map(reply =>
+                reply._id === updatedData.replyId
+                  ? { ...reply, comment: updatedData.updatedReplyText }
+                  : reply
+              )
+            };
+          }
+          return comment;
+        });
+      }
+  
       // Case 1: Reply like update
-      if (updatedData._id && updatedData.replyId && updatedData.replyLikes) {
+      else if (updatedData._id && updatedData.replyId && updatedData.replyLikes) {
         newComments = newComments.map(comment => {
           if (comment._id === updatedData._id) {
             return {
@@ -117,6 +134,7 @@ function Application({ application: initialApplication }) {
   
     refetch(); // Always sync with server
   };
+  
   
 
 
@@ -231,6 +249,7 @@ function Application({ application: initialApplication }) {
           onCommentUpdate={handleCommentUpdate}
           onCommentDelete={() => refetch()}
           onLikeToReply={handleCommentUpdate}
+          onEditReply = {handleCommentUpdate}
         />
       )}
     </Card>

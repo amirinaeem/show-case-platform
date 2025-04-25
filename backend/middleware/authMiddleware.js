@@ -67,4 +67,43 @@ const commentOwnerOrAdmin = asyncHandler(async (req, res, next) => {
   next();
 });
 
-export { protect, admin, commentOwnerOrAdmin };
+const replyOwnerOrAdmin = asyncHandler(async (req, res, next) => {
+  const { id: appId, commentId, replyId } = req.params;
+
+  if (
+    !mongoose.Types.ObjectId.isValid(appId) ||
+    !mongoose.Types.ObjectId.isValid(commentId) ||
+    !mongoose.Types.ObjectId.isValid(replyId)
+  ) {
+    return res.status(400).json({ message: 'Invalid ID format' });
+  }
+
+  const application = await Application.findById(appId);
+  if (!application) {
+    return res.status(404).json({ message: 'Application not found' });
+  }
+
+  const comment = application.comments.id(commentId);
+  if (!comment) {
+    return res.status(404).json({ message: 'Comment not found' });
+  }
+
+  const reply = comment.replies.id(replyId);
+  if (!reply) {
+    return res.status(404).json({ message: 'Reply not found' });
+  }
+
+  const isOwner = reply.user.toString() === req.user._id.toString();
+  const isAdmin = req.user.isAdmin;
+
+  if (!isOwner && !isAdmin) {
+    return res.status(403).json({ message: 'Not authorized to edit this reply' });
+  }
+
+  req.comment = comment; // Optional: attach if needed later
+  req.reply = reply;     // Optional
+  next();
+});  
+
+
+export { protect, admin, commentOwnerOrAdmin, replyOwnerOrAdmin };
