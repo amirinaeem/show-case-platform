@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import { toast } from 'react-toastify';
-import { useEditReplyMutation } from '../../slices/applicationsSlice';
+import { useEditCommentMutation } from '../../../slices/applicationsSlice';
 
-const EditReply = ({ 
+
+const EditComment = ({ 
   appId, 
-  commentId,
-  replyId,
+  commentId, 
   currentText,
-  onEditReply,
+  onEditComment,
   onCancel 
 }) => {
-  const [editReply] = useEditReplyMutation();
+  const [editComment] = useEditCommentMutation();
   const [text, setText] = useState(currentText);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -20,19 +20,17 @@ const EditReply = ({
     if (!text.trim() || text === currentText) return;
 
     setIsSubmitting(true);
-
     try {
-      const editedReply = await editReply({ 
+      const editedComment = await editComment({ 
         appId, 
-        commentId,
-        replyId,
+        commentId, 
         newText: text 
       }).unwrap();
-
-      toast.success('Reply updated successfully');
-      onEditReply(editedReply);
+      
+      toast.success('Comment updated successfully');
+      onEditComment(editedComment);
     } catch (error) {
-      toast.error(error.data?.message || error.message || 'Failed to update reply');
+      toast.error(error.data?.message || error.message || 'Failed to update comment');
     } finally {
       setIsSubmitting(false);
     }
@@ -40,7 +38,7 @@ const EditReply = ({
 
   return (
     <Form onSubmit={handleSubmit} className="mt-2">
-      <Form.Group controlId="editReplyText">
+      <Form.Group controlId="editCommentText">
         <Form.Control
           as="textarea"
           rows={3}
@@ -71,6 +69,6 @@ const EditReply = ({
       </div>
     </Form>
   );
-};
+}
 
-export default EditReply;
+export default EditComment;

@@ -1,7 +1,7 @@
 // components/ShareButton.js
 import { Button } from 'react-bootstrap';
 import { toast } from 'react-toastify';
-import { useShareApplicationMutation } from '../../slices/applicationsSlice';
+import { useShareApplicationMutation } from '../../../slices/applicationsSlice';
 
 const ShareButton = ({ application, onShareSuccess }) => {
   const [shareApplication] = useShareApplicationMutation();

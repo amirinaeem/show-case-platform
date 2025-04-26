@@ -3,18 +3,17 @@ import { useState, useEffect } from 'react';
 import { Card, Row, Col, Badge, Button } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import Rating from '../helpers/Rating';
-import AppFooterHandlers from './AppFooterHandlers';
-import CommentsList from '../comment/CommentList';
+import AppFooterLayout from '../application/appFooter/AppFooterLayout';
+import CommentsList from '../application/appFooter/CommentsList';
 import { useGetApplicationDetailsQuery } from '../../slices/applicationsSlice';
+
 
 function Application({ application: initialApplication }) {
   const { userInfo } = useSelector((state) => state.auth);
   const [showComments, setShowComments] = useState(false);
   
-  // Use RTK Query to get fresh data
   const { data: fetchedApplication, refetch } = useGetApplicationDetailsQuery(initialApplication._id);
   
-  // Maintain local state that syncs with both initial props and RTK Query data
   const [currentApplication, setCurrentApplication] = useState({
     ...initialApplication,
     comments: initialApplication.comments || [],
@@ -25,7 +24,6 @@ function Application({ application: initialApplication }) {
     }
   });
 
-  // Sync state when new data arrives from RTK Query
   useEffect(() => {
     if (fetchedApplication) {
       setCurrentApplication({
@@ -49,94 +47,8 @@ function Application({ application: initialApplication }) {
         likes: result.likes.length || prev.metrics.likes
       }
     }));
-    refetch(); // Ensure we have fresh data
+    refetch();
   };
-
-   // Simplified and cleaned up handleComment
-   const handleCommentUpdate = (updatedData) => {
-    setCurrentApplication(prev => {
-      let newComments = [...prev.comments];
-  
-      // NEW: Handle editing a reply
-      if (updatedData._id && updatedData.replyId && updatedData.updatedReplyText) {
-        newComments = newComments.map(comment => {
-          if (comment._id === updatedData._id) {
-            return {
-              ...comment,
-              replies: comment.replies.map(reply =>
-                reply._id === updatedData.replyId
-                  ? { ...reply, comment: updatedData.updatedReplyText }
-                  : reply
-              )
-            };
-          }
-          return comment;
-        });
-      }
-  
-      // Case 1: Reply like update
-      else if (updatedData._id && updatedData.replyId && updatedData.replyLikes) {
-        newComments = newComments.map(comment => {
-          if (comment._id === updatedData._id) {
-            return {
-              ...comment,
-              replies: comment.replies.map(reply =>
-                reply._id === updatedData.replyId
-                  ? { ...reply, likes: updatedData.replyLikes }
-                  : reply
-              )
-            };
-          }
-          return comment;
-        });
-      }
-  
-      // Case 2: New reply (includes replies array)
-      else if (updatedData._id && updatedData.replies) {
-        newComments = newComments.map(comment =>
-          comment._id === updatedData._id ? updatedData : comment
-        );
-      }
-  
-      // Case 3: Comment edit
-      else if (updatedData._id && updatedData.comment) {
-        newComments = newComments.map(comment =>
-          comment._id === updatedData._id ? updatedData : comment
-        );
-      }
-  
-      // Case 4: Comment like
-      else if (updatedData._id && updatedData.likes) {
-        newComments = newComments.map(comment =>
-          comment._id === updatedData._id
-            ? { ...comment, likes: updatedData.likes }
-            : comment
-        );
-      }
-  
-      // Case 5: New comment
-      else if (updatedData._id) {
-        const exists = newComments.some(c => c._id === updatedData._id);
-        if (!exists) {
-          newComments = [updatedData, ...newComments];
-        }
-      }
-  
-      return {
-        ...prev,
-        comments: newComments,
-        metrics: {
-          ...prev.metrics,
-          ...updatedData.metrics
-        }
-      };
-    });
-  
-    refetch(); // Always sync with server
-  };
-  
-  
-
 
   const handleShareSuccess = (result) => {
     setCurrentApplication(prev => ({
@@ -145,6 +57,77 @@ function Application({ application: initialApplication }) {
       metrics: {
         ...prev.metrics,
         shares: result.shares
+      }
+    }));
+  };
+
+  const onCommentAddHandler = (newComment) => {
+    setCurrentApplication(prev => ({
+      ...prev,
+      comments: [newComment, ...prev.comments],
+      metrics: {
+        ...prev.metrics,
+        commentsCount: (prev.metrics.commentsCount || 0) + 1
+      }
+    }));
+  };
+
+  const onDeleteCommentHandler = (deletedComment) => {
+    setCurrentApplication(prev => ({
+      ...prev,
+      comments: prev.comments.filter(c => c._id !== deletedComment._id),
+      metrics: {
+        ...prev.metrics,
+        commentsCount: (prev.metrics.commentsCount || 1) - 1
+      }
+    }));
+  };
+
+  const onEditCommentHandler = (editedComment) => {
+    setCurrentApplication(prev => ({
+      ...prev,
+      comments: prev.comments.map(c => 
+        c._id === editedComment._id ? editedComment : c
+      )
+    }));
+  };
+
+  const onEditReplyHandler = (updatedComment) => {
+    setCurrentApplication(prev => ({
+      ...prev,
+      comments: prev.comments.map(c => 
+        c._id === updatedComment._id ? updatedComment : c
+      )
+    }));
+  };
+
+  const onLikeToCommentHandler = (likedComment) => {
+    setCurrentApplication(prev => ({
+      ...prev,
+      comments: prev.comments.map(c => 
+        c._id === likedComment._id ? likedComment : c
+      )
+    }));
+  };
+
+  const onLikeToReplyHandler = (updatedComment) => {
+    setCurrentApplication(prev => ({
+      ...prev,
+      comments: prev.comments.map(c => 
+        c._id === updatedComment._id ? updatedComment : c
+      )
+    }));
+  };
+
+  const onReplyToCommentHandler = (updatedComment) => {
+    setCurrentApplication(prev => ({
+      ...prev,
+      comments: prev.comments.map(c => 
+        c._id === updatedComment._id ? updatedComment : c
+      ),
+      metrics: {
+        ...prev.metrics,
+        repliesCount: (prev.metrics.repliesCount || 0) + 1
       }
     }));
   };
@@ -227,33 +210,43 @@ function Application({ application: initialApplication }) {
           )}
         </Col>
       </Row>
-
+      
       <Card.Footer className="bg-transparent border-top position-relative">
-        <AppFooterHandlers
+        <AppFooterLayout
           application={currentApplication}
           userInfo={userInfo}
           onLikeSuccess={handleLikeSuccess}
-          onCommentUpdate={handleCommentUpdate}
           onShareSuccess={handleShareSuccess}
           onToggleComments={toggleComments}
           showComments={showComments}
+          onCommentAddHandler={onCommentAddHandler}
         />
+        
+        {showComments && (
+          <CommentsList 
+            comments={currentApplication.comments}
+            appId={currentApplication._id}
+            currentUserId={userInfo?._id}
+            isAdmin={userInfo?.isAdmin || false}
+            onDeleteCommentHandler={onDeleteCommentHandler}
+            onEditCommentHandler={onEditCommentHandler}
+            onEditReplyHandler={onEditReplyHandler}
+            onLikeToCommentHandler={onLikeToCommentHandler}
+            onLikeToReplyHandler={onLikeToReplyHandler}
+            onReplyToCommentHandler={onReplyToCommentHandler}
+          />
+        )}
       </Card.Footer>
-      
-      {showComments && (
-        <CommentsList 
-          comments={currentApplication.comments || []}
-          appId={currentApplication._id}
-          currentUserId={userInfo?._id}
-          isAdmin={userInfo?.isAdmin || false}
-          onCommentUpdate={handleCommentUpdate}
-          onCommentDelete={() => refetch()}
-          onLikeToReply={handleCommentUpdate}
-          onEditReply = {handleCommentUpdate}
-        />
-      )}
     </Card>
   );
 }
 
 export default Application;
+
+
+
+
+     
+
+
+      

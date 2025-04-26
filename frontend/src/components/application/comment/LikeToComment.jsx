@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { useLikeCommentMutation } from '../../slices/applicationsSlice';
+import { useLikeCommentMutation } from '../../../slices/applicationsSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faThumbsUp } from '@fortawesome/free-solid-svg-icons';
 

@@ -1,7 +1,7 @@
 import { Button } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
-import { useDeleteCommentMutation } from '../../slices/applicationsSlice';
+import { useDeleteCommentMutation } from '../../../slices/applicationsSlice';
 
 const DeleteComment = ({ commentId, onDeleteComment, appId, userId, commentUserId, isAdmin = false }) => {
   const [deleteComment, { isLoading }] = useDeleteCommentMutation();

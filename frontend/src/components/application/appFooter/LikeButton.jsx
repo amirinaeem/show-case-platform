@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
-import { useLikeApplicationMutation } from '../../slices/applicationsSlice';
+import { useLikeApplicationMutation } from '../../../slices/applicationsSlice';
 
 const LikeButton = ({ application, userInfo, onLikeSuccess }) => {
   const [likeApplication] = useLikeApplicationMutation();

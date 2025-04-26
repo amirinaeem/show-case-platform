@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { useLikeToReplyMutation } from '../../slices/applicationsSlice';
+import { useLikeToReplyMutation } from '../../../slices/applicationsSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faThumbsUp } from '@fortawesome/free-solid-svg-icons';
 
@@ -20,7 +20,7 @@ const LikeToReply = ({ appId, onLikeToReply, commentId, replyId, likes = [] }) =
     try {
       toastId.current = toast.loading('Updating like...');
       
-      const response = await likeReply({ 
+      const likedReply = await likeReply({ 
         appId,
         commentId,
         replyId
@@ -30,8 +30,8 @@ const LikeToReply = ({ appId, onLikeToReply, commentId, replyId, likes = [] }) =
       onLikeToReply?.({
         _id: commentId,
         replyId: replyId,
-        replyLikes: response.replyLikes,
-        metrics: response.metrics || {}
+        replyLikes: likedReply.replyLikes,
+        metrics: likedReply.metrics || {}
       });
       
       toast.update(toastId.current, {

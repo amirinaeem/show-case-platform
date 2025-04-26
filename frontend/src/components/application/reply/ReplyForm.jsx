@@ -1,14 +1,19 @@
-import React, { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { useReplyToCommentMutation } from '../../slices/applicationsSlice';
+import { useReplyToCommentMutation } from '../../../slices/applicationsSlice';
 import { Button, Form } from 'react-bootstrap';
 
-const ReplyToComment = ({ appId, onReplyToComment, commentId, commentUserId,  }) => {
+const ReplyForm = ({ 
+  appId, 
+  commentId, 
+  commentUserId,
+  onReplyToComment 
+}) => {
   const [replyText, setReplyText] = useState('');
   const [replyToComment, { isLoading }] = useReplyToCommentMutation();
   const { userInfo } = useSelector(state => state.auth);
-  const toastId = React.useRef(null);
+  const toastId = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -70,7 +75,7 @@ const ReplyToComment = ({ appId, onReplyToComment, commentId, commentUserId,  })
           <Button
             variant="outline-secondary"
             size="sm"
-            onClick={() => onReplyToComment?.()} // This will trigger the parent to close the form
+            onClick={() => onReplyToComment?.()}
             disabled={isLoading}
           >
             Cancel
@@ -89,4 +94,4 @@ const ReplyToComment = ({ appId, onReplyToComment, commentId, commentUserId,  })
   );
 };
 
-export default React.memo(ReplyToComment);
+export default ReplyForm;
