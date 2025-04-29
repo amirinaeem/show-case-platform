@@ -15,7 +15,6 @@ const AppFooterLayout = ({
   userInfo,
   onToggleComments,
   showComments,
-  onAddComment
 }) => {
   const [showCommentForm, setShowCommentForm] = useState(false);
   const navigate = useNavigate();
@@ -58,9 +57,9 @@ const AppFooterLayout = ({
           >
             <i className="far fa-comment me-1"></i> Comment
             {commentCount > 0 && (
-              <span className="ms-1 badge bg-secondary">
-                {commentCount}
-              </span>
+              <span className="ms-2 badge bg-light text-dark border rounded-pill px-2">
+              {commentCount}
+            </span>
             )}
           </Button>
 

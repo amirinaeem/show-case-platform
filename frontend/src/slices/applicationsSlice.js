@@ -78,7 +78,8 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         url: `${APPLICATIONS_URL}/${appId}/like`,
         method: 'POST',
       }),
-      invalidatesTags: ['Application'],
+      invalidatesTags: (result, error, id) => [{ type: 'Application', id }],
+      providesTags: (result, error, id) => [{ type: 'Application', id }],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'likeToggle',
         'likeToggle'
