@@ -14,12 +14,8 @@ const CommentsList = ({
   appId, 
   currentUserId, 
   isAdmin = false,
-  onDeleteCommentHandler,
-  onEditCommentHandler,
-  onEditReplyHandler,
-  onLikeToCommentHandler,
-  onLikeToReplyHandler,
-  onReplyToCommentHandler,
+  onRefetch,
+  onAddComment
 }) => {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [replyingToCommentId, setReplyingToCommentId] = useState(null);
@@ -61,6 +57,10 @@ const CommentsList = ({
     return total + 1 + (comment.replies?.length || 0);
   }, 0);
 
+  const handleSuccess = () => {
+    onRefetch?.();
+  };
+
   return (
     <div className="comments-container">
       <h6 className="comments-title">Comments ({totalCommentsCount})</h6>
@@ -74,6 +74,7 @@ const CommentsList = ({
                   <img 
                     src={comment.avatar || '/SHCAPL-logo.jpg'} 
                     alt={comment.name || 'User'} 
+                    loading="lazy"
                   />
                 </div>
                 
@@ -93,13 +94,14 @@ const CommentsList = ({
                         <button
                           className="comment-action-btn edit-btn"
                           onClick={() => setEditingCommentId(comment._id)}
+                          aria-label="Edit comment"
                         >
                           <FontAwesomeIcon icon={faEdit} />
                         </button>
                         <DeleteComment
                           commentId={comment._id}
                           appId={appId}
-                          onDeleteComment={(deletedComment) => onDeleteCommentHandler(deletedComment)}
+                          onSuccess={handleSuccess}
                         />
                       </div>
                     )}
@@ -111,10 +113,7 @@ const CommentsList = ({
                         appId={appId}
                         commentId={comment._id}
                         currentText={comment.comment}
-                        onEditComment={(editedComment) => {
-                          setEditingCommentId(null);
-                          onEditCommentHandler?.(editedComment);
-                        }}
+                        onSuccess={handleSuccess}
                         onCancel={() => setEditingCommentId(null)}
                       />
                     ) : (
@@ -127,9 +126,6 @@ const CommentsList = ({
                       appId={appId}
                       commentId={comment._id}
                       likes={comment.likes || []}
-                      onLikeToComment={(likedComment) => {
-                        onLikeToCommentHandler?.(likedComment);
-                      }}
                     />
 
                     <button 
@@ -137,6 +133,7 @@ const CommentsList = ({
                       onClick={() => setReplyingToCommentId(
                         replyingToCommentId === comment._id ? null : comment._id
                       )}
+                      aria-label={replyingToCommentId === comment._id ? 'Cancel reply' : 'Reply to comment'}
                     >
                       <FontAwesomeIcon icon={faReply} />
                       <span className="action-count">{comment.replies?.length || 0}</span>
@@ -149,11 +146,11 @@ const CommentsList = ({
                 <ReplyForm
                   appId={appId}
                   commentId={comment._id}
-                  commentUserId={comment.user}
-                  onReplyToComment={(repliedComment) => {
+                  onSuccess={() => {
                     setReplyingToCommentId(null);
-                    onReplyToCommentHandler?.(repliedComment);
+                    handleSuccess();
                   }}
+                  onCancel={() => setReplyingToCommentId(null)}
                 />
               )}
 
@@ -164,8 +161,6 @@ const CommentsList = ({
                 isAdmin={isAdmin}
                 collapsedReplies={collapsedReplies}
                 toggleReplies={toggleReplies}
-                onEditReplyHandler={onEditReplyHandler}
-                onLikeToReplyHandler={onLikeToReplyHandler}
                 getAuthorName={getAuthorName}
                 formatDate={formatDate}
               />

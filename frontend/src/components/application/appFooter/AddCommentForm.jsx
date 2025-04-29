@@ -1,17 +1,15 @@
 import { useState, useRef } from 'react';
-import { useSelector } from 'react-redux';
 import { useAddCommentMutation } from '../../../slices/applicationsSlice';
 import { Button, Form } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 
+
 const AddCommentForm = ({ 
-  application, 
-  onAddComment, 
+  appId,
   onCancel 
 }) => {
   const [commentText, setCommentText] = useState('');
   const [addComment, { isLoading }] = useAddCommentMutation();
-  const { userInfo } = useSelector((state) => state.auth);
   const toastId = useRef(null);
 
   const handleSubmit = async (e) => {
@@ -21,15 +19,13 @@ const AddCommentForm = ({
     toastId.current = toast.loading('Posting comment...');
 
     try {
-      const newComment = await addComment({
-        appId: application._id,
+        await addComment({
+        appId,
         comment: commentText,
-        userId: userInfo._id,
       }).unwrap();
 
       setCommentText('');
-      onAddComment(newComment);
-
+  
       toast.update(toastId.current, {
         render: 'Comment posted successfully!',
         type: 'success',

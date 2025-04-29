@@ -3,34 +3,22 @@ import { Button, Form } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { useEditCommentMutation } from '../../../slices/applicationsSlice';
 
-
-const EditComment = ({ 
-  appId, 
-  commentId, 
-  currentText,
-  onEditComment,
-  onCancel 
-}) => {
+const EditComment = ({ appId, commentId, currentText, onCancel }) => {
   const [editComment] = useEditCommentMutation();
   const [text, setText] = useState(currentText);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
-    e?.preventDefault();
+    e.preventDefault();
     if (!text.trim() || text === currentText) return;
 
     setIsSubmitting(true);
     try {
-      const editedComment = await editComment({ 
-        appId, 
-        commentId, 
-        newText: text 
-      }).unwrap();
-      
+      await editComment({ appId, commentId, newText: text }).unwrap();
       toast.success('Comment updated successfully');
-      onEditComment(editedComment);
+      onCancel();
     } catch (error) {
-      toast.error(error.data?.message || error.message || 'Failed to update comment');
+      toast.error(error.data?.message || 'Failed to update comment');
     } finally {
       setIsSubmitting(false);
     }
@@ -69,6 +57,6 @@ const EditComment = ({
       </div>
     </Form>
   );
-}
+};
 
 export default EditComment;

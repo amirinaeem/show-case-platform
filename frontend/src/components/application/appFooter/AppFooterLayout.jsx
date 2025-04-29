@@ -1,19 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { Button } from 'react-bootstrap';
 import LikeButton from './LikeButton';
 import ShareButton from './ShareButton';
 import AddCommentForm from './AddCommentForm';
-import { Button } from 'react-bootstrap';
+import CommentsList from './CommentsList';
 
 const AppFooterLayout = ({
-  application,
+  appId,
+  comments,
+  likes = [],
+  metrics = {},
   userInfo,
-  onLikeSuccess,
-  onShareSuccess,
   onToggleComments,
   showComments,
-  onCommentAddHandler,
+  onAddComment
 }) => {
   const [showCommentForm, setShowCommentForm] = useState(false);
   const navigate = useNavigate();
@@ -25,19 +27,17 @@ const AppFooterLayout = ({
       return;
     }
     setShowCommentForm(prev => !prev);
-    if (!showComments) onToggleComments();
-  };
-
-  const handleAddComment = (newComment) => {
-    onCommentAddHandler(newComment);
-    setShowCommentForm(false);
+    if (!showComments) {
+      onToggleComments();
+    }
   };
 
   const handleCancelComment = () => {
     setShowCommentForm(false);
   };
 
-  const commentCount = (application.metrics?.commentsCount || 0) + (application.metrics?.repliesCount || 0);
+
+  const commentCount = (metrics.commentsCount || 0) + (metrics.repliesCount || 0);
 
   return (
     <>
@@ -45,35 +45,44 @@ const AppFooterLayout = ({
       <div className="m-2 app-actions-container">
         <div className="d-flex justify-content-between align-items-center mb-2">
           <LikeButton
-            application={application}
-            userInfo={userInfo}
-            onLikeSuccess={onLikeSuccess}
+            appId={appId}
+            likes={likes}
           />
 
           <Button
             variant={showCommentForm ? 'primary' : 'outline-secondary'}
             className={`comment-button ${showCommentForm ? 'active' : ''}`}
             onClick={handleCommentButtonClick}
+            aria-expanded={showCommentForm}
+            aria-label={showCommentForm ? 'Hide comment form' : 'Show comment form'}
           >
             <i className="far fa-comment me-1"></i> Comment
-            {commentCount > 0 && <span className="ms-1">({commentCount})</span>}
+            {commentCount > 0 && (
+              <span className="ms-1 badge bg-secondary">
+                {commentCount}
+              </span>
+            )}
           </Button>
 
-          <ShareButton
-            application={application}
-            onShareSuccess={onShareSuccess}
-          />
+          <ShareButton appId={appId} />
         </div>
       </div>
 
-      {/* Comment Form - Rendered below footer but controlled by footer */}
+      {/* Comment Form */}
       {showCommentForm && (
-        <div className="px-3 pb-3">
+        <div className="px-3 pb-3" aria-live="polite">
           <AddCommentForm
-            application={application}
-            onAddComment={handleAddComment}
+            appId={appId}
             onCancel={handleCancelComment}
           />
+
+        <CommentsList 
+            comments={comments}
+            appId={appId}
+            currentUserId={userInfo?._id}
+            isAdmin={userInfo?.isAdmin || false}
+          />
+
         </div>
       )}
     </>

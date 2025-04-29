@@ -13,10 +13,8 @@ const RepliesList = ({
   isAdmin,
   collapsedReplies,
   toggleReplies,
-  onEditReplyHandler,
-  onLikeToReplyHandler,
-  getAuthorName,
-  formatDate
+  getAuthorName, // Added as prop
+  formatDate,    // Added as prop
 }) => {
   const [editingReplyId, setEditingReplyId] = useState(null);
 
@@ -27,6 +25,8 @@ const RepliesList = ({
       <button 
         className="toggle-replies-btn"
         onClick={() => toggleReplies(comment._id)}
+        aria-expanded={!collapsedReplies[comment._id]}
+        aria-label={`${collapsedReplies[comment._id] ? 'Show' : 'Hide'} replies`}
       >
         <FontAwesomeIcon 
           icon={collapsedReplies[comment._id] ? faChevronDown : faChevronUp} 
@@ -53,6 +53,7 @@ const RepliesList = ({
                   <img 
                     src={reply.avatar || '/SHCAPL-logo.jpg'} 
                     alt={reply.name || 'User'} 
+                    loading="lazy"
                   />
                 </div>
                 
@@ -73,6 +74,7 @@ const RepliesList = ({
                             <button
                               className="comment-action-btn edit-btn"
                               onClick={() => setEditingReplyId(reply._id)}
+                              aria-label="Edit reply"
                             >
                               <FontAwesomeIcon icon={faEdit} />
                             </button>
@@ -80,12 +82,6 @@ const RepliesList = ({
                               commentId={comment._id}
                               replyId={reply._id}
                               appId={appId}
-                              onDeleteComment={(deletedReply) => {
-                                onEditReplyHandler?.({
-                                  ...comment,
-                                  replies: comment.replies.filter(r => r._id !== deletedReply._id)
-                                });
-                              }}
                             />
                           </>
                         )}
@@ -100,15 +96,6 @@ const RepliesList = ({
                         commentId={comment._id}
                         replyId={reply._id}
                         currentText={reply.reply}
-                        onEditReply={(editedReply) => {
-                          setEditingReplyId(null);
-                          onEditReplyHandler?.({
-                            ...comment,
-                            replies: comment.replies.map(r => 
-                              r._id === reply._id ? editedReply : r
-                            )
-                          });
-                        }}
                         onCancel={() => setEditingReplyId(null)}
                       />
                     ) : (
@@ -122,14 +109,6 @@ const RepliesList = ({
                       commentId={comment._id}
                       replyId={reply._id}
                       likes={reply.likes || []}
-                      onLikeToReply={(likedReply) => {
-                        onLikeToReplyHandler?.({
-                          ...comment,
-                          replies: comment.replies.map(r => 
-                            r._id === reply._id ? likedReply : r
-                          )
-                        });
-                      }}
                     />
                   </div>
                 </div>

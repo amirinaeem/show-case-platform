@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Button } from 'react-bootstrap';
-import { toast } from 'react-toastify';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { Button } from 'react-bootstrap';
 import { useLikeApplicationMutation } from '../../../slices/applicationsSlice';
 
-const LikeButton = ({ application, userInfo, onLikeSuccess }) => {
+const LikeButton = ({ appId, likes = [] }) => {  // Simplified props
   const [likeApplication] = useLikeApplicationMutation();
+  const { userInfo } = useSelector(state => state.auth);
   const [isLiked, setIsLiked] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    setIsLiked(userInfo && application.likes?.includes(userInfo._id));
-  }, [userInfo, application.likes]);
+    setIsLiked(userInfo && likes.includes(userInfo._id));
+  }, [userInfo, likes]);
 
   const handleLike = async () => {
     if (!userInfo) {
@@ -21,15 +23,11 @@ const LikeButton = ({ application, userInfo, onLikeSuccess }) => {
     }
 
     try {
-      const result = await likeApplication(application._id).unwrap();
-      onLikeSuccess?.(result);
+      await likeApplication(appId).unwrap();
     } catch (error) {
       toast.error(error.data?.message || 'Failed to update like');
     }
   };
-
-  // Get like count from application metrics or likes array
-  const likeCount = application.metrics?.likes || application.likes?.length || 0;
 
   return (
     <Button 
@@ -38,7 +36,7 @@ const LikeButton = ({ application, userInfo, onLikeSuccess }) => {
       aria-label={isLiked ? 'Unlike' : 'Like'}
     >
       <span className="ms-1">Like</span>
-      {likeCount > 0 && <span className="ms-1">({likeCount})</span>}
+      {likes.length > 0 && <span className="ms-1">({likes.length})</span>}
     </Button>
   );
 };

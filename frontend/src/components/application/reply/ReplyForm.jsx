@@ -1,17 +1,17 @@
 import { useState, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { useReplyToCommentMutation } from '../../../slices/applicationsSlice';
 import { Button, Form } from 'react-bootstrap';
+import { useReplyToCommentMutation } from '../../../slices/applicationsSlice';
 
 const ReplyForm = ({ 
   appId, 
   commentId, 
-  commentUserId,
-  onReplyToComment 
+  onSuccess, 
+  onCancel  // Changed from onReplyToComment to onCancel for consistency
 }) => {
   const [replyText, setReplyText] = useState('');
-  const [replyToComment, { isLoading }] = useReplyToCommentMutation();
+  const [addReply, { isLoading }] = useReplyToCommentMutation();
   const { userInfo } = useSelector(state => state.auth);
   const toastId = useRef(null);
 
@@ -23,21 +23,22 @@ const ReplyForm = ({
       return;
     }
     
-    if (isLoading) return;
+    if (!userInfo) {
+      toast.error('Please login to post a reply');
+      return;
+    }
 
     try {
       toastId.current = toast.loading('Posting your reply...');
-      
-      const repliedComment = await replyToComment({ 
-        appId,
+      await addReply({ 
+        appId, 
         commentId, 
-        commentUserId,
         reply: replyText,
-        userId: userInfo._id
+        userId: userInfo._id 
       }).unwrap();
-
+      
       setReplyText('');
-      onReplyToComment?.(repliedComment);
+      onSuccess?.();
       
       toast.update(toastId.current, {
         render: 'Reply posted successfully!',
@@ -46,9 +47,8 @@ const ReplyForm = ({
         autoClose: 3000
       });
     } catch (error) {
-      console.error('Failed to post reply:', error);
       toast.update(toastId.current, {
-        render: error.data?.message || 'Failed to post reply. Please try again.',
+        render: error.data?.message || 'Failed to post reply',
         type: 'error',
         isLoading: false,
         autoClose: 3000
@@ -68,6 +68,7 @@ const ReplyForm = ({
             placeholder="Write your reply..."
             disabled={isLoading}
             style={{ minHeight: '100px' }}
+            aria-label="Reply text input"
           />
         </Form.Group>
         
@@ -75,8 +76,9 @@ const ReplyForm = ({
           <Button
             variant="outline-secondary"
             size="sm"
-            onClick={() => onReplyToComment?.()}
+            onClick={onCancel}  // Fixed to use onCancel prop
             disabled={isLoading}
+            aria-label="Cancel reply"
           >
             Cancel
           </Button>
@@ -85,6 +87,7 @@ const ReplyForm = ({
             size="sm"
             type="submit"
             disabled={isLoading || !replyText.trim()}
+            aria-label="Submit reply"
           >
             {isLoading ? 'Posting...' : 'Post Reply'}
           </Button>
