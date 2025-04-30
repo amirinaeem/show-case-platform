@@ -115,19 +115,19 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
 
     editComment: builder.mutation({
       query: ({ appId, commentId, newText }) => ({
-        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}`,
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/editComment`,
         method: 'PUT',
-        body: { newText }
+        body: { newText },
       }),
-      invalidatesTags: (result, error, { appId }) => [
-        { type: 'Application', id: appId },
-        'Comment'
+      invalidatesTags: (result, error, { commentId }) => [
+        { type: 'Comment', id: commentId }
       ],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'commentEdit',
         'commentEdit'
-      )
+      ),
     }),
+    
 
     deleteComment: builder.mutation({
       query: ({ appId, commentId }) => ({

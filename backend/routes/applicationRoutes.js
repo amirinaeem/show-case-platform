@@ -60,10 +60,11 @@ router.route('/:id/comments')
   .post(protect, addComment);
 
 router.route('/:id/comments/:commentId')
-  .put(protect, commentOwnerOrAdmin, editComment)
   .delete(protect, commentOwnerOrAdmin, deleteComment);
 
-
+router.route('/:id/comments/:commentId/editComment')
+.put(protect, commentOwnerOrAdmin, editComment)
+  
 router.route('/:id/comments/:commentId/likeComment')
   .post(protect, likeComment);
 

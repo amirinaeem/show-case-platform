@@ -356,40 +356,45 @@ const addComment = asyncHandler(async (req, res) => {
 });
 
 // @desc    Edit a comment
-// @route   PUT /api/applications/:id/comments/:commentId
+// @route   PUT /api/applications/:id/comments/:commentId/edit
 // @access  Private
 const editComment = asyncHandler(async (req, res) => {
-  validateObjectId(req.params.id);
-  validateObjectId(req.params.commentId);
-  validateCommentText(req.body.newText);
+  const { id: appId, commentId } = req.params;
+  const { newText } = req.body;
 
-  const application = await Application.findOneAndUpdate(
-    { 
-      _id: req.params.id,
-      'comments._id': req.params.commentId,
-      'comments.user': req.user._id
-    },
-    { 
-      $set: { 
-        'comments.$.comment': req.body.newText,
-        'comments.$.isEdited': true,
-        'comments.$.editedAt': new Date()
-      } 
-    },
-    { new: true }
-  );
+  // Validate Object IDs
+  validateObjectId(appId);
+  validateObjectId(commentId);
 
+  // Find the application
+  const application = await Application.findById(appId);
   if (!application) {
     res.status(404);
-    throw new Error('Comment not found or unauthorized');
+    throw new Error('Application not found');
   }
 
-  const updatedComment = application.comments.id(req.params.commentId);
+  // Find the comment by ID in subdocument array
+  const comment = application.comments.id(commentId);
+  if (!comment) {
+    res.status(404);
+    throw new Error('Comment not found');
+  }
+
+  // Update fields directly on the subdocument
+  comment.comment = newText;
+  comment.isEdited = true;
+  comment.editedAt = Date.now();
+
+  await application.save();
+
   res.status(200).json({
-    message: "Comment updated",
-    comment: updatedComment.toObject()
+    _id: comment._id,
+    comment: comment.comment,
+    isEdited: comment.isEdited,
+    editedAt: comment.editedAt
   });
 });
+
 
 // @desc    Delete a comment
 // @route   DELETE /api/applications/:id/comments/:commentId

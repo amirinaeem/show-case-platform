@@ -15,7 +15,6 @@ const CommentsList = ({
   currentUserId, 
   isAdmin = false,
   onRefetch,
-  onAddComment
 }) => {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [replyingToCommentId, setReplyingToCommentId] = useState(null);
@@ -113,7 +112,6 @@ const CommentsList = ({
                         appId={appId}
                         commentId={comment._id}
                         currentText={comment.comment}
-                        onSuccess={handleSuccess}
                         onCancel={() => setEditingCommentId(null)}
                       />
                     ) : (

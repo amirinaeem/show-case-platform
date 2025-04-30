@@ -4,15 +4,18 @@ import { toast } from 'react-toastify';
 import { useEditCommentMutation } from '../../../slices/applicationsSlice';
 
 const EditComment = ({ appId, commentId, currentText, onCancel }) => {
+
   const [editComment] = useEditCommentMutation();
   const [text, setText] = useState(currentText);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
+
     e.preventDefault();
     if (!text.trim() || text === currentText) return;
 
     setIsSubmitting(true);
+    
     try {
       await editComment({ appId, commentId, newText: text }).unwrap();
       toast.success('Comment updated successfully');
