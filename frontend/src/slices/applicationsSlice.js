@@ -78,12 +78,10 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         url: `${APPLICATIONS_URL}/${appId}/like`,
         method: 'POST',
       }),
-      invalidatesTags: (result, error, id) => [{ type: 'Application', id }],
-      providesTags: (result, error, id) => [{ type: 'Application', id }],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'likeToggle',
         'likeToggle'
-      )
+      ),
     }),
 
     shareApplication: builder.mutation({
@@ -91,26 +89,22 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         url: `${APPLICATIONS_URL}/${appId}/share`,
         method: 'POST',
       }),
-      invalidatesTags: ['Application'],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'shareIncrement',
         'shareIncrement'
-      )
+      ),
     }),
 
     addComment: builder.mutation({
       query: ({ appId, comment }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments`,
         method: 'POST',
-        body: { comment }
+        body: { comment },
       }),
-      invalidatesTags: (result, error, { appId }) => [
-        { type: 'Application', id: appId }
-      ],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'commentAdd',
         'commentAdd'
-      )
+      ),
     }),
 
     editComment: builder.mutation({
@@ -119,87 +113,68 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'PUT',
         body: { newText },
       }),
-      invalidatesTags: (result, error, { commentId }) => [
-        { type: 'Comment', id: commentId }
-      ],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'commentEdit',
         'commentEdit'
       ),
     }),
-    
 
     deleteComment: builder.mutation({
       query: ({ appId, commentId }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}`,
-        method: 'DELETE'
+        method: 'DELETE',
       }),
-      invalidatesTags: (result, error, { appId }) => [
-        { type: 'Application', id: appId }
-      ],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'commentDelete',
         'commentDelete'
-      )
+      ),
     }),
 
     replyToComment: builder.mutation({
       query: ({ appId, commentId, reply }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/replies`,
         method: 'POST',
-        body: { reply }
+        body: { reply },
       }),
-      invalidatesTags: (result, error, { appId }) => [
-        { type: 'Application', id: appId }
-      ],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'commentReply',
         'commentReply'
-      )
+      ),
     }),
 
     likeComment: builder.mutation({
       query: ({ appId, commentId }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/likeComment`,
-        method: 'POST'
+        method: 'POST',
       }),
-      invalidatesTags: (result, error, { appId }) => [
-        { type: 'Application', id: appId }
-      ],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'commentLike',
         'commentLike'
-      )
+      ),
     }),
 
     likeToReply: builder.mutation({
       query: ({ appId, commentId, replyId }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/replies/${replyId}/likeReply`,
-        method: 'POST'
+        method: 'POST',
       }),
-      invalidatesTags: (result, error, { appId }) => [
-        { type: 'Application', id: appId }
-      ],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'replyLike',
         'replyLike'
-      )
+      ),
     }),
 
     editReply: builder.mutation({
       query: ({ appId, commentId, replyId, newText }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/replies/${replyId}`,
         method: 'PUT',
-        body: { newText }
+        body: { newText },
       }),
-      invalidatesTags: (result, error, { appId }) => [
-        { type: 'Application', id: appId }
-      ],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'replyEdit',
         'replyEdit'
-      )
-    }), 
+      ),
+    }),
   }),
 });
 
@@ -220,5 +195,5 @@ export const {
   useReplyToCommentMutation,
   useLikeCommentMutation,
   useLikeToReplyMutation,
-  useEditReplyMutation
+  useEditReplyMutation,
 } = applicationsApiSlice;

@@ -2,7 +2,6 @@ import { toast } from 'react-toastify';
 
 const optimisticHandler = {
   createHandler: (apiSlice) => ({
-
     // General function for optimistic update
     execute: (actionName, preparerName) => async (arg, { dispatch, getState, queryFulfilled }) => {
       try {
@@ -65,7 +64,6 @@ const optimisticHandler = {
         throw error;
       }
     }
-
   }),
 
   // Action implementations
@@ -126,7 +124,7 @@ const optimisticHandler = {
     commentReply(draft, { commentId, reply, currentUser, optimisticId }) {
       const comment = draft.comments?.find(c => c._id === commentId);
       if (!comment) return;
-      
+
       comment.replies = comment.replies || [];
       comment.replies.unshift({
         _id: optimisticId,
@@ -267,5 +265,3 @@ const optimisticHandler = {
 };
 
 export default optimisticHandler;
-
-
