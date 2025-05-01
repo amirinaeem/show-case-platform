@@ -59,7 +59,7 @@ router.route('/:id/reviews')
 router.route('/:id/comments')
   .post(protect, addComment);
 
-router.route('/:id/comments/:commentId')
+router.route('/:id/comments/:commentId/deleteComment')
   .delete(protect, commentOwnerOrAdmin, deleteComment);
 
 router.route('/:id/comments/:commentId/editComment')

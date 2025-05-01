@@ -100,7 +100,6 @@ const CommentsList = ({
                         <DeleteComment
                           commentId={comment._id}
                           appId={appId}
-                          onSuccess={handleSuccess}
                         />
                       </div>
                     )}

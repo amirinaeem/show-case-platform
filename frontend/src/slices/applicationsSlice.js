@@ -121,7 +121,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
 
     deleteComment: builder.mutation({
       query: ({ appId, commentId }) => ({
-        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}`,
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/deleteComment`,
         method: 'DELETE',
       }),
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(

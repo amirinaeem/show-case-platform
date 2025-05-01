@@ -410,7 +410,7 @@ const deleteComment = asyncHandler(async (req, res) => {
     });
 
     if (!application) {
-      console.log('Application not found:', appId);
+      console.log('Application not found:', id);
       return res.status(404).json({ message: 'Application not found' });
     }
 
@@ -427,7 +427,7 @@ const deleteComment = asyncHandler(async (req, res) => {
     }
 
     // Remove the comment
-    application.comments.splice(commentIndex, 1);
+    application.comments.pull({ _id: commentId });
     
     // Update metrics
     if (application.metrics?.commentsCount) {
