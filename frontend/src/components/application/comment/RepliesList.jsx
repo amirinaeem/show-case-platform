@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState} from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import DeleteComment from './DeleteComment';
@@ -13,33 +13,33 @@ const RepliesList = ({
   isAdmin,
   collapsedReplies,
   toggleReplies,
-  getAuthorName, // Added as prop
-  formatDate,    // Added as prop
+  getAuthorName,
+  formatDate,
 }) => {
   const [editingReplyId, setEditingReplyId] = useState(null);
+  const isExpanded = !collapsedReplies[comment._id]; // true = expanded
+
 
   if (!comment.replies?.length) return null;
 
   return (
     <div className="replies-container">
-      <button 
+      <button
         className="toggle-replies-btn"
         onClick={() => toggleReplies(comment._id)}
-        aria-expanded={!collapsedReplies[comment._id]}
-        aria-label={`${collapsedReplies[comment._id] ? 'Show' : 'Hide'} replies`}
+        aria-expanded={isExpanded}
+        aria-label={`${isExpanded ? 'Hide' : 'Show'} replies`}
       >
-        <FontAwesomeIcon 
-          icon={collapsedReplies[comment._id] ? faChevronDown : faChevronUp} 
-        />
+        <FontAwesomeIcon icon={isExpanded? faChevronUp : faChevronDown} />
         {comment.replies.length} {comment.replies.length === 1 ? 'Reply' : 'Replies'}
       </button>
 
-      {!collapsedReplies[comment._id] && (
+      {isExpanded && (
         <ul className="replies-list">
           {comment.replies.map((reply) => (
             <li key={reply._id} className="reply-item">
               <svg className="reply-connector" width="40" height="60">
-                <path 
+                <path
                   d="M20 0 V 20 H 40 V 40"
                   stroke="#6c757d"
                   strokeWidth="1.5"
@@ -47,16 +47,16 @@ const RepliesList = ({
                   markerEnd="url(#arrowhead)"
                 />
               </svg>
-              
+
               <div className="comment-row">
                 <div className="avatar-circle small">
-                  <img 
-                    src={reply.avatar || '/SHCAPL-logo.jpg'} 
-                    alt={reply.name || 'User'} 
+                  <img
+                    src={reply.avatar || '/SHCAPL-logo.jpg'}
+                    alt={reply.name || 'User'}
                     loading="lazy"
                   />
                 </div>
-                
+
                 <div className="comment-content-wrapper">
                   <div className="comment-header">
                     <div className="comment-author">
@@ -66,10 +66,10 @@ const RepliesList = ({
                         {reply.isEdited && <span className="edited-badge"> (edited)</span>}
                       </span>
                     </div>
-                    
+
                     {(currentUserId === reply.user || isAdmin) && (
                       <div className="comment-actions">
-                        {editingReplyId === reply._id ? null : (
+                        {editingReplyId !== reply._id && (
                           <>
                             <button
                               className="comment-action-btn edit-btn"
@@ -88,7 +88,7 @@ const RepliesList = ({
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="comment-content">
                     {editingReplyId === reply._id ? (
                       <EditReply
@@ -102,7 +102,7 @@ const RepliesList = ({
                       <p>{reply.reply}</p>
                     )}
                   </div>
-                  
+
                   <div className="comment-footer">
                     <LikeToReply
                       appId={appId}

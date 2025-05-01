@@ -68,6 +68,9 @@ router.route('/:id/comments/:commentId/editComment')
 router.route('/:id/comments/:commentId/likeComment')
   .post(protect, likeComment);
 
+router.route('/:id/comments/:commentId/replyComment')
+  .post(protect, replyToComment);
+
 router.route('/:id/comments/:commentId/replies/:replyId')
   .post(protect, replyToComment).put(protect, replyOwnerOrAdmin, editReply)
   

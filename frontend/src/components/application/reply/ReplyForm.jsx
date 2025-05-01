@@ -4,25 +4,20 @@ import { toast } from 'react-toastify';
 import { Button, Form } from 'react-bootstrap';
 import { useReplyToCommentMutation } from '../../../slices/applicationsSlice';
 
-const ReplyForm = ({ 
-  appId, 
-  commentId, 
-  onSuccess, 
-  onCancel  // Changed from onReplyToComment to onCancel for consistency
-}) => {
+const ReplyForm = ({ appId, commentId, onCancel }) => {
   const [replyText, setReplyText] = useState('');
-  const [addReply, { isLoading }] = useReplyToCommentMutation();
-  const { userInfo } = useSelector(state => state.auth);
+  const [replyToComment, { isLoading }] = useReplyToCommentMutation();
+  const { userInfo } = useSelector((state) => state.auth);
   const toastId = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!replyText.trim()) {
       toast.error('Reply cannot be empty');
       return;
     }
-    
+
     if (!userInfo) {
       toast.error('Please login to post a reply');
       return;
@@ -30,28 +25,25 @@ const ReplyForm = ({
 
     try {
       toastId.current = toast.loading('Posting your reply...');
-      await addReply({ 
-        appId, 
-        commentId, 
-        reply: replyText,
-        userId: userInfo._id 
-      }).unwrap();
-      
+
+      await replyToComment({ appId, commentId, reply: replyText }).unwrap();
+
       setReplyText('');
-      onSuccess?.();
-      
+     
       toast.update(toastId.current, {
         render: 'Reply posted successfully!',
         type: 'success',
         isLoading: false,
-        autoClose: 3000
+        autoClose: 3000,
       });
+
+      onCancel?.();
     } catch (error) {
       toast.update(toastId.current, {
-        render: error.data?.message || 'Failed to post reply',
+        render: error?.data?.message || 'Failed to post reply',
         type: 'error',
         isLoading: false,
-        autoClose: 3000
+        autoClose: 3000,
       });
     }
   };
@@ -71,12 +63,12 @@ const ReplyForm = ({
             aria-label="Reply text input"
           />
         </Form.Group>
-        
+
         <div className="d-flex justify-content-end gap-2">
           <Button
             variant="outline-secondary"
             size="sm"
-            onClick={onCancel}  // Fixed to use onCancel prop
+            onClick={onCancel}
             disabled={isLoading}
             aria-label="Cancel reply"
           >

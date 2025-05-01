@@ -452,7 +452,7 @@ const deleteComment = asyncHandler(async (req, res) => {
 
 
 // @desc    Reply to Comment
-// @route   POST /api/applications/:id/comments/:commentId/replies
+// @route   POST /api/applications/:id/comments/:commentId/replyComment
 // @access  Private
 const replyToComment = asyncHandler(async (req, res) => {
   const { id: appId, commentId } = req.params;
@@ -495,7 +495,7 @@ const replyToComment = asyncHandler(async (req, res) => {
     name: req.user.name,
     avatar: req.user.avatar || '/SHCAPL-logo.jpg',
     reply: reply.trim(),
-    replyTo: comment.user, // Original comment author
+    replyTo: comment.user || null, // Original comment author
     likes: [],
     isEdited: false,
     status: "active",
@@ -512,11 +512,11 @@ const replyToComment = asyncHandler(async (req, res) => {
   await application.save();
 
   // Return the parent comment with updated replies
-  res.status(201).json(comment);
+  res.status(201).json(newReply);
 })
 
 // @desc    Like or unlike a comment
-// @route   POST /api/applications/:id/comments/:commentId/like
+// @route   POST /api/applications/:id/comments/:commentId/likeComment
 // @access  Private
 const likeComment = asyncHandler(async (req, res) => {
   const { id: appId, commentId } = req.params;
@@ -542,7 +542,9 @@ const likeComment = asyncHandler(async (req, res) => {
   }
 
   // Check if user already liked the comment
-  const likeIndex = comment.likes.indexOf(userId);
+  const likeIndex = comment.likes.findIndex(
+    (id) => id.toString() === userId.toString()
+  );
   const isLiked = likeIndex !== -1;
 
   // Toggle like status

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faReply } from '@fortawesome/free-solid-svg-icons';
 import DeleteComment from '../comment/DeleteComment';
@@ -14,14 +14,13 @@ const CommentsList = ({
   appId, 
   currentUserId, 
   isAdmin = false,
-  onRefetch,
 }) => {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [replyingToCommentId, setReplyingToCommentId] = useState(null);
   const [collapsedReplies, setCollapsedReplies] = useState({});
 
   // Initialize collapsed state
-  useState(() => {
+  useEffect(() => {
     const initialCollapsed = {};
     comments.forEach(comment => {
       if (comment.replies?.length) {
@@ -56,9 +55,7 @@ const CommentsList = ({
     return total + 1 + (comment.replies?.length || 0);
   }, 0);
 
-  const handleSuccess = () => {
-    onRefetch?.();
-  };
+  
 
   return (
     <div className="comments-container">
@@ -145,7 +142,6 @@ const CommentsList = ({
                   commentId={comment._id}
                   onSuccess={() => {
                     setReplyingToCommentId(null);
-                    handleSuccess();
                   }}
                   onCancel={() => setReplyingToCommentId(null)}
                 />

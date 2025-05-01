@@ -13,8 +13,9 @@ const AppFooterLayout = ({
   likes = [],
   metrics = {},
   userInfo,
-  onToggleComments,
   showComments,
+  onToggleComments,
+
 }) => {
   const [showCommentForm, setShowCommentForm] = useState(false);
   const navigate = useNavigate();
@@ -25,11 +26,14 @@ const AppFooterLayout = ({
       navigate('/login');
       return;
     }
-    setShowCommentForm(prev => !prev);
+    
     if (!showComments) {
-      onToggleComments();
+      onToggleComments(); // this shows the CommentsList section
     }
+  
+    setShowCommentForm(prev => !prev); // toggle only the form
   };
+  
 
   const handleCancelComment = () => {
     setShowCommentForm(false);
