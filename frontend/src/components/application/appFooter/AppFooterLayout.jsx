@@ -13,10 +13,8 @@ const AppFooterLayout = ({
   likes = [],
   metrics = {},
   userInfo,
-  showComments,
-  onToggleComments,
-
 }) => {
+  const [toggleState, setToggleState] = useState(false); // unified toggle
   const [showCommentForm, setShowCommentForm] = useState(false);
   const navigate = useNavigate();
 
@@ -26,31 +24,23 @@ const AppFooterLayout = ({
       navigate('/login');
       return;
     }
-    
-    if (!showComments) {
-      onToggleComments(); // this shows the CommentsList section
-    }
-  
-    setShowCommentForm(prev => !prev); // toggle only the form
+
+    const nextState = !toggleState; // invert both states
+    setToggleState(nextState);
+    setShowCommentForm(nextState);
   };
-  
 
   const handleCancelComment = () => {
-    setShowCommentForm(false);
+    setShowCommentForm(false); // only hides the form, does NOT affect toggleState
   };
-
 
   const commentCount = (metrics.commentsCount || 0) + (metrics.repliesCount || 0);
 
   return (
     <>
-      {/* Footer Actions */}
       <div className="m-2 app-actions-container">
         <div className="d-flex justify-content-between align-items-center mb-2">
-          <LikeButton
-            appId={appId}
-            likes={likes}
-          />
+          <LikeButton appId={appId} likes={likes} />
 
           <Button
             variant={showCommentForm ? 'primary' : 'outline-secondary'}
@@ -62,8 +52,8 @@ const AppFooterLayout = ({
             <i className="far fa-comment me-1"></i> Comment
             {commentCount > 0 && (
               <span className="ms-2 badge bg-light text-dark border rounded-pill px-2">
-              {commentCount}
-            </span>
+                {commentCount}
+              </span>
             )}
           </Button>
 
@@ -71,22 +61,19 @@ const AppFooterLayout = ({
         </div>
       </div>
 
-      {/* Comment Form */}
       {showCommentForm && (
         <div className="px-3 pb-3" aria-live="polite">
-          <AddCommentForm
-            appId={appId}
-            onCancel={handleCancelComment}
-          />
-
-        <CommentsList 
-            comments={comments}
-            appId={appId}
-            currentUserId={userInfo?._id}
-            isAdmin={userInfo?.isAdmin || false}
-          />
-
+          <AddCommentForm appId={appId} onCancel={handleCancelComment} />
         </div>
+      )}
+
+      {toggleState && (
+        <CommentsList
+          comments={comments}
+          appId={appId}
+          currentUserId={userInfo?._id}
+          isAdmin={userInfo?.isAdmin || false}
+        />
       )}
     </>
   );

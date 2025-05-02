@@ -1,5 +1,4 @@
 import { useSelector } from 'react-redux';
-import { useState } from 'react';
 import { Card, Row, Col, Badge, Button } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import Rating from '../helpers/Rating';
@@ -10,7 +9,6 @@ import { useGetApplicationDetailsQuery } from '../../slices/applicationsSlice';
 function Application({ application: initialApplication }) {
 
   const { userInfo } = useSelector((state) => state.auth);
-  const [showComments, setShowComments] = useState(false);
   
   
   // RTK Query for data fetching
@@ -33,8 +31,6 @@ function Application({ application: initialApplication }) {
 
 
    
-  const toggleComments = () => setShowComments(prev => !prev);
-
   
   if (isError) return <div>Error loading application details</div>;
 
@@ -125,8 +121,7 @@ function Application({ application: initialApplication }) {
           likes={applicationData.likes || []}
           metrics={applicationData.metrics || {}}
           userInfo={userInfo}
-          onToggleComments={toggleComments}
-          showComments={showComments}
+          
         />
         
       </Card.Footer>

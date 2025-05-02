@@ -124,9 +124,19 @@ const CommentsList = ({
 
                     <button 
                       className="comment-action-btn"
-                      onClick={() => setReplyingToCommentId(
-                        replyingToCommentId === comment._id ? null : comment._id
-                      )}
+                      onClick={() => {
+                        const isCurrentlyReplying = replyingToCommentId === comment._id;
+                        setReplyingToCommentId(isCurrentlyReplying ? null : comment._id);
+                      
+                        if (!isCurrentlyReplying) {
+                          // Make sure replies list is shown when replying starts
+                          setCollapsedReplies(prev => ({
+                            ...prev,
+                            [comment._id]: false
+                          }));
+                        }
+                      }}
+                      
                       aria-label={replyingToCommentId === comment._id ? 'Cancel reply' : 'Reply to comment'}
                     >
                       <FontAwesomeIcon icon={faReply} />
