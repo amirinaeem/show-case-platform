@@ -616,10 +616,6 @@ const likeToReply = asyncHandler(async (req, res) => {
     _id: comment._id,      
     replyId: reply._id,     
     replyLikes: reply.likes || [], 
-    comments: application.comments.map(c => ({
-      ...c.toObject(),
-      replies: c.replies || [] 
-    }))
   });
 });
 

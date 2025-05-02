@@ -132,7 +132,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
 
     replyToComment: builder.mutation({
       query: ({ appId, commentId, reply }) => ({
-        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/replyComment`,
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/replies`,
         method: 'POST',
         body: { reply },
       }),
@@ -166,7 +166,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
 
     editReply: builder.mutation({
       query: ({ appId, commentId, replyId, newText }) => ({
-        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/replies/${replyId}`,
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/replies/${replyId}/editReply`,
         method: 'PUT',
         body: { newText },
       }),

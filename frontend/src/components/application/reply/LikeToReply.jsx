@@ -16,10 +16,7 @@ const LikeToReply = ({ appId, commentId, replyId, likes = [] }) => {
   const handleLike = async (e) => {
     e.preventDefault();
   
-    if (!userInfo) {
-      toast.error('Please login to like replies');
-      return;
-    }
+    if (replyId.startsWith('optimistic-reply-')) return;
 
     try {
       toastId.current = toast.loading('Updating like...');

@@ -2,28 +2,26 @@ import { toast } from 'react-toastify';
 
 const optimisticHandler = {
   createHandler: (apiSlice) => ({
-    // General function for optimistic update
     execute: (actionName, preparerName) => async (arg, { dispatch, getState, queryFulfilled }) => {
       try {
-        // Validate actions and preparers
         if (!optimisticHandler.actions[actionName]) {
           throw new Error(`Action ${actionName} not found`);
         }
         if (!optimisticHandler.preparers[preparerName]) {
           throw new Error(`Preparer ${preparerName} not found`);
         }
-
+  
         const state = getState();
         const currentUser = state.auth?.userInfo;
-
+  
         if (!currentUser?._id) {
           throw new Error('User not authenticated');
         }
-
+  
         const dataPreparer = optimisticHandler.preparers[preparerName];
         const context = { state, getState };
         const optimisticData = dataPreparer(arg, currentUser, context);
-
+  
         const patchResult = dispatch(
           apiSlice.util.updateQueryData(
             'getApplicationDetails',
@@ -34,26 +32,39 @@ const optimisticHandler = {
             }
           )
         );
-
+  
         try {
           const { data: confirmed } = await queryFulfilled;
-
-          // Post-confirmation handling: replace optimistic with confirmed data
-          if (['commentAdd', 'commentReply'].includes(actionName)) {
-            dispatch(
-              apiSlice.util.updateQueryData(
-                'getApplicationDetails',
-                arg.appId,
-                (draft) => {
-                  const index = draft.comments?.findIndex(c => c._id === optimisticData.optimisticId);
+  
+          dispatch(
+            apiSlice.util.updateQueryData(
+              'getApplicationDetails',
+              arg.appId,
+              (draft) => {
+                if (!draft?.comments) return;
+  
+                // Replace optimistic comment
+                if (actionName === 'commentAdd') {
+                  const index = draft.comments.findIndex(c => c._id === optimisticData.optimisticId);
                   if (index !== -1) {
                     draft.comments[index] = confirmed;
                   }
                 }
-              )
-            );
-          }
-
+  
+                // Replace optimistic reply
+                if (actionName === 'commentReply') {
+                  const comment = draft.comments.find(c => c._id === optimisticData.commentId);
+                  if (!comment || !comment.replies) return;
+  
+                  const replyIndex = comment.replies.findIndex(r => r._id === optimisticData.optimisticId);
+                  if (replyIndex !== -1) {
+                    comment.replies[replyIndex] = confirmed;
+                  }
+                }
+              }
+            )
+          );
+  
         } catch (error) {
           patchResult.undo();
           toast.error(error.message || 'Operation failed');
@@ -65,6 +76,7 @@ const optimisticHandler = {
       }
     }
   }),
+  
 
   // Action implementations
   actions: {

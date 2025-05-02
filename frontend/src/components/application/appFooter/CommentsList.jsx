@@ -21,13 +21,15 @@ const CommentsList = ({
 
   // Initialize collapsed state
   useEffect(() => {
-    const initialCollapsed = {};
-    comments.forEach(comment => {
-      if (comment.replies?.length) {
-        initialCollapsed[comment._id] = true;
-      }
+    setCollapsedReplies(prev => {
+      const updated = { ...prev };
+      comments.forEach(comment => {
+        if (!(comment._id in updated) && comment.replies?.length) {
+          updated[comment._id] = true; // default collapsed if not already tracked
+        }
+      });
+      return updated;
     });
-    setCollapsedReplies(initialCollapsed);
   }, [comments]);
 
   const toggleReplies = (commentId) => {

@@ -68,14 +68,11 @@ router.route('/:id/comments/:commentId/editComment')
 router.route('/:id/comments/:commentId/likeComment')
   .post(protect, likeComment);
 
-router.route('/:id/comments/:commentId/replyComment')
+router.route('/:id/comments/:commentId/replies')
   .post(protect, replyToComment);
 
-router.route('/:id/comments/:commentId/replies/:replyId')
-  .post(protect, replyToComment).put(protect, replyOwnerOrAdmin, editReply)
+router.route('/:id/comments/:commentId/replies/:replyId/editReply').put(protect, replyOwnerOrAdmin, editReply)
   
-// Fixed this route - was pointing to likeComment instead of likeToReply
-router.route('/:id/comments/:commentId/replies/:replyId/likeReply')
-  .post(protect, likeToReply);  // Changed from likeComment to likeToReply
+router.route('/:id/comments/:commentId/replies/:replyId/likeReply').post(protect, likeToReply); 
 
 export default router;
