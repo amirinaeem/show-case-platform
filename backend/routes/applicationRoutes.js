@@ -16,7 +16,8 @@ import {
   replyToComment,
   likeComment,
   likeToReply,
-  editReply,  // Make sure this is imported
+  editReply,
+  deleteReply
 } from '../controllers/applicationController.js';
 import { protect, admin, commentOwnerOrAdmin, replyOwnerOrAdmin } from '../middleware/authMiddleware.js';
 
@@ -71,7 +72,9 @@ router.route('/:id/comments/:commentId/likeComment')
 router.route('/:id/comments/:commentId/replies')
   .post(protect, replyToComment);
 
-router.route('/:id/comments/:commentId/replies/:replyId/editReply').put(protect, replyOwnerOrAdmin, editReply)
+router.route('/:id/comments/:commentId/replies/:replyId/editReply').put(protect, replyOwnerOrAdmin, editReply);
+
+router.route('/:id/comments/:commentId/replies/:replyId/deleteReply').delete(protect, replyOwnerOrAdmin, deleteReply);
   
 router.route('/:id/comments/:commentId/replies/:replyId/likeReply').post(protect, likeToReply); 
 

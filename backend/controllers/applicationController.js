@@ -402,51 +402,40 @@ const editComment = asyncHandler(async (req, res) => {
 
 const deleteComment = asyncHandler(async (req, res) => {
   const { id, commentId } = req.params;
+
   try {
-    
     const application = await Application.findOne({
       _id: id,
       'comments._id': commentId
     });
 
     if (!application) {
-      console.log('Application not found:', id);
-      return res.status(404).json({ message: 'Application not found' });
-    }
-
-    const commentIndex = application.comments.findIndex(
-      c => c._id.toString() === commentId
-    );
-
-    if (commentIndex === -1) {
-      console.log('Comment not found in application:', {
-        searchedId: commentId,
-        existingIds: application.comments.map(c => c._id.toString())
-      });
+      console.log('Application or Comment not found:', { id, commentId });
       return res.status(404).json({ message: 'Comment not found' });
     }
 
+    // Find the comment to get number of replies
+    const comment = application.comments.id(commentId);
+    const repliesCount = comment?.replies?.length || 0;
+
     // Remove the comment
     application.comments.pull({ _id: commentId });
-    
+
     // Update metrics
-    if (application.metrics?.commentsCount) {
-      application.metrics.commentsCount--;
+    const decrementBy = 1 + repliesCount;
+    if (application.metrics?.commentsCount != null) {
+      application.metrics.commentsCount = Math.max(0, application.metrics.commentsCount - decrementBy);
     }
 
     await application.save();
 
-    res.status(200).json({
-      message: "Comment deleted successfully",
-      deletedCommentId: commentId
+    res.status(200).json({ 
+      message: "Comment and its replies deleted successfully",
+      deletedReplies: repliesCount
     });
-
   } catch (error) {
-    console.error('Deletion error:', error);
-    res.status(500).json({ 
-      message: 'Server error',
-      error: error.message 
-    });
+    console.error('Deletion error for appId:', id, 'commentId:', commentId, error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -671,6 +660,54 @@ const editReply = asyncHandler(async (req, res) => {
 });
 
 
+// @desc    Delete a reply
+// @route   DELETE /api/applications/:id/comments/:commentId/replies/:replyId/deleteReply
+// @access  Private
+const deleteReply = asyncHandler(async (req, res) => {
+  const { id: appId, commentId, replyId } = req.params;
+  const userId = req.user._id;
+
+  if (
+    !mongoose.Types.ObjectId.isValid(appId) ||
+    !mongoose.Types.ObjectId.isValid(commentId) ||
+    !mongoose.Types.ObjectId.isValid(replyId)
+  ) {
+    res.status(400);
+    throw new Error("Invalid ID format");
+  }
+
+  const application = await Application.findById(appId);
+  if (!application) {
+    res.status(404);
+    throw new Error("Application not found");
+  }
+
+  const comment = application.comments.id(commentId);
+  if (!comment) {
+    res.status(404);
+    throw new Error("Comment not found");
+  }
+
+  const reply = comment.replies.id(replyId);
+  if (!reply) {
+    res.status(404);
+    throw new Error("Reply not found");
+  }
+
+  application.comments.pull({ _id: replyId });
+
+  // Optional: decrement reply count if you track it
+  if (application.metrics?.repliesCount) {
+    application.metrics.repliesCount = Math.max(0, application.metrics.repliesCount - 1);
+  }
+
+  await application.save();
+
+  res.status(200).json({ message: "Reply deleted successfully" });
+});
+
+
+
 
 export { 
   getApplications, 
@@ -688,5 +725,6 @@ export {
   replyToComment,
   likeComment,
   likeToReply,
-  editReply
+  editReply,
+  deleteReply
 };

@@ -34,7 +34,9 @@ const AppFooterLayout = ({
     setShowCommentForm(false); // only hides the form, does NOT affect toggleState
   };
 
-  const commentCount = (metrics.commentsCount || 0) + (metrics.repliesCount || 0);
+  const totalCommentsCount = comments.reduce((total, comment) => {
+    return total + 1 + (comment.replies?.length || 0);
+  }, 0);
 
   return (
     <>
@@ -50,9 +52,9 @@ const AppFooterLayout = ({
             aria-label={showCommentForm ? 'Hide comment form' : 'Show comment form'}
           >
             <i className="far fa-comment me-1"></i> Comment
-            {commentCount > 0 && (
+            {totalCommentsCount > 0 && (
               <span className="ms-2 badge bg-light text-dark border rounded-pill px-2">
-                {commentCount}
+                {totalCommentsCount}
               </span>
             )}
           </Button>

@@ -175,6 +175,17 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         'replyEdit'
       ),
     }),
+
+    deleteReply: builder.mutation({
+      query: ({ appId, commentId, replyId }) => ({
+        url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/replies/${replyId}/deleteReply`,
+        method: 'DELETE',
+      }),
+      onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
+        'replyDelete',
+        'replyDelete'
+      ),
+    }),
   }),
 });
 
@@ -196,4 +207,5 @@ export const {
   useLikeCommentMutation,
   useLikeToReplyMutation,
   useEditReplyMutation,
+  useDeleteReplyMutation
 } = applicationsApiSlice;

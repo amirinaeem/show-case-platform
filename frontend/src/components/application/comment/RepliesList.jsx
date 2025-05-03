@@ -1,7 +1,7 @@
 import { useState} from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
-import DeleteComment from './DeleteComment';
+import DeleteReply from '../reply/DeleteReply';
 import EditReply from '../reply/EditReply';
 import LikeToReply from '../reply/LikeToReply';
 import '../../../assets/styles/commentList.css';
@@ -78,7 +78,7 @@ const RepliesList = ({
                             >
                               <FontAwesomeIcon icon={faEdit} />
                             </button>
-                            <DeleteComment
+                            <DeleteReply
                               commentId={comment._id}
                               replyId={reply._id}
                               appId={appId}
@@ -121,4 +121,4 @@ const RepliesList = ({
   );
 };
 
-export default RepliesList;
+export default RepliesList
