@@ -79,7 +79,7 @@ const optimisticHandler = {
       }
     },
 
-    commentAdd(draft, { comment, currentUser, optimisticId }) {
+    commentAdd(draft, { comment, currentUser, optimisticId, linkPreview }) {
       draft.comments = draft.comments || [];
       draft.comments.unshift({
         _id: optimisticId,
@@ -94,9 +94,13 @@ const optimisticHandler = {
         status: 'active',
         pinned: false,
         createdAt: new Date().toISOString(),
+        linkPreview: linkPreview || null,
       });
-      if (draft.metrics) draft.metrics.commentsCount = (draft.metrics.commentsCount || 0) + 1;
+      if (draft.metrics) {
+        draft.metrics.commentsCount = (draft.metrics.commentsCount || 0) + 1;
+      }
     },
+    
 
     commentEdit(draft, { commentId, newText }) {
       const comment = draft.comments?.find(c => c._id === commentId);
@@ -206,6 +210,7 @@ const optimisticHandler = {
         optimisticId: `optimistic-${Date.now()}`,
       };
     },
+    
 
     commentEdit(arg) {
       return {

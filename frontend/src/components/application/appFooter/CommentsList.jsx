@@ -1,47 +1,42 @@
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faReply } from '@fortawesome/free-solid-svg-icons';
+import { formatDistanceToNow } from 'date-fns';
 import DeleteComment from '../comment/DeleteComment';
 import EditComment from '../comment/EditComment';
 import LikeToComment from '../comment/LikeToComment';
 import RepliesList from '../comment/RepliesList';
 import ReplyForm from '../reply/ReplyForm';
-import { formatDistanceToNow } from 'date-fns';
+import LinkPreviewCard from '../../helpers/LinkPreviewCard';
+
 import '../../../assets/styles/commentList.css';
 
-const CommentsList = ({ 
-  comments = [], 
-  appId, 
-  currentUserId, 
-  isAdmin = false,
-}) => {
+const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) => {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [replyingToCommentId, setReplyingToCommentId] = useState(null);
   const [collapsedReplies, setCollapsedReplies] = useState({});
 
-  // Initialize collapsed state
+  
+
   useEffect(() => {
-    setCollapsedReplies(prev => {
-      const updated = { ...prev };
-      comments.forEach(comment => {
-        if (!(comment._id in updated) && comment.replies?.length) {
-          updated[comment._id] = true; // default collapsed if not already tracked
-        }
-      });
-      return updated;
+    const initialCollapsed = {};
+    comments.forEach((comment) => {
+      if (comment.replies?.length) {
+        initialCollapsed[comment._id] = true;
+      }
     });
+    setCollapsedReplies(initialCollapsed);
   }, [comments]);
 
   const toggleReplies = (commentId) => {
-    setCollapsedReplies(prev => ({
+    setCollapsedReplies((prev) => ({
       ...prev,
-      [commentId]: !prev[commentId]
+      [commentId]: !prev[commentId],
     }));
   };
 
   const getAuthorName = (user) => {
-    if (!user?.name) return 'Anonymous';
-    return user.name[0].toUpperCase() + user.name.slice(1);
+    return user?.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : 'Anonymous';
   };
 
   const formatDate = (dateString) => {
@@ -53,29 +48,28 @@ const CommentsList = ({
     }
   };
 
-  const totalCommentsCount = comments.reduce((total, comment) => {
-    return total + 1 + (comment.replies?.length || 0);
-  }, 0);
-
-  
+  const totalCommentsCount = comments.reduce(
+    (total, comment) => total + 1 + (comment.replies?.length || 0),
+    0
+  );
 
   return (
     <div className="comments-container">
       <h6 className="comments-title">Comments ({totalCommentsCount})</h6>
-      
+
       {comments.length > 0 ? (
         <ul className="comments-list">
           {comments.map((comment) => (
             <li key={comment._id} className="comment-item">
               <div className="comment-row">
                 <div className="avatar-circle">
-                  <img 
-                    src={comment.avatar || '/SHCAPL-logo.jpg'} 
-                    alt={comment.name || 'User'} 
+                  <img
+                    src={comment.avatar || '/SHCAPL-logo.jpg'}
+                    alt={comment.name || 'User'}
                     loading="lazy"
                   />
                 </div>
-                
+
                 <div className="comment-content-wrapper">
                   <div className="comment-header">
                     <div className="comment-author">
@@ -96,10 +90,7 @@ const CommentsList = ({
                         >
                           <FontAwesomeIcon icon={faEdit} />
                         </button>
-                        <DeleteComment
-                          commentId={comment._id}
-                          appId={appId}
-                        />
+                        <DeleteComment commentId={comment._id} appId={appId} />
                       </div>
                     )}
                   </div>
@@ -111,9 +102,15 @@ const CommentsList = ({
                         commentId={comment._id}
                         currentText={comment.comment}
                         onCancel={() => setEditingCommentId(null)}
+                      
                       />
                     ) : (
-                      <p>{comment.comment}</p>
+                      <>
+                        {comment.comment && <p>{comment.comment}</p>}
+                        {comment.linkPreview?.url && (
+                          <LinkPreviewCard linkPreview={comment.linkPreview} />
+                        )}
+                      </>
                     )}
                   </div>
 
@@ -124,21 +121,18 @@ const CommentsList = ({
                       likes={comment.likes || []}
                     />
 
-                    <button 
+                    <button
                       className="comment-action-btn"
                       onClick={() => {
-                        const isCurrentlyReplying = replyingToCommentId === comment._id;
-                        setReplyingToCommentId(isCurrentlyReplying ? null : comment._id);
-                      
-                        if (!isCurrentlyReplying) {
-                          // Make sure replies list is shown when replying starts
-                          setCollapsedReplies(prev => ({
+                        const isReplying = replyingToCommentId === comment._id;
+                        setReplyingToCommentId(isReplying ? null : comment._id);
+                        if (isReplying) {
+                          setCollapsedReplies((prev) => ({
                             ...prev,
-                            [comment._id]: false
+                            [comment._id]: false,
                           }));
                         }
                       }}
-                      
                       aria-label={replyingToCommentId === comment._id ? 'Cancel reply' : 'Reply to comment'}
                     >
                       <FontAwesomeIcon icon={faReply} />
@@ -154,6 +148,11 @@ const CommentsList = ({
                   commentId={comment._id}
                   onSuccess={() => {
                     setReplyingToCommentId(null);
+                    
+                    setCollapsedReplies(prev => ({
+                      ...prev,
+                      [comment._id]: false 
+                    }));
                   }}
                   onCancel={() => setReplyingToCommentId(null)}
                 />

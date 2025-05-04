@@ -1,22 +1,9 @@
 import asyncHandler from '../middleware/asyncHandler.js';
 import Application from '../models/applicationModel.js';
+import fetchLinkMetadata from '../utils/linkPreview.js'
+import {validateCommentText, validateObjectId} from '../utils/validator.js'
 import mongoose from 'mongoose';
 
-// Helper functions
-const validateObjectId = (id) => {
-  if (!id) return false;
-  return mongoose.Types.ObjectId.isValid(id) && 
-         (new mongoose.Types.ObjectId(id)).toString() === id;
-};
-
-const validateCommentText = (comment) => {
-  if (!comment || typeof comment !== 'string' || !comment.trim()) {
-    throw new Error('comment content is required and must be a non-empty string');
-  }
-  if (comment.length > 5000) {
-    throw new Error('Comment/reply cannot exceed 500 characters');
-  }
-};
 
 // @desc    Fetch all applications
 // @route   GET /api/applications
@@ -302,6 +289,9 @@ const addComment = asyncHandler(async (req, res) => {
   const { comment } = req.body;
   const appId = req.params.id;
 
+  validateCommentText(comment)
+  validateObjectId(appId)
+
   if (!comment || !comment.trim()) {
     res.status(400);
     throw new Error("Comment text is required");
@@ -312,6 +302,9 @@ const addComment = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Application not found");
   }
+
+  const linkPreview = req.body.preview || await fetchLinkMetadata(comment);
+
 
   const newComment = {
     _id: new mongoose.Types.ObjectId(), // Ensure we have an ID
@@ -325,7 +318,8 @@ const addComment = asyncHandler(async (req, res) => {
     isOptimistic: false,
     status: "active",
     pinned: false,
-    createdAt: new Date()
+    createdAt: new Date(),
+    linkPreview
   };
 
   application.comments.unshift(newComment);
@@ -339,16 +333,7 @@ const addComment = asyncHandler(async (req, res) => {
   await application.save();
 
   res.status(201).json({
-    _id: newComment._id,
-    user: newComment.user,
-    name: newComment.name,
-    avatar: newComment.avatar,
-    comment: newComment.comment,
-    replies: [],
-    likes: [],
-    isEdited: false,
-    status: "active",
-    createdAt: newComment.createdAt,
+    ...newComment,
     metrics: {
       commentsCount: application.metrics.commentsCount
     }
@@ -477,6 +462,8 @@ const replyToComment = asyncHandler(async (req, res) => {
     throw new Error("Original comment author not found");
   }
 
+  const linkPreview = req.body.preview || await fetchLinkMetadata(reply);
+
   // Create new reply
   const newReply = {
     _id: new mongoose.Types.ObjectId(),
@@ -488,7 +475,8 @@ const replyToComment = asyncHandler(async (req, res) => {
     likes: [],
     isEdited: false,
     status: "active",
-    createdAt: new Date()
+    createdAt: new Date(),
+    linkPreview
   };
 
   // Add the reply

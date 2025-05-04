@@ -12,55 +12,69 @@ const reviewSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Enhanced Schema for Reply
+// Reply Schema
 const replySchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     name: { type: String, required: true },
-    avatar: { type: String, default: "/SHCAPL-logo.jpg" },
-    reply: { 
-      type: String, 
+    avatar: { type: String, default: '/SHCAPL-logo.jpg' },
+    reply: {
+      type: String,
       required: true,
       minlength: 1,
-      maxlength: 5000
+      maxlength: 5000,
+      trim: true,
     },
-    replyTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // For nested replies
-    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    replyTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Who is being replied to
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     isEdited: { type: Boolean, default: false },
     editedAt: { type: Date },
-    isOptimistic: { type: Boolean, default: false }, // For optimistic updates
+    isOptimistic: { type: Boolean, default: false },
     status: {
       type: String,
-      enum: ["active", "flagged", "deleted"],
-      default: "active"
-    }
+      enum: ['active', 'flagged', 'deleted'],
+      default: 'active',
+    },
+    linkPreview: {
+      url: String,
+      title: String,
+      description: String,
+      image: String,
+    },
   },
   { timestamps: true }
 );
 
-// Enhanced Schema for Comment
+// Comment Schema
 const commentSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     name: { type: String, required: true },
-    avatar: { type: String, default: "" },
-    comment: { 
-      type: String, 
+    avatar: { type: String, default: '/SHCAPL-logo.jpg' },
+    comment: {
+      type: String,
       required: true,
       minlength: 1,
-      maxlength: 5000
+      maxlength: 5000,
+      trim: true,
     },
     replies: [replySchema],
-    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     isEdited: { type: Boolean, default: false },
     editedAt: { type: Date },
-    isOptimistic: { type: Boolean, default: false }, // For optimistic updates
+    isOptimistic: { type: Boolean, default: false },
     status: {
       type: String,
-      enum: ["active", "flagged", "deleted"],
-      default: "active"
+      enum: ['active', 'flagged', 'deleted'],
+      default: 'active',
     },
-    pinned: { type: Boolean, default: false }
+    pinned: { type: Boolean, default: false },
+    linkPreview: {
+      url: String,
+      title: String,
+      description: String,
+      image: String,
+    },
   },
   { timestamps: true }
 );
