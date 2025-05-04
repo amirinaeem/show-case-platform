@@ -15,8 +15,7 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [replyingToCommentId, setReplyingToCommentId] = useState(null);
   const [collapsedReplies, setCollapsedReplies] = useState({});
-
-  
+  const [localComments, setLocalComments] = useState(comments);
 
   useEffect(() => {
     const initialCollapsed = {};
@@ -26,6 +25,7 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
       }
     });
     setCollapsedReplies(initialCollapsed);
+    setLocalComments(comments);
   }, [comments]);
 
   const toggleReplies = (commentId) => {
@@ -48,7 +48,7 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
     }
   };
 
-  const totalCommentsCount = comments.reduce(
+  const totalCommentsCount = localComments.reduce(
     (total, comment) => total + 1 + (comment.replies?.length || 0),
     0
   );
@@ -57,9 +57,9 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
     <div className="comments-container">
       <h6 className="comments-title">Comments ({totalCommentsCount})</h6>
 
-      {comments.length > 0 ? (
+      {localComments.length > 0 ? (
         <ul className="comments-list">
-          {comments.map((comment) => (
+          {localComments.map((comment) => (
             <li key={comment._id} className="comment-item">
               <div className="comment-row">
                 <div className="avatar-circle">
@@ -102,7 +102,13 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
                         commentId={comment._id}
                         currentText={comment.comment}
                         onCancel={() => setEditingCommentId(null)}
-                      
+                        onSave={(updatedComment) => {
+                          const updated = localComments.map((c) =>
+                            c._id === updatedComment._id ? { ...c, ...updatedComment } : c
+                          );
+                          setLocalComments(updated);
+                          setEditingCommentId(null);
+                        }}
                       />
                     ) : (
                       <>
@@ -133,7 +139,9 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
                           }));
                         }
                       }}
-                      aria-label={replyingToCommentId === comment._id ? 'Cancel reply' : 'Reply to comment'}
+                      aria-label={
+                        replyingToCommentId === comment._id ? 'Cancel reply' : 'Reply to comment'
+                      }
                     >
                       <FontAwesomeIcon icon={faReply} />
                       <span className="action-count">{comment.replies?.length || 0}</span>
@@ -148,10 +156,9 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
                   commentId={comment._id}
                   onSuccess={() => {
                     setReplyingToCommentId(null);
-                    
-                    setCollapsedReplies(prev => ({
+                    setCollapsedReplies((prev) => ({
                       ...prev,
-                      [comment._id]: false 
+                      [comment._id]: false,
                     }));
                   }}
                   onCancel={() => setReplyingToCommentId(null)}

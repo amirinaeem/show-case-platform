@@ -15,10 +15,7 @@ const AddCommentForm = ({ appId, onCancel }) => {
     toastId.current = toast.loading('Posting comment...');
 
     try {
-      await addComment({
-        appId,
-        comment: commentText, 
-      }).unwrap();
+       await addComment({ appId, comment: commentText }).unwrap();
 
       setCommentText('');
       toast.update(toastId.current, {
@@ -27,6 +24,7 @@ const AddCommentForm = ({ appId, onCancel }) => {
         isLoading: false,
         autoClose: 3000,
       });
+
     } catch (error) {
       toast.update(toastId.current, {
         render: error.data?.message || 'Failed to post comment',

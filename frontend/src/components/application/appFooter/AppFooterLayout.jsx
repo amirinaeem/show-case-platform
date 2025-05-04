@@ -11,10 +11,9 @@ const AppFooterLayout = ({
   appId,
   comments,
   likes = [],
-  metrics = {},
   userInfo,
 }) => {
-  const [toggleState, setToggleState] = useState(false); // unified toggle
+  const [toggleState, setToggleState] = useState(false); 
   const [showCommentForm, setShowCommentForm] = useState(false);
   const navigate = useNavigate();
 
@@ -25,13 +24,13 @@ const AppFooterLayout = ({
       return;
     }
 
-    const nextState = !toggleState; // invert both states
+    const nextState = !toggleState; 
     setToggleState(nextState);
     setShowCommentForm(nextState);
   };
 
   const handleCancelComment = () => {
-    setShowCommentForm(false); // only hides the form, does NOT affect toggleState
+    setShowCommentForm(false); 
   };
 
   const totalCommentsCount = comments.reduce((total, comment) => {
@@ -65,7 +64,10 @@ const AppFooterLayout = ({
 
       {showCommentForm && (
         <div className="px-3 pb-3" aria-live="polite">
-          <AddCommentForm appId={appId} onCancel={handleCancelComment} />
+          <AddCommentForm
+            appId={appId}
+            onCancel={handleCancelComment}
+          />
         </div>
       )}
 

@@ -288,6 +288,7 @@ const addComment = asyncHandler(async (req, res) => {
 
   const { comment } = req.body;
   const appId = req.params.id;
+  const preview = await fetchLinkMetadata(comment)
 
   validateCommentText(comment)
   validateObjectId(appId)
@@ -303,9 +304,7 @@ const addComment = asyncHandler(async (req, res) => {
     throw new Error("Application not found");
   }
 
-  const linkPreview = req.body.preview || await fetchLinkMetadata(comment);
-
-
+  
   const newComment = {
     _id: new mongoose.Types.ObjectId(), // Ensure we have an ID
     user: req.user._id,
@@ -319,7 +318,7 @@ const addComment = asyncHandler(async (req, res) => {
     status: "active",
     pinned: false,
     createdAt: new Date(),
-    linkPreview
+    linkPreview: preview
   };
 
   application.comments.unshift(newComment);
@@ -346,6 +345,7 @@ const addComment = asyncHandler(async (req, res) => {
 const editComment = asyncHandler(async (req, res) => {
   const { id: appId, commentId } = req.params;
   const { newText } = req.body;
+  const preview = await fetchLinkMetadata(newText)
 
   // Validate Object IDs
   validateObjectId(appId);
@@ -367,8 +367,10 @@ const editComment = asyncHandler(async (req, res) => {
 
   // Update fields directly on the subdocument
   comment.comment = newText;
+  comment.linkPreview = preview;
   comment.isEdited = true;
   comment.editedAt = Date.now();
+  
 
   await application.save();
 
@@ -376,7 +378,8 @@ const editComment = asyncHandler(async (req, res) => {
     _id: comment._id,
     comment: comment.comment,
     isEdited: comment.isEdited,
-    editedAt: comment.editedAt
+    editedAt: comment.editedAt,
+    linkPreview: comment.linkPreview
   });
 });
 

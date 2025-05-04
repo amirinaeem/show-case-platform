@@ -7,31 +7,40 @@ const EditComment = ({
   appId,
   commentId, 
   currentText, 
-  onCancel 
+  onCancel,
+  onSave 
 }) => {
-  const [editComment] = useEditCommentMutation();
   const [text, setText] = useState(currentText);
+  const [editComment] = useEditCommentMutation();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Inside EditComment
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!text.trim() || text === currentText) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const trimmedText = text.trim();
 
-  setIsSubmitting(true);
-  try {
-    await editComment({ appId, commentId, newText: text }).unwrap();
-    
-    toast.success('Comment updated successfully');
-  
-    onCancel();   
-  } catch (error) {
-    toast.error(error.data?.message || 'Failed to update comment');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+    if (!trimmedText || trimmedText === currentText) return;
 
+    setIsSubmitting(true);
+    try {
+      const updatedComment = await editComment({
+        appId,
+        commentId,
+        newText: trimmedText,
+      }).unwrap();
+
+      toast.success('Comment updated successfully');
+
+      if (onSave) {
+        onSave(updatedComment);
+      }
+
+      onCancel(); // close edit mode
+    } catch (error) {
+      toast.error(error?.data?.message || 'Failed to update comment');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Form onSubmit={handleSubmit} className="mt-2">
@@ -40,15 +49,12 @@ const handleSubmit = async (e) => {
           as="textarea"
           rows={3}
           value={text}
-          onChange={(e) => setText(e.target.value )}
+          onChange={(e) => setText(e.target.value)}
           disabled={isSubmitting}
           autoFocus
         />
-        
       </Form.Group>
 
-      
-      
       <div className="d-flex justify-content-end mt-2">
         <Button
           variant="outline-secondary"
