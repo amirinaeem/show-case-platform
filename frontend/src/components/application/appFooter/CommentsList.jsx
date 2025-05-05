@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faReply } from '@fortawesome/free-solid-svg-icons';
 import { formatDistanceToNow } from 'date-fns';
+
 import DeleteComment from '../comment/DeleteComment';
 import EditComment from '../comment/EditComment';
 import LikeToComment from '../comment/LikeToComment';
@@ -15,7 +16,6 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [replyingToCommentId, setReplyingToCommentId] = useState(null);
   const [collapsedReplies, setCollapsedReplies] = useState({});
-  const [localComments, setLocalComments] = useState(comments);
 
   useEffect(() => {
     const initialCollapsed = {};
@@ -25,7 +25,6 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
       }
     });
     setCollapsedReplies(initialCollapsed);
-    setLocalComments(comments);
   }, [comments]);
 
   const toggleReplies = (commentId) => {
@@ -48,7 +47,7 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
     }
   };
 
-  const totalCommentsCount = localComments.reduce(
+  const totalCommentsCount = comments.reduce(
     (total, comment) => total + 1 + (comment.replies?.length || 0),
     0
   );
@@ -57,27 +56,32 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
     <div className="comments-container">
       <h6 className="comments-title">Comments ({totalCommentsCount})</h6>
 
-      {localComments.length > 0 ? (
-        <ul className="comments-list">
-          {localComments.map((comment) => (
+      {comments.length > 0 ? (
+        <ul className="comments-list" style={{ listStyle: 'none', padding: 0 }}>
+          {comments.map((comment) => (
             <li key={comment._id} className="comment-item">
               <div className="comment-row">
-                <div className="avatar-circle">
+                <div className="avatar-circle" style={{ cursor: 'pointer' }}>
                   <img
                     src={comment.avatar || '/SHCAPL-logo.jpg'}
                     alt={comment.name || 'User'}
                     loading="lazy"
+                    style={{ cursor: 'pointer' }}
                   />
                 </div>
 
                 <div className="comment-content-wrapper">
                   <div className="comment-header">
                     <div className="comment-author">
-                      <strong>{getAuthorName(comment)}</strong>
-                      {comment.isAuthor && <span className="author-title">▼ Author</span>}
-                      <span className="comment-time">
+                      <strong style={{ cursor: 'pointer' }}>{getAuthorName(comment)}</strong>
+                      {comment.isAuthor && (
+                        <span className="author-title" style={{ cursor: 'pointer' }}>▼ Author</span>
+                      )}
+                      <span className="comment-time" style={{ cursor: 'pointer' }}>
                         {formatDate(comment.createdAt)}
-                        {comment.isEdited && <span className="edited-badge"> (edited)</span>}
+                        {comment.isEdited && (
+                          <span className="edited-badge" style={{ cursor: 'pointer' }}> (edited)</span>
+                        )}
                       </span>
                     </div>
 
@@ -87,10 +91,15 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
                           className="comment-action-btn edit-btn"
                           onClick={() => setEditingCommentId(comment._id)}
                           aria-label="Edit comment"
+                          style={{ cursor: 'pointer' }}
                         >
-                          <FontAwesomeIcon icon={faEdit} />
+                          <FontAwesomeIcon icon={faEdit} style={{ cursor: 'pointer' }} />
                         </button>
-                        <DeleteComment commentId={comment._id} appId={appId} />
+                        <DeleteComment 
+                          commentId={comment._id} 
+                          appId={appId} 
+                          style={{ cursor: 'pointer' }}
+                        />
                       </div>
                     )}
                   </div>
@@ -102,19 +111,16 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
                         commentId={comment._id}
                         currentText={comment.comment}
                         onCancel={() => setEditingCommentId(null)}
-                        onSave={(updatedComment) => {
-                          const updated = localComments.map((c) =>
-                            c._id === updatedComment._id ? { ...c, ...updatedComment } : c
-                          );
-                          setLocalComments(updated);
-                          setEditingCommentId(null);
-                        }}
+                        onSave={() => setEditingCommentId(null)}
                       />
                     ) : (
                       <>
-                        {comment.comment && <p>{comment.comment}</p>}
+                        {comment.comment && <p style={{ cursor: 'pointer' }}>{comment.comment}</p>}
                         {comment.linkPreview?.url && (
-                          <LinkPreviewCard linkPreview={comment.linkPreview} />
+                          <LinkPreviewCard 
+                            linkPreview={comment.linkPreview} 
+                            style={{ cursor: 'pointer' }}
+                          />
                         )}
                       </>
                     )}
@@ -125,6 +131,7 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
                       appId={appId}
                       commentId={comment._id}
                       likes={comment.likes || []}
+                      style={{ cursor: 'pointer' }}
                     />
 
                     <button
@@ -142,9 +149,12 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
                       aria-label={
                         replyingToCommentId === comment._id ? 'Cancel reply' : 'Reply to comment'
                       }
+                      style={{ cursor: 'pointer' }}
                     >
-                      <FontAwesomeIcon icon={faReply} />
-                      <span className="action-count">{comment.replies?.length || 0}</span>
+                      <FontAwesomeIcon icon={faReply} style={{ cursor: 'pointer' }} />
+                      <span className="action-count" style={{ cursor: 'pointer' }}>
+                        {comment.replies?.length || 0}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -179,7 +189,7 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
           ))}
         </ul>
       ) : (
-        <p className="no-comments">No comments yet</p>
+        <p className="no-comments" style={{ cursor: 'pointer' }}>No comments yet</p>
       )}
     </div>
   );

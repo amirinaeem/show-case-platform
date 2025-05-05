@@ -3,19 +3,24 @@ import { toast } from 'react-toastify';
 const optimisticHandler = {
   // Create a thunk handler for a given action and data preparer
   createHandler: (apiSlice) => ({
-    execute: (actionName, preparerName) =>
+    execute: (actionName, preparerName) => 
       async (arg, { dispatch, getState, queryFulfilled }) => {
         try {
-          const action = optimisticHandler.actions[actionName];
-          const preparer = optimisticHandler.preparers[preparerName];
-          if (!action) throw new Error(`Action "${actionName}" not found`);
-          if (!preparer) throw new Error(`Preparer "${preparerName}" not found`);
+          const { actions, preparers } = optimisticHandler;
+          
+          if (!actions[actionName]) {
+            throw new Error(`Action "${actionName}" not found`);
+          }
+          if (!preparers[preparerName]) {
+            throw new Error(`Preparer "${preparerName}" not found`);
+          }
 
-          const state = getState();
-          const currentUser = state.auth?.userInfo;
-          if (!currentUser?._id) throw new Error('User not authenticated');
+          const currentUser = getState().auth?.userInfo;
+          if (!currentUser?._id) {
+            throw new Error('User not authenticated');
+          }
 
-          const optimisticData = preparer(arg, currentUser, { state, getState });
+          const optimisticData = preparers[preparerName](arg, currentUser, { getState });
 
           const patchResult = dispatch(
             apiSlice.util.updateQueryData(
@@ -23,7 +28,7 @@ const optimisticHandler = {
               arg.appId,
               (draft) => {
                 if (!draft) return;
-                action(draft, optimisticData);
+                actions[actionName](draft, optimisticData);
               }
             )
           );
@@ -38,17 +43,24 @@ const optimisticHandler = {
                 (draft) => {
                   if (!draft?.comments) return;
 
+                  // Handle confirmed data for different actions
                   if (actionName === 'commentAdd') {
-                    const i = draft.comments.findIndex(c => c._id === optimisticData.optimisticId);
-                    if (i !== -1) draft.comments[i] = confirmed;
+                    const index = draft.comments.findIndex(
+                      c => c._id === optimisticData.optimisticId
+                    );
+                    if (index !== -1) draft.comments[index] = confirmed;
                   }
 
                   if (actionName === 'commentReply') {
-                    const comment = draft.comments.find(c => c._id === optimisticData.commentId);
+                    const comment = draft.comments.find(
+                      c => c._id === optimisticData.commentId
+                    );
                     if (!comment?.replies) return;
 
-                    const i = comment.replies.findIndex(r => r._id === optimisticData.optimisticId);
-                    if (i !== -1) comment.replies[i] = confirmed;
+                    const index = comment.replies.findIndex(
+                      r => r._id === optimisticData.optimisticId
+                    );
+                    if (index !== -1) comment.replies[index] = confirmed;
                   }
                 }
               )
@@ -68,19 +80,25 @@ const optimisticHandler = {
   // Optimistic state actions
   actions: {
     likeToggle(draft, { userId }) {
-      draft.likes = draft.likes || [];
-      const i = draft.likes.indexOf(userId);
-      if (i === -1) {
+      if (!draft.likes) draft.likes = [];
+      const index = draft.likes.indexOf(userId);
+      
+      if (index === -1) {
         draft.likes.push(userId);
-        if (draft.metrics) draft.metrics.likes = (draft.metrics.likes || 0) + 1;
+        if (draft.metrics) {
+          draft.metrics.likes = (draft.metrics.likes || 0) + 1;
+        }
       } else {
-        draft.likes.splice(i, 1);
-        if (draft.metrics) draft.metrics.likes = Math.max(0, (draft.metrics.likes || 0) - 1);
+        draft.likes.splice(index, 1);
+        if (draft.metrics) {
+          draft.metrics.likes = Math.max(0, (draft.metrics.likes || 0) - 1);
+        }
       }
     },
 
     commentAdd(draft, { comment, currentUser, optimisticId, linkPreview }) {
-      draft.comments = draft.comments || [];
+      if (!draft.comments) draft.comments = [];
+      
       draft.comments.unshift({
         _id: optimisticId,
         user: currentUser._id,
@@ -96,20 +114,21 @@ const optimisticHandler = {
         createdAt: new Date().toISOString(),
         linkPreview: linkPreview || null,
       });
+
       if (draft.metrics) {
         draft.metrics.commentsCount = (draft.metrics.commentsCount || 0) + 1;
       }
     },
-    
 
-    commentEdit(draft, { commentId, newText }) {
+    commentEdit(draft, { commentId, newText, linkPreview }) {
       const comment = draft.comments?.find(c => c._id === commentId);
-      if (comment) {
-        comment.comment = newText;
-        comment.isEdited = true;
-        comment.editedAt = new Date().toISOString();
-        comment.status = 'edited';
-      }
+      if (!comment) return;
+
+      comment.comment = newText;
+      comment.isEdited = true;
+      comment.editedAt = new Date().toISOString();
+      comment.status = 'edited';
+      comment.linkPreview = linkPreview || null;
     },
 
     commentDelete(draft, { commentId }) {
@@ -131,7 +150,8 @@ const optimisticHandler = {
       const comment = draft.comments?.find(c => c._id === commentId);
       if (!comment) return;
 
-      comment.replies = comment.replies || [];
+      if (!comment.replies) comment.replies = [];
+      
       comment.replies.unshift({
         _id: optimisticId,
         user: currentUser._id,
@@ -146,31 +166,40 @@ const optimisticHandler = {
         createdAt: new Date().toISOString(),
       });
 
-      if (draft.metrics) draft.metrics.repliesCount = (draft.metrics.repliesCount || 0) + 1;
+      if (draft.metrics) {
+        draft.metrics.repliesCount = (draft.metrics.repliesCount || 0) + 1;
+      }
     },
 
     commentLike(draft, { commentId, userId }) {
       const comment = draft.comments?.find(c => c._id === commentId);
       if (!comment) return;
 
-      comment.likes = comment.likes || [];
-      const i = comment.likes.indexOf(userId);
-      i === -1 ? comment.likes.push(userId) : comment.likes.splice(i, 1);
+      if (!comment.likes) comment.likes = [];
+      const index = comment.likes.indexOf(userId);
+      index === -1 
+        ? comment.likes.push(userId) 
+        : comment.likes.splice(index, 1);
     },
 
     replyLike(draft, { commentId, replyId, userId }) {
-      const comment = draft.comments?.find(c => c._id === commentId);
-      const reply = comment?.replies?.find(r => r._id === replyId);
+      const reply = draft.comments
+        ?.find(c => c._id === commentId)
+        ?.replies?.find(r => r._id === replyId);
       if (!reply) return;
 
-      reply.likes = reply.likes || [];
-      const i = reply.likes.indexOf(userId);
-      i === -1 ? reply.likes.push(userId) : reply.likes.splice(i, 1);
+      if (!reply.likes) reply.likes = [];
+      const index = reply.likes.indexOf(userId);
+      index === -1 
+        ? reply.likes.push(userId) 
+        : reply.likes.splice(index, 1);
     },
 
     shareIncrement(draft) {
       draft.shares = (draft.shares || 0) + 1;
-      if (draft.metrics) draft.metrics.shares = (draft.metrics.shares || 0) + 1;
+      if (draft.metrics) {
+        draft.metrics.shares = (draft.metrics.shares || 0) + 1;
+      }
     },
 
     replyEdit(draft, { commentId, replyId, newText }) {
@@ -192,7 +221,10 @@ const optimisticHandler = {
 
       comment.replies = comment.replies.filter(r => r._id !== replyId);
       if (draft.metrics) {
-        draft.metrics.repliesCount = Math.max(0, (draft.metrics.repliesCount || 0) - 1);
+        draft.metrics.repliesCount = Math.max(
+          0, 
+          (draft.metrics.repliesCount || 0) - 1
+        );
       }
     },
   },
@@ -203,26 +235,25 @@ const optimisticHandler = {
       return { userId: getState().auth.userInfo?._id };
     },
 
-    commentAdd(arg, currentUser) {
+    commentAdd(arg, currentUser, { getState }) {
       return {
         comment: arg.comment,
         currentUser,
         optimisticId: `optimistic-${Date.now()}`,
+        linkPreview: getState().applications?.linkPreview
       };
     },
-    
 
-    commentEdit(arg) {
+    commentEdit(arg, _, { getState }) {
       return {
         commentId: arg.commentId,
         newText: arg.newText,
+        linkPreview: getState().applications?.linkPreview
       };
     },
 
     commentDelete(arg) {
-      return {
-        commentId: arg.commentId,
-      };
+      return { commentId: arg.commentId };
     },
 
     commentReply(arg, currentUser) {

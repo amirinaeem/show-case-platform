@@ -436,7 +436,7 @@ const replyToComment = asyncHandler(async (req, res) => {
   const { reply } = req.body;
 
   // Validate inputs
-  if (!mongoose.Types.ObjectId.isValid(appId) || !mongoose.Types.ObjectId.isValid(commentId)) {
+  if (!validateObjectId(appId) || !validateObjectId(commentId)) {
     res.status(400);
     throw new Error("Invalid ID format");
   }
@@ -603,6 +603,8 @@ const editReply = asyncHandler(async (req, res) => {
   const { id: appId, commentId, replyId } = req.params;
   const { newText } = req.body;
 
+  const preview = await fetchLinkMetadata(newText)
+
   // Validate Object IDs
   validateObjectId(appId);
   validateObjectId(commentId);
@@ -633,6 +635,7 @@ const editReply = asyncHandler(async (req, res) => {
   reply.reply = newText;
   reply.isEdited = true;
   reply.editedAt = Date.now();
+  reply.linkPreview = preview
 
   // Save the application
   const updatedApplication = await application.save();

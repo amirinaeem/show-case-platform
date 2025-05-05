@@ -3,7 +3,7 @@ import { Button, Form } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { useEditReplyMutation } from '../../../slices/applicationsSlice';
 
-const EditReply = ({ appId, commentId, replyId, currentText, onCancel, onSuccess }) => {
+const EditReply = ({ appId, commentId, replyId, currentText, onCancel, }) => {
   const [editReply] = useEditReplyMutation();
   const [text, setText] = useState(currentText);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,7 +16,6 @@ const EditReply = ({ appId, commentId, replyId, currentText, onCancel, onSuccess
     try {
       await editReply({ appId, commentId, replyId, newText: text }).unwrap();
       toast.success('Reply updated successfully');
-      onSuccess?.();
       onCancel();
     } catch (error) {
       toast.error(error.data?.message || 'Failed to update reply');

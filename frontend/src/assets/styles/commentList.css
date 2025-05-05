@@ -197,3 +197,20 @@
   cursor: not-allowed;
 }
 
+/* Add to commentList.css */
+.comment-action-btn, 
+.avatar-circle, 
+.comment-author strong, 
+.author-title, 
+.comment-time, 
+.edited-badge,
+.no-comments,
+.comment-content p,
+.action-count {
+  cursor: pointer;
+}
+
+.comment-action-btn svg {
+  cursor: pointer;
+}
+

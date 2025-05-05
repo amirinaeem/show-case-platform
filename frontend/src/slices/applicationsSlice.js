@@ -101,6 +101,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body: { comment },
       }),
+      invalidatesTags: (result, error, { appId }) => [{ type: 'Application', id: appId }],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'commentAdd',
         'commentAdd'
@@ -113,6 +114,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'PUT',
         body: { newText },  
       }),
+      invalidatesTags: (result, error, { appId }) => [{ type: 'Application', id: appId }],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'commentEdit',
         'commentEdit'
@@ -171,6 +173,7 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         method: 'PUT',
         body: { newText },
       }),
+      invalidatesTags: (result, error, { replyId }) => [{ type: 'Reply', id: replyId }],
       onQueryStarted: optimisticHandler.createHandler(apiSlice).execute(
         'replyEdit',
         'replyEdit'
