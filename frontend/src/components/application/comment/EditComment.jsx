@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { useEditCommentMutation } from '../../../slices/applicationsSlice';
+import { fetchLinkMetadata } from '../../../utils/metaDataLink';
 
 const EditComment = ({ 
   appId,
   commentId, 
   currentText, 
-  onCancel,
-  onSave 
+  onCancel, 
 }) => {
   const [text, setText] = useState(currentText);
   const [editComment] = useEditCommentMutation();
@@ -22,19 +22,19 @@ const EditComment = ({
 
     setIsSubmitting(true);
     try {
-      const updatedComment = await editComment({
+
+      const linkPreview = await fetchLinkMetadata(trimmedText);
+
+       await editComment({
         appId,
         commentId,
         newText: trimmedText,
+        linkPreview
       }).unwrap();
 
       toast.success('Comment updated successfully');
 
-      if (onSave) {
-        onSave(updatedComment);
-      }
-
-      onCancel(); // close edit mode
+      onCancel(); 
     } catch (error) {
       toast.error(error?.data?.message || 'Failed to update comment');
     } finally {

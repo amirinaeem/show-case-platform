@@ -1,32 +1,28 @@
 import { useState, useRef } from 'react';
-import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { Button, Form } from 'react-bootstrap';
 import { useReplyToCommentMutation } from '../../../slices/applicationsSlice';
+import { fetchLinkMetadata } from '../../../utils/metaDataLink';
 
 const ReplyForm = ({ appId, commentId, onCancel }) => {
   const [replyText, setReplyText] = useState('');
   const [replyToComment, { isLoading }] = useReplyToCommentMutation();
-  const { userInfo } = useSelector((state) => state.auth);
   const toastId = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!replyText.trim()) {
-      toast.error('Reply cannot be empty');
-      return;
-    }
+    const trimmedText = replyText.trim();
+    
+    if (!trimmedText ) return;
 
-    if (!userInfo) {
-      toast.error('Please login to post a reply');
-      return;
-    }
+    toastId.current = toast.loading('Posting your reply...');
 
     try {
-      toastId.current = toast.loading('Posting your reply...');
-
-      await replyToComment({ appId, commentId, reply: replyText }).unwrap();
+      
+      const linkPreview = await fetchLinkMetadata(trimmedText);
+      
+      await replyToComment({ appId, commentId, reply: trimmedText, linkPreview }).unwrap();
 
       setReplyText('');
      

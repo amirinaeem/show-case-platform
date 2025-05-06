@@ -8,7 +8,7 @@ import EditComment from '../comment/EditComment';
 import LikeToComment from '../comment/LikeToComment';
 import RepliesList from '../comment/RepliesList';
 import ReplyForm from '../reply/ReplyForm';
-import LinkPreviewCard from '../../helpers/LinkPreviewCard';
+import LinkPreviewCard from '../../shared/LinkPreviewCard';
 
 import '../../../assets/styles/commentList.css';
 
@@ -111,7 +111,6 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
                         commentId={comment._id}
                         currentText={comment.comment}
                         onCancel={() => setEditingCommentId(null)}
-                        onSave={() => setEditingCommentId(null)}
                       />
                     ) : (
                       <>

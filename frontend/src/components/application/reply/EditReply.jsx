@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { useEditReplyMutation } from '../../../slices/applicationsSlice';
+import { fetchLinkMetadata } from '../../../utils/metaDataLink';
 
 const EditReply = ({ appId, commentId, replyId, currentText, onCancel, }) => {
   const [editReply] = useEditReplyMutation();
@@ -10,11 +11,18 @@ const EditReply = ({ appId, commentId, replyId, currentText, onCancel, }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!text.trim() || text === currentText) return;
+
+    const trimmedText = text.trim();
+    
+    if (!trimmedText || isSubmitting) return;
 
     setIsSubmitting(true);
+
     try {
-      await editReply({ appId, commentId, replyId, newText: text }).unwrap();
+
+      const linkPreview = await fetchLinkMetadata(trimmedText);
+
+      await editReply({ appId, commentId, replyId, newText: trimmedText, linkPreview }).unwrap();
       toast.success('Reply updated successfully');
       onCancel();
     } catch (error) {

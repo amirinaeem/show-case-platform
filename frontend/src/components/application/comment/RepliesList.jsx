@@ -4,7 +4,7 @@ import { faEdit, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-
 import DeleteReply from '../reply/DeleteReply';
 import EditReply from '../reply/EditReply';
 import LikeToReply from '../reply/LikeToReply';
-import LinkPreviewCard from '../../helpers/LinkPreviewCard';
+import LinkPreviewCard from '../../shared/LinkPreviewCard';
 import '../../../assets/styles/commentList.css';
 
 const RepliesList = ({

@@ -1,21 +1,33 @@
 import { useState, useRef } from 'react';
 import { useAddCommentMutation } from '../../../slices/applicationsSlice';
+import { fetchLinkMetadata } from '../../../utils/metaDataLink';
 import { Button, Form, Spinner } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 
 const AddCommentForm = ({ appId, onCancel }) => {
   const [commentText, setCommentText] = useState('');
-  const [addComment, { isLoading }] = useAddCommentMutation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [addComment] = useAddCommentMutation();
   const toastId = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!commentText.trim() || isLoading) return;
+    const trimmedText = commentText.trim();
+    
+    if (!trimmedText || isSubmitting) return;
 
+    setIsSubmitting(true);
     toastId.current = toast.loading('Posting comment...');
 
     try {
-       await addComment({ appId, comment: commentText }).unwrap();
+      // Fetch metadata on client side first for optimistic update
+      const linkPreview = await fetchLinkMetadata(trimmedText);
+      
+      await addComment({ 
+        appId, 
+        comment: trimmedText,
+        linkPreview // Pass to optimistic update
+      }).unwrap();
 
       setCommentText('');
       toast.update(toastId.current, {
@@ -24,14 +36,15 @@ const AddCommentForm = ({ appId, onCancel }) => {
         isLoading: false,
         autoClose: 3000,
       });
-
     } catch (error) {
       toast.update(toastId.current, {
-        render: error.data?.message || 'Failed to post comment',
+        render: error?.data?.message || 'Failed to post comment',
         type: 'error',
         isLoading: false,
         autoClose: 3000,
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -45,7 +58,8 @@ const AddCommentForm = ({ appId, onCancel }) => {
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             placeholder="Write your comment or paste a link..."
-            disabled={isLoading}
+            disabled={isSubmitting}
+            aria-label="Comment input"
           />
         </Form.Group>
 
@@ -55,7 +69,8 @@ const AddCommentForm = ({ appId, onCancel }) => {
             size="sm" 
             className="me-2" 
             onClick={onCancel} 
-            disabled={isLoading}
+            disabled={isSubmitting}
+            aria-label="Cancel comment"
           >
             Cancel
           </Button>
@@ -63,9 +78,21 @@ const AddCommentForm = ({ appId, onCancel }) => {
             variant="primary" 
             size="sm" 
             type="submit" 
-            disabled={isLoading || !commentText.trim()}
+            disabled={isSubmitting || !commentText.trim()}
+            aria-label="Submit comment"
           >
-            {isLoading ? <Spinner size="sm" animation="border" /> : 'Post'}
+            {isSubmitting ? (
+              <>
+                <Spinner 
+                  as="span" 
+                  animation="border" 
+                  size="sm" 
+                  role="status"
+                  aria-hidden="true"
+                />
+                <span className="visually-hidden">Posting...</span>
+              </>
+            ) : 'Post'}
           </Button>
         </div>
       </Form>
