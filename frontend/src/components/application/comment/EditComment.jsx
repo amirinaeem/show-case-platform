@@ -24,6 +24,7 @@ const EditComment = ({
     try {
 
       const linkPreview = await fetchLinkMetadata(trimmedText);
+      
 
        await editComment({
         appId,

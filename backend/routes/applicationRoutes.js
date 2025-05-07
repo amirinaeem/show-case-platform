@@ -1,5 +1,9 @@
 import express from 'express';
+import { getLinkPreview } from 'link-preview-js';
+import NodeCache from 'node-cache';
 const router = express.Router();
+const previewCache = new NodeCache({ stdTTL: 3600 });
+
 import {
   getApplications,
   getApplicationById,
@@ -21,6 +25,51 @@ import {
 } from '../controllers/applicationController.js';
 import { protect, admin, commentOwnerOrAdmin, replyOwnerOrAdmin } from '../middleware/authMiddleware.js';
 
+
+// ======================
+// Link Preview Route (with cache)
+// ======================
+router.get('/link-preview', async (req, res) => {
+  const { url, noCache } = req.query;
+
+  if (!url) {
+    return res.status(400).json({ error: 'URL parameter is required' });
+  }
+
+  if (noCache) previewCache.del(url); // Support cache busting
+
+  const cached = previewCache.get(url);
+  if (cached) return res.json(cached);
+
+  try {
+    const preview = await getLinkPreview(url, {
+      timeout: 5000,
+      followRedirects: 'follow',
+      headers: {
+        'Accept': 'text/html,application/xhtml+xml',
+        'User-Agent': 'Mozilla/5.0'
+      }
+    });
+
+    const result = {
+      url: preview.url,
+      title: preview.title || 'No title',
+      description: preview.description || '',
+      image: Array.isArray(preview.images) && preview.images.length > 0 ? preview.images[0] : null
+    };
+
+    previewCache.set(url, result); // Cache the result
+    res.json(result);
+
+  } catch (err) {
+    console.error("Backend failed to fetch link preview:", err);
+    res.status(500).json({
+      error: 'Failed to fetch link preview',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+});
+
 // ======================
 // Public Routes
 // ======================
@@ -31,6 +80,7 @@ router.get('/top', getTopApplications);
 
 router.route('/:id')
   .get(getApplicationById);
+
 
 // ======================
 // Admin-only Routes

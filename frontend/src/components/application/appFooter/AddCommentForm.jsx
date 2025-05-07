@@ -22,6 +22,8 @@ const AddCommentForm = ({ appId, onCancel }) => {
     try {
       // Fetch metadata on client side first for optimistic update
       const linkPreview = await fetchLinkMetadata(trimmedText);
+
+      console.log(linkPreview, 'the frontend preview package can not fetch the data')
       
       await addComment({ 
         appId, 

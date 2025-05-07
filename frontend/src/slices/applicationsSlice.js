@@ -95,6 +95,13 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       ),
     }),
 
+    getLinkPreview: builder.query({
+      query: (url) => ({
+        url: `${APPLICATIONS_URL}/link-preview`,
+        params: { url },
+      }),
+    }),
+
     addComment: builder.mutation({
       query: ({ appId, comment, linkPreview }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments`,
