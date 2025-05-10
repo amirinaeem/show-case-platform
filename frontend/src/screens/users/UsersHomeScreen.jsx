@@ -16,7 +16,7 @@ function UsersHomeScreen() {
     }
   }, [users]);
 
-  // TEMP: Use first 2 users as mock "top users"
+  
   const topUsers = users.slice(0, 2);
 
   const renderTopUser = (user) => (
@@ -29,8 +29,8 @@ function UsersHomeScreen() {
           height="100"
                   className="mb-3"
                   style={{
-                    border: '2px solid rgb(132, 147, 172)', // Light gray border
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', // Optional subtle shadow
+                    border: '2px solid rgb(132, 147, 172)', 
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', 
                   }}
         />
         <h5 className="fw-bold">{user.name}</h5>
@@ -58,14 +58,14 @@ function UsersHomeScreen() {
           {firstRow.map(user => (
             <div key={user._id} className="mx-2">
               <Image
-  src={user.avatar || 'SHCAPL-logo.jpg'}
-  roundedCircle
-  width="50"
-  height="50"
-  style={{
-    border: '2px solid rgb(132, 147, 172)', // Light gray border
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', // Optional subtle shadow
-  }}
+              src={user.avatar || 'SHCAPL-logo.jpg'}
+              roundedCircle
+              width="45"
+              height="45"
+              style={{
+              border: '2px solid rgb(132, 147, 172)', 
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', 
+              }}
 />
             </div>
           ))}
@@ -78,15 +78,15 @@ function UsersHomeScreen() {
             {secondRow.map(user => (
               <div key={user._id} className="mx-2">
                 <Image
-  src={user.avatar || 'SHCAPL-logo.jpg'}
-  roundedCircle
-  width="50"
-  height="50"
-  style={{
-    border: '2px solid rgb(140, 157, 183)', // Light gray border
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', // Optional subtle shadow
-  }}
-/>
+                src={user.avatar || 'SHCAPL-logo.jpg'}
+                roundedCircle
+                width="45"
+                height="45"
+                style={{
+                 border: '2px solid rgb(140, 157, 183)', 
+                 boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', 
+                }}
+               />
               </div>
             ))}
           </div>
@@ -101,6 +101,7 @@ function UsersHomeScreen() {
 
   return (
     <div className="container mt-3">
+      
       {/* Top Users Section */}
       <div className="mb-5">
         <Card.Header className="bg-white mb-3 p-2">

@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useState } from 'react';
 import { FiMessageSquare } from 'react-icons/fi';
 import { useGetApplicationsQuery } from '../../slices/applicationsSlice.js';
-import Application from '../../components/application/Application.jsx'
+import Application from '../../components/application/Application.jsx';
 import Paginate from '../../components/helpers/Paginate.jsx';
 import Loader from '../../components/helpers/Loader.jsx';
 import Message from '../../components/helpers/Message.jsx';
@@ -15,6 +15,7 @@ function HomeScreen() {
   const { pageNumber, keyword } = useParams();
   const { data, isLoading, isError } = useGetApplicationsQuery({ keyword, pageNumber });
   const [showChat, setShowChat] = useState(false);
+  
 
   return (
     <>
@@ -59,16 +60,20 @@ function HomeScreen() {
           {/* Chat Interface */}
           {showChat && (
             <div
-              className="position-fixed bg-white shadow-lg rounded-lg overflow-hidden"
+              className="position-fixed"
               style={{
                 bottom: '90px',
                 right: '20px',
-                width: '350px',
-                height: '500px',
                 zIndex: 1050,
+                transition: 'width 0.3s ease'
               }}
             >
-              <MessengerScreen onClose={() => setShowChat(false)} />
+              <MessengerScreen 
+                onClose={() => {
+                  setShowChat(false);
+                }}
+                
+              />
             </div>
           )}
 
