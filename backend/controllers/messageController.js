@@ -1,8 +1,8 @@
-// controllers/messageController.js
 import asyncHandler from '../middleware/asyncHandler.js';
 import Conversation from '../models/conversationModel.js';
 import Message from '../models/messageModel.js';
-import { uploadToCloudinary } from '../utils/cloudinary.js';
+import Call from '../models/callModel.js';
+import { uploadToCloudinary } from '../config/cloudinary.js';
 
 // @desc    Get all conversations for a user
 // @route   GET /api/messages/conversations
@@ -89,6 +89,7 @@ const sendMessage = asyncHandler(async (req, res) => {
   });
 
   // Update conversation's last message and timestamp
+  conversation.lastMessage = message._id;
   conversation.updatedAt = Date.now();
   await conversation.save();
 
@@ -97,6 +98,9 @@ const sendMessage = asyncHandler(async (req, res) => {
     path: 'sender',
     select: 'name avatar'
   });
+
+  // Emit socket event
+  req.app.get('io').to(conversationId).emit('newMessage', populatedMessage);
 
   res.status(201).json(populatedMessage);
 });
@@ -146,7 +150,9 @@ const editMessage = asyncHandler(async (req, res) => {
     throw new Error('Message not found or not authorized');
   }
 
-  io.to(message.conversation.toString()).emit('messageEdited', message);
+  // Emit socket event
+  req.app.get('io').to(message.conversation.toString()).emit('messageEdited', message);
+  
   res.json(message);
 });
 
@@ -167,12 +173,135 @@ const deleteMessage = asyncHandler(async (req, res) => {
     throw new Error('Message not found or not authorized');
   }
 
-  io.to(message.conversation.toString()).emit('messageDeleted', {
+  // Emit socket event
+  req.app.get('io').to(message.conversation.toString()).emit('messageDeleted', {
     messageId: message._id,
     deletedFor: message.deletedFor
   });
 
   res.json({ message: 'Message deleted' });
+});
+
+// @desc    React to a message
+// @route   POST /api/messages/:messageId/react
+// @access  Private
+const reactToMessage = asyncHandler(async (req, res) => {
+  const { messageId } = req.params;
+  const { emoji } = req.body;
+
+  const message = await Message.findOneAndUpdate(
+    { _id: messageId },
+    { 
+      $pull: { reactions: { user: req.user._id } },
+      $push: { reactions: { user: req.user._id, emoji } }
+    },
+    { new: true }
+  ).populate('reactions.user', 'name avatar');
+
+  if (!message) {
+    res.status(404);
+    throw new Error('Message not found');
+  }
+
+  // Emit socket event
+  req.app.get('io').to(message.conversation.toString()).emit('messageReacted', {
+    messageId: message._id,
+    reactions: message.reactions
+  });
+
+  res.json(message);
+});
+
+// @desc    Mark message as read
+// @route   POST /api/messages/:messageId/read
+// @access  Private
+const markAsRead = asyncHandler(async (req, res) => {
+  const { messageId } = req.params;
+
+  const message = await Message.findByIdAndUpdate(
+    messageId,
+    { $addToSet: { readBy: req.user._id } },
+    { new: true }
+  );
+
+  if (!message) {
+    res.status(404);
+    throw new Error('Message not found');
+  }
+
+  res.json(message);
+});
+
+// @desc    Start a call
+// @route   POST /api/messages/calls/start
+// @access  Private
+const startCall = asyncHandler(async (req, res) => {
+  const { conversationId, type, participants } = req.body;
+
+  const call = await Call.create({
+    participants: [
+      { user: req.user._id, status: 'joined' },
+      ...participants.map(userId => ({ user: userId, status: 'calling' }))
+    ],
+    initiator: req.user._id,
+    type,
+    status: 'initiated',
+    conversation: conversationId
+  });
+
+  // Emit socket event to participants
+  participants.forEach(userId => {
+    req.app.get('io').to(userId.toString()).emit('incomingCall', call);
+  });
+
+  res.status(201).json(call);
+});
+
+// @desc    End a call
+// @route   POST /api/messages/calls/:callId/end
+// @access  Private
+const endCall = asyncHandler(async (req, res) => {
+  const { callId } = req.params;
+  const { duration } = req.body;
+
+  const call = await Call.findByIdAndUpdate(
+    callId,
+    { 
+      status: 'completed',
+      endedAt: Date.now(),
+      duration,
+      $set: { 'participants.$[].status': 'completed' }
+    },
+    { new: true }
+  );
+
+  if (!call) {
+    res.status(404);
+    throw new Error('Call not found');
+  }
+
+  // Emit socket event to participants
+  req.app.get('io').to(call.conversation.toString()).emit('callEnded', call);
+
+  res.json(call);
+});
+
+// @desc    Get call status
+// @route   GET /api/messages/calls/:callId/status
+// @access  Private
+const getCallStatus = asyncHandler(async (req, res) => {
+  const { callId } = req.params;
+
+  const call = await Call.findById(callId)
+    .populate('participants.user', 'name avatar')
+    .populate('initiator', 'name avatar');
+
+  if (!call) {
+    res.status(404);
+    throw new Error('Call not found');
+  }
+
+  res.json(call);
 });
 
 export {
@@ -182,5 +311,10 @@ export {
   sendMessage,
   uploadAttachment,
   editMessage,
-  deleteMessage
-}
+  deleteMessage,
+  reactToMessage,
+  markAsRead,
+  startCall,
+  endCall,
+  getCallStatus
+};

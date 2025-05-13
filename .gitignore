@@ -23,5 +23,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Temporary uploads
+/temp_uploads
+
+# Shared files - ignore everything except SHCAPL-logo.jpg
 /shared/*
 !/shared/SHCAPL-logo.jpg
+
+# Cloudinary uploads (if you have local cache)
+.cloudinary

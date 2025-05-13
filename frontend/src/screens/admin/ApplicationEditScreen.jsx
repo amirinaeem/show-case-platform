@@ -5,7 +5,7 @@ import Message from '../../components/helpers/Message';
 import Loader from '../../components/helpers/Loader';
 import FormContainer from '../../components/application/FormContainer';
 import { toast } from 'react-toastify';
-import { useUpdateApplicationMutation, useGetApplicationDetailsQuery, useUploadApplicationFileMutation } from '../../slices/applicationsSlice';
+import { useUpdateApplicationMutation, useGetApplicationDetailsQuery } from '../../slices/applicationsSlice';
 
 function ApplicationEditScreen() {
   const { id: appId } = useParams();
@@ -46,9 +46,7 @@ function ApplicationEditScreen() {
   // Update application mutation
   const [updateApplication, { isLoading: loadingUpdate }] = useUpdateApplicationMutation();
 
-  // File upload mutation
-  const [uploadApplicationFile] = useUploadApplicationFileMutation();
-
+ 
   const navigate = useNavigate();
 
   // Populate state with application data when it's fetched
@@ -121,36 +119,53 @@ function ApplicationEditScreen() {
 
   // Handle file upload
   const uploadImageHandler = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const file = e.target.files[0];
+  if (!file) return;
 
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
 
-      const res = await uploadApplicationFile({ file: formData, fileType: 'image' }).unwrap();
-      toast.success(res.message);
-      setImage(res.image); // Update the image URL in state
-    } catch (error) {
-      toast.error(error?.data?.message || error.error);
-    }
-  };
+    const res = await fetch('/api/uploads', {
+      method: 'POST',
+      body: formData,
+      // headers will be set automatically by browser for FormData
+    });
 
-  const uploadVideoHandler = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const data = await res.json();
+    
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
 
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
+    toast.success('Image uploaded successfully');
+    setImage(data.url); // Update the image URL in state
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
 
-      const res = await uploadApplicationFile({ file: formData, fileType: 'video' }).unwrap();
-      toast.success(res.message);
-      setPreviews([{ type: 'video', url: res.video }]); // Update the video URL in state
-    } catch (error) {
-      toast.error(error?.data?.message || error.error);
-    }
-  };
+const uploadVideoHandler = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch('/api/uploads', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await res.json();
+    
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+    toast.success('Video uploaded successfully');
+    setPreviews([{ type: 'video', url: data.url }]);
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
 
   return (
     <>

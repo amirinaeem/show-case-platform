@@ -12,6 +12,12 @@ const userSchema = new mongoose.Schema(
     },
     password: { type: String, required: true },
     isAdmin: { type: Boolean, required: true, default: false },
+    status: {
+      type: String,
+      enum: ['online', 'offline', 'away'],
+      default: 'offline'
+    },
+    lastSeen: { type: Date }
   },
   { timestamps: true } 
 );
@@ -27,9 +33,8 @@ userSchema.pre('save', async function (next) {
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt)
-})
+});
 
 const User = mongoose.model("User", userSchema);
-
 
 export default User;

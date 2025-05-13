@@ -4,20 +4,21 @@ import asyncHandler from './asyncHandler.js';
 import User from '../models/userModel.js';
 import Application from '../models/applicationModel.js';
 
-// Protect routes
+// Protect routes (HTTP Middleware)
 const protect = asyncHandler(async (req, res, next) => {
-  let token = req.cookies.jwt || req.headers.authorization?.split(' ')[1];
-  
+  const token = req.cookies.jwt || req.headers.authorization?.split(' ')[1];
+
   if (!token) {
     return res.status(401).json({ message: 'Not authorized, no token' });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.userId).select('-password');
-    if (!req.user) {
+    const user = await User.findById(decoded.userId).select('-password');
+    if (!user) {
       return res.status(401).json({ message: 'User not found' });
     }
+    req.user = user;
     next();
   } catch (error) {
     console.error('JWT Error:', error);
@@ -42,20 +43,13 @@ const commentOwnerOrAdmin = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ message: 'Invalid ID format' });
   }
 
-  const application = await Application.findOne({
-    _id: appId,
-    'comments._id': commentId
-  }).select('comments.$');
+  const application = await Application.findOne({ _id: appId, 'comments._id': commentId }).select('comments.$');
 
-  if (!application) {
-    return res.status(404).json({ message: 'Resource not found' });
-  }
-
-  const comment = application.comments.find(c => c._id.toString() === commentId);
-  if (!comment) {
+  if (!application || !application.comments.length) {
     return res.status(404).json({ message: 'Comment not found' });
   }
 
+  const comment = application.comments[0];
   const isOwner = comment.user.toString() === req.user._id.toString();
   const isAdmin = req.user.isAdmin;
 
@@ -67,6 +61,7 @@ const commentOwnerOrAdmin = asyncHandler(async (req, res, next) => {
   next();
 });
 
+// Reply owner or admin middleware
 const replyOwnerOrAdmin = asyncHandler(async (req, res, next) => {
   const { id: appId, commentId, replyId } = req.params;
 
@@ -84,26 +79,51 @@ const replyOwnerOrAdmin = asyncHandler(async (req, res, next) => {
   }
 
   const comment = application.comments.id(commentId);
-  if (!comment) {
-    return res.status(404).json({ message: 'Comment not found' });
-  }
+  const reply = comment?.replies?.id(replyId);
 
-  const reply = comment.replies.id(replyId);
-  if (!reply) {
-    return res.status(404).json({ message: 'Reply not found' });
+  if (!comment || !reply) {
+    return res.status(404).json({ message: 'Comment or reply not found' });
   }
 
   const isOwner = reply.user.toString() === req.user._id.toString();
   const isAdmin = req.user.isAdmin;
 
   if (!isOwner && !isAdmin) {
-    return res.status(403).json({ message: 'Not authorized to edit this reply' });
+    return res.status(403).json({ message: 'Not authorized to modify this reply' });
   }
 
-  req.comment = comment; // Optional: attach if needed later
-  req.reply = reply;     // Optional
+  req.comment = comment;
+  req.reply = reply;
   next();
-});  
+});
 
+// ✅ Socket.io authentication middleware
+const socketAuth = async (socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token;
+    if (!token) {
+      return next(new Error('Authentication error: No token provided'));
+    }
 
-export { protect, admin, commentOwnerOrAdmin, replyOwnerOrAdmin };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId).select('-password');
+
+    if (!user) {
+      return next(new Error('Authentication error: User not found'));
+    }
+
+    socket.user = user; // Attach user to socket
+    next();
+  } catch (error) {
+    console.error('Socket JWT Error:', error);
+    return next(new Error('Authentication error: Invalid token'));
+  }
+};
+
+export {
+  protect,
+  admin,
+  commentOwnerOrAdmin,
+  replyOwnerOrAdmin,
+  socketAuth,
+};
