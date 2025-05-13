@@ -9,7 +9,7 @@ import Loader from '../../components/helpers/Loader.jsx';
 import Message from '../../components/helpers/Message.jsx';
 import ApplicationCarousel from '../../components/application/ApplicationCarousel.jsx';
 import UsersHomeScreen from '../users/UsersHomeScreen.jsx';
-import MessengerScreen from '../users/MessengerScreen.jsx';
+import MessengerScreen from '../messaging/MessengerScreen.jsx';
 
 function HomeScreen() {
   const { pageNumber, keyword } = useParams();

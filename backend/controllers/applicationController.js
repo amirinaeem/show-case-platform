@@ -599,6 +599,10 @@ const likeToReply = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Edit a reply
+// @route   POST /api/applications/:id/comments/:commentId/replies/:replyId/editReply
+// @access  Private
+
 const editReply = asyncHandler(async (req, res) => {
   const { id: appId, commentId, replyId } = req.params;
   const { newText } = req.body;

@@ -1,4 +1,4 @@
-import { APPLICATIONS_URL, UPLOAD_URL } from '../constants';
+import { APPLICATIONS_URL } from '../constants';
 import { apiSlice } from './apiSlice';
 import optimisticHandler from '../utils/optimisticHandler';
 
@@ -39,14 +39,6 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
         body: data,
       }),
       invalidatesTags: ['Application'],
-    }),
-
-    uploadApplicationFile: builder.mutation({
-      query: ({ file, fileType }) => ({
-        url: `${UPLOAD_URL}/${fileType}`,
-        method: 'POST',
-        body: file,
-      }),
     }),
 
     deleteApplication: builder.mutation({
@@ -130,7 +122,6 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
       ),
     }),
     
-
     deleteComment: builder.mutation({
       query: ({ appId, commentId }) => ({
         url: `${APPLICATIONS_URL}/${appId}/comments/${commentId}/deleteComment`,
@@ -216,7 +207,6 @@ export const {
   useCreateApplicationMutation,
   useUpdateApplicationMutation,
   useDeleteApplicationMutation,
-  useUploadApplicationFileMutation,
   useCreateReviewMutation,
   useLikeApplicationMutation,
   useShareApplicationMutation,

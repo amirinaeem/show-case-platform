@@ -1,57 +1,53 @@
 import express from 'express';
 import multer from 'multer';
+import fs from 'fs';
 import path from 'path';
 import { protect } from '../middleware/authMiddleware.js';
+import { uploadToCloudinary } from '../config/cloudinary.js';
 
 const router = express.Router();
 
-// Create messagingUploads directory if it doesn't exist
-const messagingUploadsDir = path.join(process.cwd(), 'messagingUploads');
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, messagingUploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `msg-${uniqueSuffix}${ext}`);
-  }
-});
-
-const fileFilter = (req, file, cb) => {
-  const filetypes = /jpeg|jpg|png|gif|mp4|webm|ogg|mp3|wav|pdf|doc|docx|txt/;
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = filetypes.test(file.mimetype);
-
-  if (extname && mimetype) {
-    return cb(null, true);
-  }
-  cb(new Error('Only images, videos, audio, and documents are allowed'));
-};
-
+// Multer config — use temp folder for Cloudinary uploads
 const upload = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 50 * 1024 * 1024 // 50MB
+  dest: './temp_uploads',
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|jpg|png|gif|mp4|webm|ogg|mp3|wav|pdf|doc|docx|txt/;
+    const extname = allowed.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowed.test(file.mimetype);
+    if (extname && mimetype) {
+      return cb(null, true);
+    }
+    cb(new Error('Only images, videos, audio, and documents are allowed'));
   }
 });
 
-router.post('/', protect, upload.single('file'), (req, res) => {
+// Upload route
+router.post('/', protect, upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
 
-  const fileUrl = `/messagingUploads/${req.file.filename}`;
-  const fileType = req.file.mimetype.split('/')[0];
+  try {
+    // Upload to Cloudinary
+    const result = await uploadToCloudinary(req.file.path, {
+      folder: 'messaging',
+      resource_type: 'auto',
+    });
 
-  res.json({
-    url: fileUrl,
-    type: fileType === 'application' ? 'document' : fileType,
-    name: req.file.originalname,
-    size: req.file.size
-  });
+    // Delete temp file
+    fs.unlinkSync(req.file.path);
+
+    res.json({
+      url: result.secure_url,
+      type: result.resource_type === 'raw' ? 'document' : result.resource_type,
+      name: req.file.originalname,
+      size: req.file.size,
+    });
+  } catch (error) {
+    console.error('Cloudinary upload failed:', error);
+    res.status(500).json({ error: 'Upload failed' });
+  }
 });
 
 export default router;

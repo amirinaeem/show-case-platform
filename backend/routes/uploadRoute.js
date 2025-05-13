@@ -14,7 +14,7 @@ function checkFileType(file, cb) {
   const mimetype = filetypes.test(file.mimetype);
   
   const isMovFile = file.mimetype === 'video/quicktime' && 
-                   path.extname(file.originalname).toLowerCase() === '.mov';
+  path.extname(file.originalname).toLowerCase() === '.mov';
 
   if (extname && (mimetype || isMovFile)) {
     return cb(null, true);

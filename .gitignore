@@ -23,10 +23,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Temporary uploads
+# Upload directories
 /temp_uploads
-
-# Shared files - ignore everything except SHCAPL-logo.jpg
+/messagingUploads
 /shared/*
 !/shared/SHCAPL-logo.jpg
 
