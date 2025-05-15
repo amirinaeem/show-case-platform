@@ -1,35 +1,56 @@
 import { useState } from 'react';
 import { useCreateConversationMutation } from '../../slices/messagingApiSlice';
+import { useGetUsersQuery } from '../../slices/usersApiSlice';
 
 function CreateConversation({ onConversationCreated }) {
   const [createConversation] = useCreateConversationMutation();
-  const [participantId, setParticipantId] = useState('');
+  const { data: users, isLoading, isError } = useGetUsersQuery();
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!participantId.trim()) return;
-
+  const handleStartChat = async (userId) => {
     try {
-      const result = await createConversation({ participants: [participantId] }).unwrap();
+      const result = await createConversation({ participants: [userId] }).unwrap();
       onConversationCreated(result);
-      setParticipantId('');
     } catch (err) {
       console.error('Failed to create conversation:', err);
     }
   };
 
+  const filteredUsers = users?.filter(user => 
+    user.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (isLoading) return <div>Loading users...</div>;
+  if (isError) return <div>Error loading users</div>;
+
   return (
     <div className="create-conversation">
-      <h3>Start New Conversation</h3>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Enter user ID"
-          value={participantId}
-          onChange={(e) => setParticipantId(e.target.value)}
-        />
-        <button type="submit">Start Chat</button>
-      </form>
+      
+      <input
+        type="text"
+        placeholder="Search users..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="form-control mb-3"
+      />
+      <div className="user-list">
+        {filteredUsers?.map(user => (
+          <div 
+            key={user._id} 
+            className="user-item d-flex align-items-center p-2"
+            onClick={() => handleStartChat(user._id)}
+          >
+            <img
+              src={user.avatar}
+              alt={user.name}
+              className="rounded-circle me-3"
+              width="40"
+              height="40"
+            />
+            <span>{user.name}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -18,16 +18,23 @@ export const messagingApiSlice = createApi({
   tagTypes: ['Conversation', 'Message'],
   endpoints: (builder) => ({
 
-    getConversations: builder.query({
-      query: () => '/api/messages/conversations',
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ _id }) => ({ type: 'Conversation', id: _id })),
-              { type: 'Conversation', id: 'LIST' },
-            ]
-          : [{ type: 'Conversation', id: 'LIST' }],
-    }),
+getConversations: builder.query({
+  query: () => '/api/messages/conversations',
+  transformResponse: (response) => {
+    // Sort conversations by latest message date
+    return response.sort((a, b) => 
+      new Date(b.updatedAt) - new Date(a.updatedAt)
+)},
+  providesTags: (result) =>
+    result
+      ? [
+          ...result.map(({ _id }) => ({ type: 'Conversation', id: _id })),
+          { type: 'Conversation', id: 'LIST' },
+        ]
+      : [{ type: 'Conversation', id: 'LIST' }],
+}),
+
+
     createConversation: builder.mutation({
       query: (data) => ({
         url: '/api/messages/conversations',
