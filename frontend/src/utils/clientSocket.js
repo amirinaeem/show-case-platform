@@ -63,7 +63,7 @@ export const disconnectSocket = () => {
 };
 
 export const setupSocketEvents = (handlers = {}) => {
-  if (!socket) return;
+  if (!socket) return () => {}; // Always return a function
 
   const defaultHandlers = {
     onMessage: () => {},

@@ -1,6 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import EmojiPicker from 'emoji-picker-react';
-import '../../assets/styles/messenger.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faSearch, 
@@ -14,11 +13,11 @@ import {
   faPaperclip, 
   faLocationArrow 
 } from '@fortawesome/free-solid-svg-icons';
-
 import { useGetUsersQuery } from '../../slices/usersApiSlice';
+import { useConnectSocket } from '../../utils/useSocket';
+import '../../assets/styles/messenger.css';
 
 function MessengerScreen() {
-  const { data: users = [], isLoading, isError } = useGetUsersQuery();
   const [showChat1, setShowChat1] = useState(true);
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -26,18 +25,30 @@ function MessengerScreen() {
   const [selectedUser, setSelectedUser] = useState(null);
   const textareaRef = useRef(null);
 
+  const { data: users = [], isLoading, isError, refetch } = useGetUsersQuery();
+  const { socket } = useConnectSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleStatusUpdate = (updatedUser) => {
+      refetch();
+    };
+
+    socket.on('userStatusChanged', handleStatusUpdate);
+
+    return () => {
+      socket.off('userStatusChanged', handleStatusUpdate);
+    };
+  }, [socket, refetch]);
+
   const handleUserClick = (user) => {
     setSelectedUser(user);
     setShowChat1(false);
   };
 
-  const toggleActionMenu = () => {
-    setShowActionMenu(!showActionMenu);
-  };
-
-  const toggleEmojiPicker = () => {
-    setShowEmojiPicker(!showEmojiPicker);
-  };
+  const toggleActionMenu = () => setShowActionMenu(!showActionMenu);
+  const toggleEmojiPicker = () => setShowEmojiPicker(!showEmojiPicker);
 
   const handleEmojiClick = (emojiData) => {
     const cursorPosition = textareaRef.current.selectionStart;
@@ -46,7 +57,6 @@ function MessengerScreen() {
     
     setMessage(textBefore + emojiData.emoji + textAfter);
     
-    // Focus back on textarea after emoji selection
     setTimeout(() => {
       textareaRef.current.focus();
       textareaRef.current.selectionStart = cursorPosition + emojiData.emoji.length;
@@ -54,20 +64,19 @@ function MessengerScreen() {
     }, 0);
   };
 
-  if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Error loading users</div>;
+  if (isLoading) return <div className="loading">Loading users...</div>;
+  if (isError) return <div className="error">Error loading users</div>;
 
   return (
     <div className="messenger">
       <div className="row justify-content-center h-100">
-        <div className={showChat1 ? "chat-1" : "chat-1 d-none"}>
+        <div className={`chat-1 ${showChat1 ? '' : 'd-none'}`}>
           <div className="card mb-sm-3 mb-md-0 contacts_card">
             <div className="card-header">
               <div className="input-group">
                 <input
                   type="text"
                   placeholder="Search..."
-                  name=""
                   className="form-control search"
                 />
                 <div className="input-group-prepend">
@@ -88,7 +97,7 @@ function MessengerScreen() {
                           className="rounded-circle user_img"
                           alt={`${user.name} profile`}
                         />
-                        <span className={`online_icon ${user.isOnline ? '' : 'offline'}`} />
+                        <span className={`online_icon ${user.isOnline ? 'online' : 'offline'}`} />
                       </div>
                       <div className="user_info">
                         <span>{user.name}</span>
@@ -102,7 +111,8 @@ function MessengerScreen() {
             <div className="card-footer" />
           </div>
         </div>
-        <div className={!showChat1 ? "chat-2" : "chat-2 d-none"}>
+
+        <div className={`chat-2 ${!showChat1 ? '' : 'd-none'}`}>
           <div className="card">
             <div className="card-header msg_head">
               <div className="d-flex bd-highlight header-icons">
@@ -112,42 +122,33 @@ function MessengerScreen() {
                     className="rounded-circle user_img"
                     alt={`${selectedUser?.name} profile`}
                   />
-                  <span className={`online_icon ${selectedUser?.isOnline ? '' : 'offline'}`} />
+                  <span className={`online_icon ${selectedUser?.isOnline ? 'online' : 'offline'}`} />
                 </div>
                 <div className="user_info">
                   <span>{selectedUser?.name || 'User'}</span>
-                  <p>1767 Messages</p>
+                  <p>{selectedUser?.isOnline ? 'Online' : 'Offline'}</p>
                 </div>
                 <div className="video_cam">
-                  <span>
-                    <FontAwesomeIcon icon={faVideo} />
-                  </span>
-                  <span>
-                    <FontAwesomeIcon icon={faPhone} />
-                  </span>
-                  <span id="action_menu_btn" onClick={toggleActionMenu}>
+                  <span><FontAwesomeIcon icon={faVideo} /></span>
+                  <span><FontAwesomeIcon icon={faPhone} /></span>
+                  <span onClick={toggleActionMenu}>
                     <FontAwesomeIcon icon={faEllipsisV} />
                   </span>
                 </div>
               </div>
               
-              <div className={`action_menu ${showActionMenu ? '' : 'd-none'}`}>
-                <ul>
-                  <li>
-                    <FontAwesomeIcon icon={faUserCircle} /> View profile
-                  </li>
-                  <li>
-                    <FontAwesomeIcon icon={faUsers} /> Add to close friends
-                  </li>
-                  <li>
-                    <FontAwesomeIcon icon={faPlus} /> Add to group
-                  </li>
-                  <li>
-                    <FontAwesomeIcon icon={faBan} /> Block
-                  </li>
-                </ul>
-              </div>
+              {showActionMenu && (
+                <div className="action_menu">
+                  <ul>
+                    <li><FontAwesomeIcon icon={faUserCircle} /> View profile</li>
+                    <li><FontAwesomeIcon icon={faUsers} /> Add to close friends</li>
+                    <li><FontAwesomeIcon icon={faPlus} /> Add to group</li>
+                    <li><FontAwesomeIcon icon={faBan} /> Block</li>
+                  </ul>
+                </div>
+              )}
             </div>
+
             <div className="card-body msg_card_body">
               <div className="d-flex justify-content-start mb-4">
                 <div className="img_cont_msg">
@@ -158,96 +159,16 @@ function MessengerScreen() {
                   />
                 </div>
                 <div className="msg_cotainer">
-                  Hi, how are you samim?
+                  Hi, how are you?
                   <span className="msg_time">8:40 AM, Today</span>
                 </div>
               </div>
-              <div className="d-flex justify-content-end mb-4">
-                <div className="msg_cotainer_send">
-                  Hi Khalid i am good tnx how about you?
-                  <span className="msg_time_send">8:55 AM, Today</span>
-                </div>
-                <div className="img_cont_msg">
-                  <img
-                    src="https://avatars.hsoubcdn.com/ed57f9e6329993084a436b89498b6088?s=256"
-                    className="rounded-circle user_img_msg"
-                    alt="User"
-                  />
-                </div>
-              </div>
-              <div className="d-flex justify-content-start mb-4">
-                <div className="img_cont_msg">
-                  <img
-                    src={selectedUser?.avatar || 'https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg'}
-                    className="rounded-circle user_img_msg"
-                    alt={`${selectedUser?.name} profile`}
-                  />
-                </div>
-                <div className="msg_cotainer">
-                  I am good too, thank you for your chat template
-                  <span className="msg_time">9:00 AM, Today</span>
-                </div>
-              </div>
-              <div className="d-flex justify-content-end mb-4">
-                <div className="msg_cotainer_send">
-                  You are welcome
-                  <span className="msg_time_send">9:05 AM, Today</span>
-                </div>
-                <div className="img_cont_msg">
-                  <img
-                    src="https://avatars.hsoubcdn.com/ed57f9e6329993084a436b89498b6088?s=256"
-                    className="rounded-circle user_img_msg"
-                    alt="User"
-                  />
-                </div>
-              </div>
-              <div className="d-flex justify-content-start mb-4">
-                <div className="img_cont_msg">
-                  <img
-                    src={selectedUser?.avatar || 'https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg'}
-                    className="rounded-circle user_img_msg"
-                    alt={`${selectedUser?.name} profile`}
-                  />
-                </div>
-                <div className="msg_cotainer">
-                  I am looking for your next templates
-                  <span className="msg_time">9:07 AM, Today</span>
-                </div>
-              </div>
-              <div className="d-flex justify-content-end mb-4">
-                <div className="msg_cotainer_send">
-                  Ok, thank you have a good day
-                  <span className="msg_time_send">9:10 AM, Today</span>
-                </div>
-                <div className="img_cont_msg">
-                  <img
-                    src="https://avatars.hsoubcdn.com/ed57f9e6329993084a436b89498b6088?s=256"
-                    className="rounded-circle user_img_msg"
-                    alt="User"
-                  />
-                </div>
-              </div>
-              <div className="d-flex justify-content-start mb-4">
-                <div className="img_cont_msg">
-                  <img
-                    src={selectedUser?.avatar || 'https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg'}
-                    className="rounded-circle user_img_msg"
-                    alt={`${selectedUser?.name} profile`}
-                  />
-                </div>
-                <div className="msg_cotainer">
-                  Bye, see you
-                  <span className="msg_time">9:12 AM, Today</span>
-                </div>
-              </div>
             </div>
+
             <div className="card-footer">
               <div className="input-group">
                 <div className="emoji-picker-container">
-                  <button 
-                    className="emoji-btn"
-                    onClick={toggleEmojiPicker}
-                  >
+                  <button className="emoji-btn" onClick={toggleEmojiPicker}>
                     <span role="img" aria-label="emoji">😊</span>
                   </button>
                   {showEmojiPicker && (
@@ -286,4 +207,4 @@ function MessengerScreen() {
   );
 }
 
-export default MessengerScreen
+export default MessengerScreen;

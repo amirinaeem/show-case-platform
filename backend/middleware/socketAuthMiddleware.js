@@ -3,11 +3,19 @@ import User from '../models/userModel.js';
 
 const socketAuthMiddleware = async (socket, next) => {
   try {
-    const token =
-      socket.handshake.auth?.token ||
-      socket.handshake.headers?.cookie?.split('; ')
-        .find((c) => c.startsWith('jwt='))
-        ?.split('=')[1];
+    // Try to get token from auth first, then cookies
+    let token = socket.handshake.auth?.token;
+    
+    if (!token && socket.handshake.headers?.cookie) {
+      const cookies = socket.handshake.headers.cookie.split('; ')
+        .reduce((acc, cookie) => {
+          const [key, value] = cookie.split('=');
+          acc[key] = value;
+          return acc;
+        }, {});
+      
+      token = cookies.jwt;
+    }
 
     if (!token) {
       return next(new Error('Not authorized: No token provided'));
@@ -20,10 +28,14 @@ const socketAuthMiddleware = async (socket, next) => {
       return next(new Error('Not authorized: User not found'));
     }
 
+    // Attach user to socket for later use
     socket.user = user;
     next();
   } catch (error) {
     console.error('Socket auth error:', error.message);
+    if (error.name === 'TokenExpiredError') {
+      return next(new Error('Not authorized: Token expired'));
+    }
     next(new Error('Not authorized: Invalid token'));
   }
 };

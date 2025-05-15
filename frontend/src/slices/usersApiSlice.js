@@ -9,11 +9,12 @@ export const usersApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body: data,
       }),
+      invalidatesTags: ['User'],
     }),
 
     register: builder.mutation({
       query: (data) => ({
-        url: `${USERS_URL}`,
+        url: USERS_URL,
         method: 'POST',
         body: data,
       }),
@@ -24,6 +25,7 @@ export const usersApiSlice = apiSlice.injectEndpoints({
         url: `${USERS_URL}/logout`,
         method: 'POST',
       }),
+      invalidatesTags: ['User'],
     }),
 
     profile: builder.mutation({
@@ -31,15 +33,23 @@ export const usersApiSlice = apiSlice.injectEndpoints({
         url: `${USERS_URL}/profile`,
         method: 'PUT',
         body: data,
-      })
+      }),
+      invalidatesTags: ['User'],
     }),
 
     getUsers: builder.query({
       query: () => ({
-        url: USERS_URL
+        url: USERS_URL,
       }),
-      providesTags: ['Users'],
-      keepUnusedDataFor: 5
+      providesTags: (result) => 
+        result
+          ? [
+              ...result.map(({ _id }) => ({ type: 'User', _id })),
+              { type: 'User', id: 'LIST' },
+            ]
+          : [{ type: 'User', id: 'LIST' }],
+      keepUnusedDataFor: 5,
+      // Removed the socket-related code from here - we'll handle that elsewhere
     }),
 
     deleteUser: builder.mutation({
@@ -47,12 +57,14 @@ export const usersApiSlice = apiSlice.injectEndpoints({
         url: `${USERS_URL}/${userId}`,
         method: 'DELETE',
       }),
+      invalidatesTags: ['User'],
     }),
 
     getUserDetails: builder.query({
       query: (userId) => ({
         url: `${USERS_URL}/${userId}`,
       }),
+      providesTags: (result, error, userId) => [{ type: 'User', _id: userId }],
       keepUnusedDataFor: 5,
     }),
 
@@ -62,9 +74,32 @@ export const usersApiSlice = apiSlice.injectEndpoints({
         method: 'PUT',
         body: data,
       }),
-      invalidatesTags: ['Users'],
-    })
+      invalidatesTags: (result, error, { userId }) => [
+        { type: 'User', _id: userId },
+      ],
+    }),
+
+    updateUserStatus: builder.mutation({
+      query: ({ userId, status }) => ({
+        url: `${USERS_URL}/${userId}/status`,
+        method: 'PATCH',
+        body: { status },
+      }),
+      invalidatesTags: (result, error, { userId }) => [
+        { type: 'User', _id: userId },
+      ],
+    }),
   }),
 });
 
-export const { useLoginMutation, useGetUsersQuery, useLogoutMutation, useRegisterMutation, useProfileMutation, useDeleteUserMutation, useGetUserDetailsQuery, useUpdateUserMutation } = usersApiSlice;
+export const {
+  useLoginMutation,
+  useRegisterMutation,
+  useLogoutMutation,
+  useProfileMutation,
+  useGetUsersQuery,
+  useDeleteUserMutation,
+  useGetUserDetailsQuery,
+  useUpdateUserMutation,
+  useUpdateUserStatusMutation,
+} = usersApiSlice;
