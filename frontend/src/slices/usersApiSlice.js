@@ -3,6 +3,7 @@ import { apiSlice } from './apiSlice';
 
 export const usersApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
+    
     login: builder.mutation({
       query: (data) => ({
         url: `${USERS_URL}/auth`,
@@ -13,10 +14,10 @@ export const usersApiSlice = apiSlice.injectEndpoints({
     }),
 
     register: builder.mutation({
-      query: (data) => ({
+      query: (formData) => ({
         url: USERS_URL,
         method: 'POST',
-        body: data,
+        body: formData,
       }),
     }),
 
@@ -50,6 +51,19 @@ export const usersApiSlice = apiSlice.injectEndpoints({
           : [{ type: 'User', id: 'LIST' }],
       keepUnusedDataFor: 5,
       // Removed the socket-related code from here - we'll handle that elsewhere
+    }),
+    
+    getAllUsers: builder.query({
+      query: () => '/api/users',
+      providesTags: ['Users'],
+    }),
+   
+    getUser: builder.query({
+      query: (userId) => ({
+        url: `/api/users/${userId}`,
+        method: 'GET'
+      }),
+      providesTags: (result, error, userId) => [{ type: 'User', id: userId }]
     }),
 
     deleteUser: builder.mutation({
@@ -98,8 +112,10 @@ export const {
   useLogoutMutation,
   useProfileMutation,
   useGetUsersQuery,
+  useGetUserQuery,
   useDeleteUserMutation,
   useGetUserDetailsQuery,
   useUpdateUserMutation,
   useUpdateUserStatusMutation,
+  useGetAllUsersQuery
 } = usersApiSlice;

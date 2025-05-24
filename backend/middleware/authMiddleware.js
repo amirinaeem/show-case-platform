@@ -1,59 +1,71 @@
+// middleware/authMiddleware.js
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import asyncHandler from './asyncHandler.js';
 import User from '../models/userModel.js';
 import Application from '../models/applicationModel.js';
 
-// Protect routes (HTTP Middleware)
-const protect = asyncHandler(async (req, res, next) => {
-  const token = req.cookies.jwt || req.headers.authorization?.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no token' });
-  }
-
+// Verify JWT token
+const verifyToken = (token) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
-    if (!user) {
-      return res.status(401).json({ message: 'User not found' });
-    }
-    req.user = user;
-    next();
+    return jwt.verify(token, process.env.JWT_SECRET);
   } catch (error) {
     console.error('JWT Error:', error);
-    res.status(401).json({ message: 'Not authorized, token failed' });
+    throw new Error('Invalid token');
+  }
+};
+
+// Get user from token
+const getUserFromToken = async (token) => {
+  const decoded = verifyToken(token);
+  const user = await User.findById(decoded.userId).select('-password');
+  if (!user) throw new Error('User not found');
+  return user;
+};
+
+// HTTP Middleware
+const protect = asyncHandler(async (req, res, next) => {
+  const token = req.cookies.jwt || req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'Not authorized, no token' });
+  
+  try {
+    req.user = await getUserFromToken(token);
+    next();
+  } catch (error) {
+    res.status(401).json({ message: error.message || 'Not authorized' });
   }
 });
 
 // Admin middleware
 const admin = (req, res, next) => {
-  if (req.user?.isAdmin) {
-    next();
-  } else {
-    res.status(403).json({ message: 'Not authorized as admin' });
-  }
+  if (req.user?.isAdmin) return next();
+  res.status(403).json({ message: 'Not authorized as admin' });
+};
+
+// Resource ownership check helper
+const checkOwnership = (resourceUser, reqUser) => {
+  return resourceUser.toString() === reqUser._id.toString() || reqUser.isAdmin;
 };
 
 // Comment owner or admin middleware
 const commentOwnerOrAdmin = asyncHandler(async (req, res, next) => {
   const { id: appId, commentId } = req.params;
 
-  if (!mongoose.Types.ObjectId.isValid(appId) || !mongoose.Types.ObjectId.isValid(commentId)) {
+  if (!mongoose.isValidObjectId(appId) || !mongoose.isValidObjectId(commentId)) {
     return res.status(400).json({ message: 'Invalid ID format' });
   }
 
-  const application = await Application.findOne({ _id: appId, 'comments._id': commentId }).select('comments.$');
+  const application = await Application.findOne({ 
+    _id: appId, 
+    'comments._id': commentId 
+  }).select('comments.$');
 
-  if (!application || !application.comments.length) {
+  if (!application?.comments?.length) {
     return res.status(404).json({ message: 'Comment not found' });
   }
 
   const comment = application.comments[0];
-  const isOwner = comment.user.toString() === req.user._id.toString();
-  const isAdmin = req.user.isAdmin;
-
-  if (!isOwner && !isAdmin) {
+  if (!checkOwnership(comment.user, req.user)) {
     return res.status(403).json({ message: 'Not authorized' });
   }
 
@@ -65,18 +77,12 @@ const commentOwnerOrAdmin = asyncHandler(async (req, res, next) => {
 const replyOwnerOrAdmin = asyncHandler(async (req, res, next) => {
   const { id: appId, commentId, replyId } = req.params;
 
-  if (
-    !mongoose.Types.ObjectId.isValid(appId) ||
-    !mongoose.Types.ObjectId.isValid(commentId) ||
-    !mongoose.Types.ObjectId.isValid(replyId)
-  ) {
+  if (!mongoose.isValidObjectId(appId) || !mongoose.isValidObjectId(commentId) || !mongoose.isValidObjectId(replyId)) {
     return res.status(400).json({ message: 'Invalid ID format' });
   }
 
   const application = await Application.findById(appId);
-  if (!application) {
-    return res.status(404).json({ message: 'Application not found' });
-  }
+  if (!application) return res.status(404).json({ message: 'Application not found' });
 
   const comment = application.comments.id(commentId);
   const reply = comment?.replies?.id(replyId);
@@ -85,10 +91,7 @@ const replyOwnerOrAdmin = asyncHandler(async (req, res, next) => {
     return res.status(404).json({ message: 'Comment or reply not found' });
   }
 
-  const isOwner = reply.user.toString() === req.user._id.toString();
-  const isAdmin = req.user.isAdmin;
-
-  if (!isOwner && !isAdmin) {
+  if (!checkOwnership(reply.user, req.user)) {
     return res.status(403).json({ message: 'Not authorized to modify this reply' });
   }
 
@@ -97,26 +100,30 @@ const replyOwnerOrAdmin = asyncHandler(async (req, res, next) => {
   next();
 });
 
-// ✅ Socket.io authentication middleware
+// Socket.io authentication middleware
 const socketAuth = async (socket, next) => {
   try {
     const token = socket.handshake.auth?.token;
+    console.log('Incoming connection with token:', token); // Add this line
+    
     if (!token) {
-      return next(new Error('Authentication error: No token provided'));
+      console.warn('No token provided');
+      throw new Error('No token provided');
     }
-
+    
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
-
+    const user = await User.findById(decoded.userId);
+    
     if (!user) {
-      return next(new Error('Authentication error: User not found'));
+      console.warn('User not found for token');
+      throw new Error('User not found');
     }
-
-    socket.user = user; // Attach user to socket
+    
+    socket.user = user;
     next();
   } catch (error) {
-    console.error('Socket JWT Error:', error);
-    return next(new Error('Authentication error: Invalid token'));
+    console.error('Socket auth error:', error.message);
+    next(new Error('Not authorized'));
   }
 };
 
@@ -125,5 +132,5 @@ export {
   admin,
   commentOwnerOrAdmin,
   replyOwnerOrAdmin,
-  socketAuth,
+  socketAuth
 };

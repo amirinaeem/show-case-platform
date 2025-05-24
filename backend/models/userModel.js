@@ -14,7 +14,6 @@ const userSchema = new mongoose.Schema(
     },
     avatar: { 
       type: String, 
-      required: true, 
       default: "/SHCAPL-logo.jpg" 
     },
     password: { 
@@ -23,7 +22,6 @@ const userSchema = new mongoose.Schema(
     },
     isAdmin: { 
       type: Boolean, 
-      required: true, 
       default: false 
     },
     status: {
@@ -63,9 +61,7 @@ userSchema.methods.matchPassword = async function(enteredPassword) {
 
 // Password hashing middleware
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
-    return next();
-  }
+  if (!this.isModified('password')) return next();
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -93,6 +89,8 @@ userSchema.methods.setOnline = function(socketId) {
   return this.save();
 };
 
-const User = mongoose.model("User", userSchema);
+// Keep this index; it's not redundant
+userSchema.index({ status: 1 });
 
+const User = mongoose.model("User", userSchema);
 export default User;

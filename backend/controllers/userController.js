@@ -2,6 +2,8 @@ import asyncHandler from '../middleware/asyncHandler.js';
 import User from '../models/userModel.js';
 import generateToken from '../utils/generateToken.js';
 
+
+
 // @desc    Auth user & get token
 // @route   POST /api/users/login
 // @access  Public
@@ -29,7 +31,14 @@ const authUser = asyncHandler(async (req, res) => {
 // @route   POST /api/users
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
-    const { name, email, password } = req.body;
+
+    const { name, email, password, avatar } = req.body;
+
+    console.log(req.body, 'from backend userController')
+
+    console.log('Avatar file:', req.file);
+    console.log('Form fields:', req.body);
+    
     const userExists = await User.findOne({ email });
     if (userExists) {
         res.status(400);
@@ -40,7 +49,7 @@ const registerUser = asyncHandler(async (req, res) => {
         name,
         email,
         password,
-        avatar: req.body.avatar || '/SHCAPL-logo.jpg',
+        avatar: avatar || '/SHCAPL-logo.jpg' 
     });
 
     if (user) {
@@ -125,6 +134,19 @@ const getUsers = asyncHandler(async (req, res) => {
     res.status(200).json(users);
 });
 
+// @route GET /api/users
+// @desc Get all users except self
+// @access Private
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({ _id: { $ne: req.user._id } });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
 // @desc    Get user by ID
 // @route   GET /api/users/:id
 // @access  Private/Admin
@@ -192,4 +214,5 @@ export {
     getUserByID,
     deleteUser,
     updateUser,
+    getAllUsers
 };

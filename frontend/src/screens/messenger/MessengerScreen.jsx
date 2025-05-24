@@ -14,33 +14,80 @@ import {
   faLocationArrow 
 } from '@fortawesome/free-solid-svg-icons';
 import { useGetUsersQuery } from '../../slices/usersApiSlice';
-import { useConnectSocket } from '../../utils/useSocket';
+import { useConnectSocket } from '../../sockets/useConnectSocket';
 import '../../assets/styles/messenger.css';
 
 function MessengerScreen() {
+
   const [showChat1, setShowChat1] = useState(true);
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
+  const [usersList, setUsersList] = useState([]);
   const textareaRef = useRef(null);
 
-  const { data: users = [], isLoading, isError, refetch } = useGetUsersQuery();
-  const { socket } = useConnectSocket();
+  // Fetch initial users data
+  const { data: initialUsers = [], isLoading, isError } = useGetUsersQuery();
 
+  console.log(initialUsers, 'data from query')
+  
+  const socket = useConnectSocket();
+
+  console.log('Socket connected successuly', socket)
+
+  
+useEffect(() => {
+  if (initialUsers.length) {
+    setUsersList(initialUsers.map(user => ({
+      ...user,
+      isOnline: user.isOnline || false,  // Ensure isOnline exists
+      lastSeen: user.lastSeen 
+        ? new Date(user.lastSeen).toLocaleString() 
+        : 'recently'
+    })));
+  }
+}, [initialUsers]);
+
+  // Handle real-time status updates
   useEffect(() => {
     if (!socket) return;
 
-    const handleStatusUpdate = (updatedUser) => {
-      refetch();
+    const handleStatusUpdate = ({ userId: _id, isOnline, lastSeen }) => {
+      console.log(isOnline);
+
+      setUsersList(prevUsers => 
+        prevUsers.map(user => 
+          user._id === _id
+            ? { 
+                ...user, 
+                isOnline, 
+                lastSeen: lastSeen ? new Date(lastSeen).toLocaleString() : 'recently' 
+              } 
+            : user
+        )
+      );
+
+      // Update selected user if they're the one who changed status
+      setSelectedUser(prev => 
+        prev?._id === _id 
+          ? { 
+              ...prev, 
+              isOnline, 
+              lastSeen: lastSeen ? new Date(lastSeen).toLocaleString() : 'recently' 
+            } 
+          : prev
+      );
     };
 
-    socket.on('userStatusChanged', handleStatusUpdate);
+    socket.on('userStatusChange', handleStatusUpdate);
+    socket.on('error', (err) => console.error('Socket error:', err));
 
     return () => {
-      socket.off('userStatusChanged', handleStatusUpdate);
+      socket.off('userStatusChange', handleStatusUpdate);
+      socket.off('error');
     };
-  }, [socket, refetch]);
+  }, [socket]);
 
   const handleUserClick = (user) => {
     setSelectedUser(user);
@@ -62,6 +109,11 @@ function MessengerScreen() {
       textareaRef.current.selectionStart = cursorPosition + emojiData.emoji.length;
       textareaRef.current.selectionEnd = cursorPosition + emojiData.emoji.length;
     }, 0);
+  };
+
+  const formatLastSeen = (lastSeen) => {
+    if (!lastSeen || lastSeen === 'recently') return 'recently';
+    return new Date(lastSeen).toLocaleString();
   };
 
   if (isLoading) return <div className="loading">Loading users...</div>;
@@ -88,8 +140,8 @@ function MessengerScreen() {
             </div>
             <div className="card-body contacts_body">
               <ul className="contacts">
-                {users.map((user) => (
-                  <li key={user._id} onClick={() => handleUserClick(user)}>
+                {usersList.map((user) => (
+                  <li key={user.userId} onClick={() => handleUserClick(user)}>
                     <div className="d-flex bd-highlight">
                       <div className="img_cont">
                         <img
@@ -101,7 +153,7 @@ function MessengerScreen() {
                       </div>
                       <div className="user_info">
                         <span>{user.name}</span>
-                        <p>{user.isOnline ? 'Online' : `Last seen ${user.lastSeen || 'recently'}`}</p>
+                        <p>{user.isOnline ? 'Online' : `Last seen ${formatLastSeen(user.lastSeen)}`}</p>
                       </div>
                     </div>
                   </li>
@@ -126,7 +178,7 @@ function MessengerScreen() {
                 </div>
                 <div className="user_info">
                   <span>{selectedUser?.name || 'User'}</span>
-                  <p>{selectedUser?.isOnline ? 'Online' : 'Offline'}</p>
+                  <p>{selectedUser?.isOnline ? 'Online' : `Last seen ${formatLastSeen(selectedUser?.lastSeen)}`}</p>
                 </div>
                 <div className="video_cam">
                   <span><FontAwesomeIcon icon={faVideo} /></span>
@@ -150,6 +202,7 @@ function MessengerScreen() {
             </div>
 
             <div className="card-body msg_card_body">
+              {/* Message content would go here */}
               <div className="d-flex justify-content-start mb-4">
                 <div className="img_cont_msg">
                   <img

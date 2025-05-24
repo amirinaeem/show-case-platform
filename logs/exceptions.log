@@ -1,0 +1,7 @@
+2025-05-16 10:39:01 [error]: uncaughtException: setupSignaling is not defined
+ReferenceError: setupSignaling is not defined
+    at file:///home/malistan/profile-projects/show-case-platform/backend/server/server.js:102:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:195:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:337:24)
+    at async loadESM (node:internal/process/esm_loader:34:7)
+    at async handleMainPromise (node:internal/modules/run_main:106:12)

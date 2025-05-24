@@ -126,7 +126,7 @@ function ApplicationEditScreen() {
     const formData = new FormData();
     formData.append('file', file);
 
-    const res = await fetch('/api/uploads', {
+    const res = await fetch('/api/uploads/image', {
       method: 'POST',
       body: formData,
       // headers will be set automatically by browser for FormData
@@ -151,7 +151,7 @@ const uploadVideoHandler = async (e) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const res = await fetch('/api/uploads', {
+    const res = await fetch('/api/uploads/video', {
       method: 'POST',
       body: formData,
     });
