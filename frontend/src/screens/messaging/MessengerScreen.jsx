@@ -22,4 +22,7 @@ const MessengerScreen = () => {
   );
 };
 
+
+console.log(LeftSide)
+
 export default MessengerScreen;
