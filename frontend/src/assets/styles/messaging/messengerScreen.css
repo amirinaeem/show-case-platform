@@ -1,0 +1,11 @@
+.messenger {
+  width: 100%;
+  height: 100%; /* Changed from 50vh to 100% */
+  background-color: #879490; /* Changed from #bc2424 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 1rem;
+}
+
+

@@ -1,0 +1,169 @@
+/* Left Side Styles */
+.left-side {
+  height: 50vh;
+  display: flex;
+  flex-direction: column;
+  background-color: rgb(172, 187, 201);
+}
+
+.top {
+  padding: 12px 20px;
+  background-color: rgb(119, 136, 151);
+  color: whitesmoke;
+  margin: 0!important;
+}
+
+.image {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.name h3 {
+  padding-left: 10px;
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+
+.icons {
+  gap: 8px;
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  cursor: pointer;
+  
+}
+
+.theme_logout {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background-color: white;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  padding: 15px;
+  border-radius: 8px;
+  z-index: 100;
+  display: none;
+}
+
+.icons:hover .theme_logout {
+  display: block;
+}
+
+.friend-search {
+  padding: 10px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.search {
+  background-color: #e9ecef;
+  border-radius: 20px;
+  padding: 0 10px;
+}
+
+.search .form-control {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Friends List Styles */
+.friends-list-container {
+  flex: 1;
+  overflow-y: scroll;
+}
+
+.friends-list {
+  background-color: transparent;
+
+}
+
+.friend-item {
+  border-bottom: 1px solid #e9ecef !important;
+  padding: 12px 15px;
+  transition: background-color 0.2s;
+}
+
+.friend-item:hover {
+  background-color: #5591eb !important;
+  color: #fff;
+}
+
+.friend-item.unread {
+  background-color: #f0f7ff;
+  border-left: 3px solid #0d6efd;
+}
+
+.friend-avatar {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border: 2px solid #fff;
+}
+
+.active-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  padding: 0.25rem;
+  border: 2px solid #fff;
+}
+
+.active-icon {
+  font-size: 0.5rem;
+  color: #fff;
+}
+
+.friend-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.friend-name {
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.last-message {
+  font-size: 0.8rem;
+  color: #6c757d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0;
+}
+
+.you-label {
+  color: #495057;
+  font-weight: 500;
+}
+
+.message-time {
+  font-size: 0.75rem;
+  color: #adb5bd;
+}
+
+.unread-badge {
+  width: 10px;
+  height: 10px;
+}
+
+.read-icon {
+  color: #adb5bd;
+  font-size: 0.8rem;
+}

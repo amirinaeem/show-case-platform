@@ -12,8 +12,9 @@ const authUser = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
-        generateToken(res, user._id);
-
+        
+         generateToken (res, user._id);
+        
         res.json({
             _id: user._id,
             name: user.name,
@@ -34,11 +35,6 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const { name, email, password, avatar } = req.body;
 
-    console.log(req.body, 'from backend userController')
-
-    console.log('Avatar file:', req.file);
-    console.log('Form fields:', req.body);
-    
     const userExists = await User.findOne({ email });
     if (userExists) {
         res.status(400);

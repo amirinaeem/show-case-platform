@@ -9,7 +9,7 @@ import Loader from '../../components/helpers/Loader.jsx';
 import Message from '../../components/helpers/Message.jsx';
 import ApplicationCarousel from '../../components/application/ApplicationCarousel.jsx';
 import UsersHomeScreen from '../users/UsersHomeScreen.jsx';
-import MessengerScreen from '../messenger/MessengerScreen.jsx';
+import MessengerScreen from '../messaging/MessengerScreen.jsx';
 
 function HomeScreen() {
   const { pageNumber, keyword } = useParams();
@@ -57,25 +57,30 @@ function HomeScreen() {
             </Col>
           </Row>
 
-          {/* Chat Interface */}
-          {showChat && (
-            <div
-              className="position-fixed"
-              style={{
-                bottom: '90px',
-                right: '20px',
-                zIndex: 1050,
-                transition: 'width 0.3s ease'
-              }}
-            >
-              <MessengerScreen 
-                onClose={() => {
-                  setShowChat(false);
-                }}
-                
-              />
-            </div>
-          )}
+              {/* Chat Interface */}
+              
+             
+{showChat && (
+  <div
+    className="position-fixed shadow-lg rounded d-flex flex-column"
+    style={{
+      bottom: '90px',
+      right: '20px',
+      width: '80vh',
+      height: '60vh',
+      maxHeight: '80vh',
+      backgroundColor: '#f9f9f9',
+      border: '1px solid #ccc',
+      borderRadius: '12px',
+      zIndex: 1050,
+      overflow: 'hidden' // This is correct - keeps parent from scrolling
+    }}
+  >
+    <MessengerScreen 
+      onClose={() => setShowChat(false)}
+    />
+  </div>
+)}
 
           {/* Floating Chat Toggle */}
           <button

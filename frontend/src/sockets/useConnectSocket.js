@@ -7,7 +7,12 @@ export const useConnectSocket = () => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
+
+    
     if (!userInfo?.token || !userInfo?._id) return;
+
+    
+    
 
     const socketInstance = connectSocket(userInfo.token);
     setSocket(socketInstance);

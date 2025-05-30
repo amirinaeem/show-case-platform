@@ -21,6 +21,7 @@ import { socketAuth } from '../middleware/authMiddleware.js';
 // Routes and Sockets
 import apiRoutes from '../routes/routeSetup.js';
 import { setupSocketHandlers } from '../sockets/socketHandlers.js';
+import messengerRoutes from '../routes/messengerRoutes.js'
 
 // Constants
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -75,9 +76,11 @@ app.use(express.static(path.join(rootDir, 'shared')));
 // ======================
 app.get('/', (req, res) => res.send('Welcome to the API!'));
 app.use('/api', apiRoutes);
+app.use('/api/messenger', messengerRoutes)
 
 app.get('/health', (_, res) => res.status(200).json({ status: 'healthy' }));
 app.get('/api/config/paypal', (_, res) => res.json({ clientId: process.env.PAYPAL_CLIENT_ID }));
+
 
 // ======================
 // Error Handling
