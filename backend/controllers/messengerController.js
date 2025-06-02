@@ -4,23 +4,24 @@ import User from '../models/userModel.js';
 
 const getFriends = asyncHandler(async (req, res) => {
   try {
-    console.log('Fetching friends...');
-    const friends = await User.find({}).select('-password');
     
-    
-    res.status(200).json({ 
+
+    const friends = await User.find({ _id: { $ne: req.user._id } }).select('-password');
+
+    res.status(200).json({
       success: true,
-      friends 
+      friends,
     });
-    
+
   } catch (error) {
     console.error('Error fetching friends:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: 'Server error',
-      error: error.message 
+      error: error.message,
     });
   }
 });
+
 
 export { getFriends };

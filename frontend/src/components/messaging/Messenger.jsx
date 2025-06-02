@@ -22,10 +22,14 @@ import { RiChat3Line } from 'react-icons/ri';
 import EmojiPicker from 'emoji-picker-react';
 import '../../assets/styles/messaging/messenger.css';
 
-const Messenger = () => {
+const Messenger = (props) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [message, setMessage] = useState('');
-  
+  //selected friend
+  const { selectFriend, userInfo } = props;
+
+  console.log('selected friend data', selectFriend)
+
   // Sample messages data
   const messages = [
     {
@@ -71,12 +75,12 @@ const Messenger = () => {
       <div className="message-header">
         <div className="d-flex align-items-center">
           <Image 
-            src="SHCAPL-logo.jpg" 
+            src ={selectFriend.avatar} 
             roundedCircle 
             className="message-header-avatar"
           />
           <div className="ms-3">
-            <h5 className="mb-0">Friend Name</h5>
+            <h5 className="mb-0">{selectFriend.name}</h5>
             <small className="text-muted">Online</small>
           </div>
         </div>

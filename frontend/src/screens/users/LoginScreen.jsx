@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
+import { useAuthUserMutation } from '../../slices/usersApiSlice';
+import { setCredentials } from '../../slices/authSlice';
+import { toast } from "react-toastify";
+
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Form, Button, Row, Col } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import FormContainer from "../../components/application/FormContainer";
 import Loader from '../../components/helpers/Loader';
-import { useLoginMutation } from '../../slices/usersApiSlice';
-import { setCredentials } from '../../slices/authSlice';
-import { toast } from "react-toastify";
-
 
 
 function LoginScreen() {
@@ -18,7 +18,7 @@ function LoginScreen() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const [login, { isLoading }] = useLoginMutation();
+    const [authUser, { isLoading }] = useAuthUserMutation();
     const { userInfo } = useSelector((state) => state.auth);
 
     const { search } = useLocation();
@@ -33,16 +33,28 @@ function LoginScreen() {
    }, [userInfo, redirect, navigate])
 
     const submitHandler = async (e) => {
+        
         e.preventDefault();
         try {
-            const res = await login({ email, password }).unwrap();
+            const res = await authUser({ email, password }).unwrap();
+
+            console.log('login cridential', res)
+        
             dispatch(setCredentials({ ...res, }));
             navigate(redirect);
+            
         } catch (error) {
-            toast.error(error?.data?.message || error.error)
+           const errorMessage = error.data?.message || 
+                        error.error?.message || 
+                        error.message || 
+                        'Login failed';
+          toast.error(errorMessage);
         }
     };
 
+
+
+    
   return (
       <FormContainer>
           <h1>Sign In</h1>
@@ -66,7 +78,7 @@ function LoginScreen() {
                   </Form.Control>
               </Form.Group> 
               <Button type="submit" variant="primary" className="mt-3" disabled={isLoading}>
-                  Sing In
+                  Sign In
               </Button>
               {isLoading && <Loader />}
           </Form>

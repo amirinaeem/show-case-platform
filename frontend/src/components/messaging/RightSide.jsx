@@ -3,7 +3,10 @@ import { Container, Card, Accordion, Row, Col, Image } from 'react-bootstrap';
 import { FaCaretSquareDown } from 'react-icons/fa';
 import '../../assets/styles/messaging/rightSide.css'
 
-const RightSide = () => {
+const RightSide = ({ selectFriend }) => {
+  
+  if (!selectFriend) return null;
+
   return (
     <div className="right-side p-3">
 
@@ -31,14 +34,14 @@ const RightSide = () => {
           <Container className="text-center mb-4">
             <div className="position-relative d-inline-block">
               <Image
-                src="SHCAPL-logo.jpg"
+                src={selectFriend.avatar}
                 alt="friend profile"
                 roundedCircle
                 className="friend-avatar"
               />
               <span className="active-badge">Active</span>
             </div>
-            <h4 className="mt-3 friend-name">Friend Name</h4>
+            <h4 className="mt-3 friend-name">{selectFriend.name}</h4>
           </Container>
 
           {/* Options Accordion */}

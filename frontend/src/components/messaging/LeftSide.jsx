@@ -1,5 +1,5 @@
 import { ListGroup, Image, Badge, Stack, Form, Button } from 'react-bootstrap';
-import { useEffect } from 'react';
+
 
 import { 
   FaEllipsisH, 
@@ -10,37 +10,21 @@ import {
   FaCircle
 } from "react-icons/fa";
 import '../../assets/styles/messaging/leftSide.css';
-import { useGetFriendsQuery } from '../../slices/messengerSlice';
 
-const LeftSide = () => {
-  // User data
-  const currentUser = {
-    name: "User",
-    avatar: 'SHCAPL-logo.jpg'
-  };
 
-  // Friends list data
-  const { data: friends = [],
-    isLoading,
-    error
-  } = useGetFriendsQuery();
+const LeftSide = ({userInfo, friends, setSelectFriend}) => {
+ 
 
-  useEffect(() => {
-    console.log('Friends data:', friends);
-    if (error) console.log('Error fetching friends', error)
-  }, [friends, isLoading, error]);
-  
-  
   return (
     <div className="left-side">
       {/* User Profile Section */}
       <div className='top d-flex justify-content-between align-items-center m-2'>
         <div className='image-name d-flex align-items-center'>
           <div className='image'>
-            <img src={currentUser.avatar} alt='user' />
+            <img src={userInfo.avatar} alt='user' />
           </div>
           <div className='name'>
-            <h3>{currentUser.name}</h3>
+            <h3>{userInfo.name}</h3>
           </div>
         </div>
 
@@ -84,7 +68,9 @@ const LeftSide = () => {
             <ListGroup.Item 
               key={friend._id || index} // Use friend._id if available
               action 
-              className={`friend-item ${friend.unread ? 'unread' : ''}`}
+              className={`friend-item ${friend.unread ? 'unread' : ''}
+              `}
+              onClick={() => setSelectFriend(friend)}
             >
               <Stack direction="horizontal" gap={3} className="align-items-center">
                 {/* Friend Avatar with Active Status */}
@@ -117,7 +103,7 @@ const LeftSide = () => {
                       {friend.lastMessage && (
                         <>
                           <span className="you-label">
-                            {friend.lastMessage.sender === currentUser.name ? 'You: ' : ''}
+                            {friend.lastMessage.sender === userInfo.name ? 'You: ' : ''}
                           </span>
                           {friend.lastMessage.text}
                         </>
