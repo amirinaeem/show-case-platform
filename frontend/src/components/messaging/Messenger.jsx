@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { 
   Image, 
   Stack, 
@@ -6,7 +5,9 @@ import {
   InputGroup, 
   Button, 
   OverlayTrigger, 
-  Tooltip 
+  Tooltip,
+  Badge,
+  CloseButton
 } from 'react-bootstrap';
 import { 
   FaPhoneAlt,
@@ -16,58 +17,101 @@ import {
   FaPlusCircle, 
   FaFileImage, 
   FaGift, 
-  FaPaperPlane 
+  FaPaperPlane,
+  FaFileAlt
 } from 'react-icons/fa';
 import { RiChat3Line } from 'react-icons/ri';
 import EmojiPicker from 'emoji-picker-react';
 import '../../assets/styles/messaging/messenger.css';
 
-const Messenger = (props) => {
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [message, setMessage] = useState('');
-  //selected friend
-  const { selectFriend, userInfo } = props;
+const Messenger = ({
+  showEmojiPicker,
+  setShowEmojiPicker,
+  message,
+  setMessage,
+  attachments,
+  messages,
+  selectFriend,
+  userInfo,
+  inputHandler,
+  handleFileUpload,
+  removeAttachment
+}) => {
+  const renderTooltip = (msg) => <Tooltip>{msg}</Tooltip>;
 
-  console.log('selected friend data', selectFriend)
-
-  // Sample messages data
-  const messages = [
-    {
-      id: 1,
-      text: "Hello there! How are you doing?",
-      time: "2 mins ago",
-      sender: "me",
-      status: "read",
-      type: "text"
-    },
-    {
-      id: 2,
-      text: "I'm doing great, thanks for asking!",
-      time: "1 min ago",
-      sender: "friend",
-      type: "text"
-    },
-    {
-      id: 3,
-      image: "./image/default-image.jpg",
-      time: "Just now",
-      sender: "friend",
-      type: "image"
+  const renderAttachmentPreview = (attachment) => {
+    if (attachment.type === 'image') {
+      return (
+        <div className="image-attachment">
+          <Image 
+            src={attachment.preview} 
+            thumbnail 
+            className="attachment-thumbnail"
+            alt="Preview"
+          />
+          <Badge bg="secondary" className="file-size-badge">
+            {attachment.size}
+          </Badge>
+        </div>
+      );
     }
-  ];
-
-  const renderTooltip = (msg) => (
-    <Tooltip>{msg}</Tooltip>
-  );
-
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (message.trim()) {
-      // Here you would typically send the message to your backend
-      console.log("Message sent:", message);
-      setMessage('');
-    }
+    return (
+      <div className="file-attachment">
+        <FaFileAlt size={24} />
+        <div className="file-info">
+          <span className="file-name">{attachment.name}</span>
+          <span className="file-size">{attachment.size}</span>
+        </div>
+      </div>
+    );
   };
+
+  const renderMessageContent = (msg) => {
+  if (msg.type === 'image') {
+    return (
+      <div className="image-message-container">
+        <Image 
+          src={msg.image} 
+          alt="Shared content" 
+          className="shared-image"
+          thumbnail
+        />
+      </div>
+    );
+  }
+  
+  if (msg.type === 'file' || msg.type === 'mixed') {
+    return (
+      <div className="file-message">
+        {msg.attachments?.map((att, i) => (
+          <div key={i} className="attachment-display">
+            {att.type === 'image' ? (
+              <div className="image-message-container">
+                <Image 
+                  src={att.url} 
+                  className="shared-image"
+                  thumbnail
+                  alt="Attachment"
+                />
+              </div>
+            ) : (
+              <div className="file-attachment-display">
+                <FaFileAlt size={24} />
+                <div className="file-info">
+                  <span className="file-name">{att.name}</span>
+                  <span className="file-size">{att.size}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+        {msg.text && <p className="message-text mb-0">{msg.text}</p>}
+      </div>
+    );
+  }
+  
+  return <p className="message-text mb-0">{msg.text}</p>;
+};
 
   return (
     <div className="messenger-container">
@@ -75,12 +119,13 @@ const Messenger = (props) => {
       <div className="message-header">
         <div className="d-flex align-items-center">
           <Image 
-            src ={selectFriend.avatar} 
+            src={selectFriend?.avatar} 
             roundedCircle 
             className="message-header-avatar"
+            alt="Friend avatar"
           />
           <div className="ms-3">
-            <h5 className="mb-0">{selectFriend.name}</h5>
+            <h5 className="mb-0">{selectFriend?.name || 'Unknown User'}</h5>
             <small className="text-muted">Online</small>
           </div>
         </div>
@@ -107,24 +152,15 @@ const Messenger = (props) => {
             <Stack direction="horizontal" gap={2} className={msg.sender === 'me' ? "justify-content-end" : ""}>
               {msg.sender !== 'me' && (
                 <Image 
-                  src="SHCAPL-logo.jpg" 
-                  alt="friend profile" 
+                  src={selectFriend?.avatar} 
+                  alt="Friend profile" 
                   roundedCircle 
                   className="message-avatar"
                 />
               )}
               
               <div className="message-bubble">
-                {msg.type === 'image' ? (
-                  <Image 
-                    src={msg.image} 
-                    alt="shared content" 
-                    thumbnail 
-                    className="shared-image"
-                  />
-                ) : (
-                  <p className="message-text mb-0">{msg.text}</p>
-                )}
+                {renderMessageContent(msg)}
                 <div className="message-meta">
                   <span className="message-time">{msg.time}</span>
                   {msg.sender === 'me' && msg.status && (
@@ -137,8 +173,8 @@ const Messenger = (props) => {
 
               {msg.sender === 'me' && (
                 <Image 
-                  src="SHCAPL-logo.jpg" 
-                  alt="user profile" 
+                  src={userInfo?.avatar} 
+                  alt="Your profile" 
                   roundedCircle 
                   className="message-avatar"
                 />
@@ -151,8 +187,8 @@ const Messenger = (props) => {
         <div className="typing-indicator">
           <Stack direction="horizontal" gap={2}>
             <Image 
-              src="SHCAPL-logo.jpg" 
-              alt="friend profile" 
+              src={selectFriend?.avatar} 
+              alt="Friend profile" 
               roundedCircle 
               className="message-avatar"
             />
@@ -167,19 +203,51 @@ const Messenger = (props) => {
       </div>
 
       {/* Message Input Area */}
-      <Form onSubmit={handleSendMessage} className="message-input-area">
+      <Form onSubmit={inputHandler} className="message-input-area">
+        {attachments.length > 0 && (
+          <div className="attachments-preview">
+            {attachments.map((attachment, index) => (
+              <div key={index} className="attachment-item">
+                {renderAttachmentPreview(attachment)}
+                <CloseButton 
+                  className="remove-attachment-btn"
+                  onClick={() => removeAttachment(index)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="message-actions">
           <OverlayTrigger placement="top" overlay={renderTooltip("Add Attachment")}>
             <Button variant="link" className="action-btn">
-              <FaPlusCircle size={20} />
+              <label htmlFor="file-upload" className="file-input-label">
+                <FaPlusCircle size={20} />
+              </label>
+              <input 
+                type="file" 
+                id="file-upload" 
+                className="file-input" 
+                onChange={handleFileUpload}
+                multiple
+              />
             </Button>
           </OverlayTrigger>
 
           <OverlayTrigger placement="top" overlay={renderTooltip("Add Image")}>
-            <label htmlFor="pic" className="file-input-label">
-              <FaFileImage size={20} />
-              <input type="file" id="pic" className="file-input" />
-            </label>
+            <Button variant="link" className="action-btn">
+              <label htmlFor="image-upload" className="file-input-label">
+                <FaFileImage size={20} />
+              </label>
+              <input 
+                type="file" 
+                id="image-upload" 
+                className="file-input" 
+                onChange={handleFileUpload}
+                accept="image/*"
+                multiple
+              />
+            </Button>
           </OverlayTrigger>
 
           <OverlayTrigger placement="top" overlay={renderTooltip("Add Gift")}>
@@ -187,6 +255,7 @@ const Messenger = (props) => {
               <FaGift size={20} />
             </Button>
           </OverlayTrigger>
+
           <Button  
             variant="link" 
             className="emoji-toggle-btn"
@@ -194,14 +263,15 @@ const Messenger = (props) => {
           >
             ❤️
           </Button>
+
           <Button 
-          type="submit" 
-          variant="link" 
-          className="send-btn"
-          disabled={!message.trim()}
-        >
-          <FaPaperPlane size={20} />
-        </Button>
+            type="submit" 
+            variant="link" 
+            className="send-btn"
+            disabled={!message.trim() && attachments.length === 0}
+          >
+            <FaPaperPlane size={20} />
+          </Button>
         </div>
 
         <InputGroup className="message-input-group">
@@ -212,11 +282,14 @@ const Messenger = (props) => {
             className="message-input"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                inputHandler(e);
+              }
+            }}
           />
-          
         </InputGroup>
-
-        
 
         {showEmojiPicker && (
           <div className="emoji-picker-container">

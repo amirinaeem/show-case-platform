@@ -1,9 +1,10 @@
 /* Left Side Styles */
 .left-side {
-  height: 50vh;
+ 
+  height: 80vh;
   display: flex;
   flex-direction: column;
-  background-color: rgb(172, 187, 201);
+  
 }
 
 .top {

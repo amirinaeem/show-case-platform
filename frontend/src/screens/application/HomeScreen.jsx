@@ -65,15 +65,14 @@ function HomeScreen() {
     className="position-fixed shadow-lg rounded d-flex flex-column"
     style={{
       bottom: '90px',
-      right: '20px',
-      width: '80vh',
-      height: '60vh',
-      maxHeight: '80vh',
+      top: '90px',
+      right: '10px',
+      left: '10px', // Add left positioning for better responsiveness
       backgroundColor: '#f9f9f9',
       border: '1px solid #ccc',
       borderRadius: '12px',
       zIndex: 1050,
-      overflow: 'hidden' // This is correct - keeps parent from scrolling
+      overflow: 'hidden', // Add this to contain everything
     }}
   >
     <MessengerScreen 
