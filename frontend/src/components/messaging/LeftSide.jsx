@@ -13,7 +13,7 @@ import '../../assets/styles/messaging/leftSide.css';
 
 
 const LeftSide = ({userInfo, friends, setSelectFriend}) => {
- 
+ friends = friends.filter(friend => friend._id !== userInfo._id);
 
   return (
     <div className="left-side">

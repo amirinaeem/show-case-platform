@@ -1,0 +1,134 @@
+/* UploadImages.css */
+.image-upload-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.upload-icon-button {
+  color: #f2f6f9;
+  background: none;
+  border: none;
+  padding: 8px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.upload-icon-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.upload-icon-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.attachments-preview {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  min-width: 280px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.preview-title {
+  font-size: 0.9rem;
+  color: #495057;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #dee2e6;
+  margin-bottom: 0.5rem;
+}
+
+.image-previews-container {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 0 -0.5rem;
+}
+
+.image-attachment-item {
+  position: relative;
+  margin: 0.5rem;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  border: 1px solid #dee2e6;
+}
+
+.preview-image {
+  width: 100%;
+  height: auto;
+  max-height: 150px;
+  object-fit: cover;
+  display: block;
+}
+
+.image-info-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.image-name {
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70%;
+}
+
+.image-size-badge {
+  font-size: 0.65rem;
+  font-weight: normal;
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #dc3545;
+  transition: all 0.2s;
+}
+
+.remove-image-btn:hover {
+  background: white;
+}
+
+/* Make sure these match your message input area */
+.message-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+}
+
+.action-btn, .file-upload-container, .image-upload-container {
+  margin: 0;
+  flex-shrink: 0;
+}

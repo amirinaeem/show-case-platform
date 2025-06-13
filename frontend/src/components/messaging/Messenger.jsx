@@ -1,117 +1,145 @@
+import EmojiPicker from 'emoji-picker-react';
+import { useGetMessageQuery, useSendMessageMutation } from '../../slices/messengerSlice';
 import { 
-  Image, 
   Stack, 
   Form, 
   InputGroup, 
-  Button, 
-  OverlayTrigger, 
+  Button,
+  Image,
+  OverlayTrigger,
   Tooltip,
-  Badge,
-  CloseButton
+  Spinner,
+  Alert
 } from 'react-bootstrap';
 import { 
   FaPhoneAlt,
   FaVideo,
   FaEllipsisH,
-  FaCheckDouble, 
-  FaPlusCircle, 
-  FaFileImage, 
   FaGift, 
   FaPaperPlane,
-  FaFileAlt
+  FaCheckDouble,
+  FaFileAlt,
 } from 'react-icons/fa';
 import { RiChat3Line } from 'react-icons/ri';
-import EmojiPicker from 'emoji-picker-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import UploadFiles from './UploadFiles';
+import UploadImages from './UploadImages';
 import '../../assets/styles/messaging/messenger.css';
 
 const Messenger = ({
-  showEmojiPicker,
-  setShowEmojiPicker,
-  message,
-  setMessage,
-  attachments,
-  messages,
   selectFriend,
   userInfo,
-  inputHandler,
-  handleFileUpload,
-  removeAttachment
 }) => {
-  const renderTooltip = (msg) => <Tooltip>{msg}</Tooltip>;
+  const scrollRef = useRef();
+  const [message, setMessage] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-  const renderAttachmentPreview = (attachment) => {
-    if (attachment.type === 'image') {
+  // Get messages for the selected friend
+  const {
+    data: messages = [],
+    isLoading,
+    isError,
+    error,
+    refetch
+  } = useGetMessageQuery(selectFriend?._id, {
+    skip: !selectFriend?._id,
+    pollingInterval: 5000, // Optional: refetch messages every 5 seconds
+  });
+
+  // Send message mutation
+  const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const renderMessageContent = useCallback((msg) => {
+    if (msg.message?.files?.length > 0) {
       return (
-        <div className="image-attachment">
-          <Image 
-            src={attachment.preview} 
-            thumbnail 
-            className="attachment-thumbnail"
-            alt="Preview"
-          />
-          <Badge bg="secondary" className="file-size-badge">
-            {attachment.size}
-          </Badge>
+        <div className="file-message">
+          {msg.message.files.map((file, i) => (
+            <div key={i} className="file-attachment-display">
+              {file.type === 'image' ? (
+                <div className="image-message-container">
+                  <Image 
+                    src={file.url} 
+                    className="shared-image"
+                    thumbnail
+                    alt={`Attachment ${i}`}
+                  />
+                </div>
+              ) : (
+                <div className="file-attachment-display">
+                  <FaFileAlt size={24} />
+                  <div className="file-info">
+                    <span className="file-name">{file.fileName}</span>
+                    <span className="file-size">{file.fileType}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+          {msg.message?.text && <p className="message-text mb-0">{msg.message.text}</p>}
         </div>
       );
     }
+    return <p className="message-text mb-0">{msg.message?.text || msg.text}</p>;
+  }, []);
+
+  const formatTime = (timestamp) => {
+    if (!timestamp) return 'Just now';
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!message.trim() || !selectFriend?._id || isSending) return;
+
+    try {
+      await sendMessage({
+        receiverId: selectFriend._id,
+        text: message,
+      }).unwrap();
+      setMessage('');
+      refetch(); 
+    } catch (err) {
+      console.error('Failed to send message:', err);
+    }
+  };
+
+  if (!selectFriend) {
     return (
-      <div className="file-attachment">
-        <FaFileAlt size={24} />
-        <div className="file-info">
-          <span className="file-name">{attachment.name}</span>
-          <span className="file-size">{attachment.size}</span>
+      <div className="messenger-container d-flex justify-content-center align-items-center">
+        <div className="text-center">
+          <RiChat3Line size={48} className="text-muted mb-3" />
+          <h5>Select a conversation to start chatting</h5>
         </div>
       </div>
     );
-  };
+  }
 
-  const renderMessageContent = (msg) => {
-  if (msg.type === 'image') {
+  if (isLoading) {
     return (
-      <div className="image-message-container">
-        <Image 
-          src={msg.image} 
-          alt="Shared content" 
-          className="shared-image"
-          thumbnail
-        />
+      <div className="messenger-container d-flex justify-content-center align-items-center">
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Loading messages...</span>
+        </Spinner>
       </div>
     );
   }
-  
-  if (msg.type === 'file' || msg.type === 'mixed') {
+
+  if (isError) {
     return (
-      <div className="file-message">
-        {msg.attachments?.map((att, i) => (
-          <div key={i} className="attachment-display">
-            {att.type === 'image' ? (
-              <div className="image-message-container">
-                <Image 
-                  src={att.url} 
-                  className="shared-image"
-                  thumbnail
-                  alt="Attachment"
-                />
-              </div>
-            ) : (
-              <div className="file-attachment-display">
-                <FaFileAlt size={24} />
-                <div className="file-info">
-                  <span className="file-name">{att.name}</span>
-                  <span className="file-size">{att.size}</span>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-        {msg.text && <p className="message-text mb-0">{msg.text}</p>}
+      <div className="messenger-container d-flex justify-content-center align-items-center">
+        <Alert variant="danger">
+          Error loading messages: {error?.data?.message || error.message}
+        </Alert>
       </div>
     );
   }
-  
-  return <p className="message-text mb-0">{msg.text}</p>;
-};
 
   return (
     <div className="messenger-container">
@@ -119,7 +147,7 @@ const Messenger = ({
       <div className="message-header">
         <div className="d-flex align-items-center">
           <Image 
-            src={selectFriend?.avatar} 
+            src={selectFriend?.avatar || '/images/default-avatar.png'} 
             roundedCircle 
             className="message-header-avatar"
             alt="Friend avatar"
@@ -130,61 +158,69 @@ const Messenger = ({
           </div>
         </div>
         <div className="header-icons">
-          <OverlayTrigger placement="top" overlay={renderTooltip("Call")}>
+          <OverlayTrigger placement="top" overlay={<Tooltip>Call</Tooltip>}>
             <button className="icon-button"><FaPhoneAlt /></button>
           </OverlayTrigger>
-          <OverlayTrigger placement="top" overlay={renderTooltip("Video Call")}>
+          <OverlayTrigger placement="top" overlay={<Tooltip>Video Call</Tooltip>}>
             <button className="icon-button"><FaVideo /></button>
           </OverlayTrigger>
-          <OverlayTrigger placement="top" overlay={renderTooltip("More Options")}>
+          <OverlayTrigger placement="top" overlay={<Tooltip>More Options</Tooltip>}>
             <button className="icon-button"><FaEllipsisH /></button>
           </OverlayTrigger>
         </div>
       </div>
 
       {/* Messages Display Area */}
-      <div className="messages-display">
-        {messages.map((msg) => (
-          <div 
-            key={msg.id} 
-            className={`message ${msg.sender === 'me' ? 'outgoing' : 'incoming'}`}
-          >
-            <Stack direction="horizontal" gap={2} className={msg.sender === 'me' ? "justify-content-end" : ""}>
-              {msg.sender !== 'me' && (
-                <Image 
-                  src={selectFriend?.avatar} 
-                  alt="Friend profile" 
-                  roundedCircle 
-                  className="message-avatar"
-                />
-              )}
-              
-              <div className="message-bubble">
-                {renderMessageContent(msg)}
-                <div className="message-meta">
-                  <span className="message-time">{msg.time}</span>
-                  {msg.sender === 'me' && msg.status && (
-                    <span className="message-status">
-                      <FaCheckDouble className={`read-icon ${msg.status}`} />
-                    </span>
-                  )}
+      <div
+        className="messages-display"
+        ref={scrollRef}
+        style={{overflowY: 'auto'}}
+      >
+        {messages.map((msg) => {
+          const isMe = msg.senderId === userInfo._id;
+          
+          return (
+            <div 
+              key={msg._id} 
+              className={`message ${isMe ? 'outgoing' : 'incoming'}`}
+            >
+              <Stack direction="horizontal" gap={2} className={isMe ? "justify-content-end" : ""}>
+                {!isMe && (
+                  <Image 
+                    src={selectFriend?.avatar || '/images/default-avatar.png'} 
+                    alt="Friend profile" 
+                    roundedCircle 
+                    className="message-avatar"
+                  />
+                )}
+                
+                <div className="message-bubble">
+                  {renderMessageContent(msg)}
+                  <div className="message-meta">
+                    <span className="message-time">{formatTime(msg.createdAt)}</span>
+                    {isMe && msg.status && (
+                      <span className="message-status">
+                        <FaCheckDouble className={`read-icon ${msg.status}`} />
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {msg.sender === 'me' && (
-                <Image 
-                  src={userInfo?.avatar} 
-                  alt="Your profile" 
-                  roundedCircle 
-                  className="message-avatar"
-                />
-              )}
-            </Stack>
-          </div>
-        ))}
+                {isMe && (
+                  <Image 
+                    src={userInfo?.avatar || '/images/default-avatar.png'} 
+                    alt="Your profile" 
+                    roundedCircle 
+                    className="message-avatar"
+                  />
+                )}
+              </Stack>
+            </div>
+          );
+        })}
 
-        {/* Typing Indicator */}
-        <div className="typing-indicator">
+        
+         <div className="typing-indicator">
           <Stack direction="horizontal" gap={2}>
             <Image 
               src={selectFriend?.avatar} 
@@ -199,58 +235,17 @@ const Messenger = ({
               </div>
             </div>
           </Stack>
-        </div>
+        </div> 
       </div>
 
       {/* Message Input Area */}
-      <Form onSubmit={inputHandler} className="message-input-area">
-        {attachments.length > 0 && (
-          <div className="attachments-preview">
-            {attachments.map((attachment, index) => (
-              <div key={index} className="attachment-item">
-                {renderAttachmentPreview(attachment)}
-                <CloseButton 
-                  className="remove-attachment-btn"
-                  onClick={() => removeAttachment(index)}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-
+      <Form onSubmit={handleSubmit} className="message-input-area">
+        
         <div className="message-actions">
-          <OverlayTrigger placement="top" overlay={renderTooltip("Add Attachment")}>
-            <Button variant="link" className="action-btn">
-              <label htmlFor="file-upload" className="file-input-label">
-                <FaPlusCircle size={20} />
-              </label>
-              <input 
-                type="file" 
-                id="file-upload" 
-                className="file-input" 
-                onChange={handleFileUpload}
-                multiple
-              />
-            </Button>
-          </OverlayTrigger>
+          <UploadFiles />
+          <UploadImages />
 
-          <OverlayTrigger placement="top" overlay={renderTooltip("Add Image")}>
-            <Button variant="link" className="action-btn">
-              <label htmlFor="image-upload" className="file-input-label">
-                <FaFileImage size={20} />
-              </label>
-              <input 
-                type="file" 
-                id="image-upload" 
-                className="file-input" 
-                onChange={handleFileUpload}
-                accept="image/*"
-                multiple
-              />
-            </Button>
-          </OverlayTrigger>
-
-          <OverlayTrigger placement="top" overlay={renderTooltip("Add Gift")}>
+          <OverlayTrigger placement="top" overlay={<Tooltip>Add Gift</Tooltip>}>
             <Button variant="link" className="action-btn">
               <FaGift size={20} />
             </Button>
@@ -268,9 +263,13 @@ const Messenger = ({
             type="submit" 
             variant="link" 
             className="send-btn"
-            disabled={!message.trim() && attachments.length === 0}
+            disabled={!message.trim() || isSending}
           >
-            <FaPaperPlane size={20} />
+            {isSending ? (
+              <Spinner animation="border" size="sm" />
+            ) : (
+              <FaPaperPlane size={20} />
+            )}
           </Button>
         </div>
 
@@ -285,7 +284,7 @@ const Messenger = ({
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                inputHandler(e);
+                handleSubmit(e);
               }
             }}
           />
@@ -296,11 +295,17 @@ const Messenger = ({
             <EmojiPicker 
               onEmojiClick={(emojiData) => {
                 setMessage(prev => prev + emojiData.emoji);
-                setShowEmojiPicker(false);
               }} 
               width={300} 
               height={350} 
             />
+            <Button 
+              variant="link" 
+              className="close-emoji-picker"
+              onClick={() => setShowEmojiPicker(false)}
+            >
+              Close
+            </Button>
           </div>
         )}
       </Form>

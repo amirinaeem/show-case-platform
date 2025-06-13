@@ -5,7 +5,7 @@
   flex-direction: column;
   background-color: #f8f9fa;
   position: relative;
-  overflow: hidden; /* Prevent any overflow */
+  overflow: hidden;
 }
 
 /* Message Header */
@@ -43,11 +43,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .icon-button:hover {
-  background-color: #f1f3f4;
-  color: #495057;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
 }
 
 /* Messages Display Area */
@@ -60,7 +61,7 @@
   gap: 15px;
   background-color: rgb(172, 187, 201);
   min-height: 0;
-  overflow-x: hidden; /* Fix horizontal overflow */
+  overflow-x: hidden;
 }
 
 .message {
@@ -88,7 +89,7 @@
   padding: 10px 15px;
   border-radius: 18px;
   max-width: 100%;
-  word-break: break-word; /* Prevent long words from overflowing */
+  word-break: break-word;
 }
 
 .outgoing .message-bubble {
@@ -106,7 +107,7 @@
 
 .message-text {
   margin-bottom: 0;
-  white-space: pre-wrap; /* Preserve line breaks */
+  white-space: pre-wrap;
 }
 
 .message-meta {
@@ -129,13 +130,14 @@
 
 .read-icon {
   font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .read-icon.read {
   color: #4fc3f7;
 }
 
-/* For images sent as messages (display larger) */
+/* Image and File Messages */
 .shared-image {
   max-width: 100%;
   max-height: 300px;
@@ -146,63 +148,20 @@
   object-fit: contain;
 }
 
-/* For file attachments (display smaller) */
 .file-attachment-display {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   max-width: 250px;
 }
 
-/* For image attachments in preview (display smaller) */
-.attachment-thumbnail {
-  max-width: 100px;
-  max-height: 100px;
-  object-fit: cover;
-}
-
-/* For file attachments in preview */
-.file-attachment {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  max-width: 200px;
-}
-
-/* Attachment styles */
-.attachments-preview {
-  display: flex;
-  gap: 10px;
-  padding: 10px;
-  flex-wrap: wrap;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  margin-bottom: 10px;
-}
-
-.attachment-item {
-  position: relative;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.image-attachment {
-  position: relative;
-}
-
-.file-attachment {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+.file-attachment-display svg {
+  color: #f2f6f9;
+  width: 24px;
+  height: 24px;
 }
 
 .file-info {
@@ -221,27 +180,6 @@
 .file-size {
   font-size: 0.7rem;
   opacity: 0.8;
-}
-
-.file-size-badge {
-  position: absolute;
-  bottom: 5px;
-  right: 5px;
-}
-
-.remove-attachment-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background-color: rgba(0, 0, 0, 0.5);
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 0.7rem;
 }
 
 /* Typing Indicator */
@@ -267,8 +205,9 @@
 }
 
 .typing-icon {
+  font-size: 1rem;
+  color: #ffffff;
   animation: pulse 1.5s infinite;
-  color: whitesmoke;
 }
 
 @keyframes pulse {
@@ -284,18 +223,56 @@
   padding: 10px;
   background-color: rgb(119, 136, 151);
   border-top: 1px solid #e9ecef;
-  flex-shrink: 0; /* Prevents input area from shrinking */
+  flex-shrink: 0;
 }
 
 .message-actions {
   display: flex;
-
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
 }
 
-.action-btn, .file-input-label {
+.action-btn {
+  color: #f2f6f9;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: none;
+  border: none;
+}
+
+.action-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.action-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.file-input-label {
   color: #ecf0f2;
   cursor: pointer;
-  padding: 5px 0px;
+  padding: 8px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.file-input-label:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .file-input {
@@ -303,13 +280,13 @@
 }
 
 .message-input-group {
-  background-color: #eff2f3;
+  background-color: #f3f0ef;
   border-radius: 20px;
   height: max-content;
   display: flex;
   flex-wrap: wrap;
   padding: 5px;
-  margin: 10px 10px;
+  margin: 10px 0px;
 }
 
 .message-input {
@@ -317,9 +294,9 @@
   background: transparent;
   padding: 8px 15px;
   width: 100%;
-  resize: none; 
-  overflow-y: auto; 
-  line-height: 1.4; 
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.4;
   height: max-content;
 }
 
@@ -328,34 +305,79 @@
 }
 
 .emoji-toggle-btn {
+  color: #f2f6f9;
+  background: none;
   border: none;
-  background: transparent;
-  padding: 0 10px;
-  color: #6c757d;
-  text-decoration: none;
+  padding: 8px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 1.5rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.emoji-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .send-btn {
-  padding: 0px 20px;
-  color: #007bff;
+  color: #ffffff;
+  background-color: #457cec;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-left: auto;
+  transition: all 0.2s ease;
+}
+
+.send-btn:hover {
+  background-color: #3a6bd6;
+  color: #ffffff;
 }
 
 .send-btn:disabled {
-   color: #717679;
+  background-color: #717679;
+  color: #d1d5db;
   cursor: not-allowed;
 }
 
-.emoji-picker-container {
-  position: absolute;
-  bottom: 60px;
-  right: 20px;
-  z-index: 1000;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  border-radius: 8px;
+.send-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
-/* Scrollbar styling */
+/* Emoji Picker */
+.emoji-picker-container {
+  position: absolute;
+  padding: 2rem;
+  bottom: 150px;
+  right: 20px;
+  z-index: 1000;
+  background: rgb(175, 188, 195);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.close-emoji-picker {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  padding: 5px;
+  background-color: #007bff;
+  color: hsl(0, 18%, 96%);
+  z-index: 1001;
+  text-decoration: none;
+}
+
+/* Scrollbar */
 .messages-display::-webkit-scrollbar {
   width: 6px;
 }
@@ -369,44 +391,7 @@
   border-radius: 3px;
 }
 
-/* Image messages container */
-.image-message-container {
-  display: inline-block;
-  max-width: 100%;
-}
-
-/* Shared image styling for both preview and messages */
-.shared-image {
-  max-width: 100%;
-  max-height: 300px;
-  border-radius: 8px;
-  margin-bottom: 5px;
-}
-
-/* Make sure images in messages are larger */
-.message .shared-image {
-  min-width: 200px;
-  min-height: 200px;
-  object-fit: contain;
-}
-
-/* Make attachment previews smaller */
-.attachments-preview .shared-image {
-  max-width: 100px;
-  max-height: 100px;
-  min-width: unset;
-  min-height: unset;
-}
-
-/* File attachment styling */
-.file-attachment-display {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 8px 12px;
-  max-width: 250px;
-}
-
-/* Responsive adjustments */
+/* Responsive Adjustments */
 @media (max-width: 768px) {
   .message {
     max-width: 90%;
@@ -428,5 +413,13 @@
     width: 32px;
     height: 32px;
     font-size: 1rem;
+  }
+
+  .action-btn,
+  .file-input-label,
+  .send-btn,
+  .emoji-toggle-btn {
+    width: 36px;
+    height: 36px;
   }
 }

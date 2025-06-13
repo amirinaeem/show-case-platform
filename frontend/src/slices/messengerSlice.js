@@ -1,7 +1,5 @@
-
 import { apiSlice } from './apiSlice';
-import { MESSENGER_URL } from '../constants'; // Define this constant
-
+import { MESSENGER_URL } from '../constants';
 
 export const messengerSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -10,14 +8,41 @@ export const messengerSlice = apiSlice.injectEndpoints({
         url: `${MESSENGER_URL}/friends`,
         method: 'GET'
       }),
-      providesTags: ['Friends'],
-      transformResponse: (response) => {
-        console.log('API Response:', response); // Log the response
-        return response.friends || response; // Handle both response formats
-      } 
+      providesTags: ['Friends']
     }),
-      
-  }),
+
+    sendMessage: builder.mutation({
+      query: (messageData) => ({
+        url: `${MESSENGER_URL}/send-message`,
+        method: 'POST',
+        body: messageData
+      }),
+      invalidatesTags: ['Messages']
+    }),
+
+    getMessage: builder.query({
+      query: (id) => ({
+        url: `${MESSENGER_URL}/get-message/${id}`,
+        method: 'GET',
+      }),
+      providesTags: ['Messages']
+    }),
+
+    sendFileMessage: builder.mutation({
+      query: (formData) => ({
+        url: `${MESSENGER_URL}/send-file-message`,
+        method: 'POST',
+        body: formData,
+        
+      }),
+      invalidatesTags: ['Messages']
+    }),
+  }), 
 });
 
-export const { useGetFriendsQuery } = messengerSlice;
+export const { 
+  useGetFriendsQuery,
+  useSendMessageMutation,
+  useSendFileMessageMutation,
+  useGetMessageQuery, 
+} = messengerSlice;

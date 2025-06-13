@@ -131,6 +131,10 @@ const previewSchema = new mongoose.Schema({
   type: { type: String, enum: ["image", "video"], required: true },
   url: { type: String, required: true },
   caption: { type: String },
+  duration: { type: Number }, // in seconds
+  size: { type: Number }, // in bytes
+  format: { type: String }, // mp4, mov, etc.
+  thumbnail: { type: String } // URL to generated thumbnail
 });
 
 // Schema for Support Details

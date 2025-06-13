@@ -1,49 +1,58 @@
-import cloudinary from '../config/cloudinary.js';
+import { uploadToCloudinary } from '../utils/cloudinaryHelpers.js';
+import asyncHandler from '../middleware/asyncHandler.js';
 
-// Common helper function
-const uploadToCloudinary = async (filePath, folder) => {
-  return cloudinary.uploader.upload(filePath, {
-    folder,
-    resource_type: 'auto', // handles both image and video
+const uploadAppImage = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    res.status(400);
+    throw new Error('No file uploaded');
+  }
+
+  const result = await uploadToCloudinary(req.file.path, 'appimage');
+  res.json({ 
+    url: result.secure_url,
+    public_id: result.public_id 
   });
-};
+});
 
-const uploadAppImage = async (req, res, next) => {
-  try {
-    const result = await uploadToCloudinary(req.file.path, 'appimage');
-    res.json({ url: result.secure_url });
-  } catch (err) {
-    next(err);
+const uploadAppVideo = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    res.status(400);
+    throw new Error('No file uploaded');
   }
-};
 
-const uploadAppVideo = async (req, res, next) => {
-  try {
-    const result = await uploadToCloudinary(req.file.path, 'appvideo');
-    res.json({ url: result.secure_url });
-  } catch (err) {
-    next(err);
+  const result = await uploadToCloudinary(req.file.path, 'appvideo');
+  res.json({ 
+    url: result.secure_url,
+    public_id: result.public_id,
+    duration: result.duration,
+    format: result.format
+  });
+});
+
+const uploadMessagingFile = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    res.status(400);
+    throw new Error('No file uploaded');
   }
-};
 
-const uploadMessagingFile = async (req, res, next) => {
-  try {
-    const result = await uploadToCloudinary(req.file.path, 'messagingfiles');
-    res.json({ url: result.secure_url });
-  } catch (err) {
-    next(err);
+  const result = await uploadToCloudinary(req.file.path, 'messagingfiles');
+  res.json({ 
+    url: result.secure_url,
+    public_id: result.public_id
+  });
+});
+
+const uploadAvatar = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    res.status(400);
+    throw new Error('No file uploaded');
   }
-};
 
-const uploadAvatar = async (req, res, next) => {
-  try {
-    const result = await uploadToCloudinary(req.file.path, 'avatar');
-    res.json({ url: result.secure_url });
-  } catch (err) {
-    next(err);
-  }
-};
+  const result = await uploadToCloudinary(req.file.path, 'avatars');
+  res.json({ 
+    url: result.secure_url,
+    public_id: result.public_id
+  });
+});
 
-
-
-export { uploadAppImage, uploadAppVideo, uploadAvatar, uploadMessagingFile }
+export { uploadAppImage, uploadAppVideo, uploadAvatar, uploadMessagingFile };

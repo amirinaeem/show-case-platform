@@ -39,6 +39,7 @@ function ApplicationEditScreen() {
   });
   const [tags, setTags] = useState([]);
   const [isAvailable, setIsAvailable] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Fetch application details
   const { data: application, isLoading, refetch, error } = useGetApplicationDetailsQuery(appId);
@@ -129,7 +130,7 @@ function ApplicationEditScreen() {
     const res = await fetch('/api/uploads/image', {
       method: 'POST',
       body: formData,
-      // headers will be set automatically by browser for FormData
+      
     });
 
     const data = await res.json();
@@ -137,34 +138,98 @@ function ApplicationEditScreen() {
     if (!res.ok) throw new Error(data.error || 'Upload failed');
 
     toast.success('Image uploaded successfully');
-    setImage(data.url); // Update the image URL in state
+    setImage(data.url); 
   } catch (error) {
     toast.error(error.message);
   }
 };
 
-const uploadVideoHandler = async (e) => {
+const uploadVideoHandler = (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
+  // Calculate dynamic timeout (1s per MB + 30s buffer, max 5min)
+  const fileSizeMB = file.size / (1024 * 1024);
+  const timeoutDuration = Math.min(
+    300000, // 5 minutes maximum
+    30000 + (fileSizeMB * 1000) // 30s + 1s per MB
+  );
 
-    const res = await fetch('/api/uploads/video', {
-      method: 'POST',
-      body: formData,
-    });
+  console.log(`Uploading ${fileSizeMB.toFixed(1)}MB file with ${timeoutDuration/1000}s timeout`);
 
-    const data = await res.json();
-    
-    if (!res.ok) throw new Error(data.error || 'Upload failed');
+  setUploadProgress(0);
+  setPreviews([{ type: 'video', loading: true }]);
 
-    toast.success('Video uploaded successfully');
-    setPreviews([{ type: 'video', url: data.url }]);
-  } catch (error) {
-    toast.error(error.message);
-  }
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const xhr = new XMLHttpRequest();
+  let uploadTimedOut = false;
+
+  // Set timeout
+  const timeoutTimer = setTimeout(() => {
+    uploadTimedOut = true;
+    xhr.abort();
+    toast.error(`Upload timed out after ${timeoutDuration/1000} seconds`);
+    setUploadProgress(0);
+    setPreviews([]);
+  }, timeoutDuration);
+
+  xhr.upload.addEventListener('progress', (event) => {
+    if (event.lengthComputable && !uploadTimedOut) {
+      const progress = Math.round((event.loaded / event.total) * 100);
+      setUploadProgress(progress);
+      
+      // Estimate remaining time (optional)
+      const elapsed = Date.now() - startTime;
+      const remaining = elapsed * (100/progress - 1);
+      console.log(`${progress}% - ~${Math.round(remaining/1000)}s remaining`);
+    }
+  });
+
+  const startTime = Date.now();
+
+  xhr.onload = () => {
+    clearTimeout(timeoutTimer);
+    if (uploadTimedOut) return;
+
+    if (xhr.status >= 200 && xhr.status < 300) {
+      const data = JSON.parse(xhr.responseText);
+      setPreviews([{ 
+        type: 'video', 
+        url: data.url,
+        ...(data.duration && { duration: data.duration }),
+        ...(data.public_id && { public_id: data.public_id })
+      }]);
+      toast.success(`Upload completed in ${((Date.now()-startTime)/1000).toFixed(1)}s`);
+    } else {
+      const errorData = JSON.parse(xhr.responseText);
+      toast.error(errorData.message || 'Upload failed');
+      setPreviews([]);
+    }
+    setUploadProgress(0);
+  };
+
+  xhr.onerror = () => {
+    clearTimeout(timeoutTimer);
+    if (!uploadTimedOut) {
+      toast.error('Network error during upload');
+      setUploadProgress(0);
+      setPreviews([]);
+    }
+  };
+
+  xhr.onabort = () => {
+    clearTimeout(timeoutTimer);
+    if (!uploadTimedOut) {
+      toast.error('Upload was cancelled');
+      setUploadProgress(0);
+      setPreviews([]);
+    }
+  };
+
+  xhr.open('POST', '/api/uploads/video');
+  xhr.send(formData);
 };
 
   return (
@@ -224,19 +289,41 @@ const uploadVideoHandler = async (e) => {
               <Form.Group controlId="video" className="my-3">
               <h5>Preview Video</h5>
               <Form.Control
-                type="text"
+                 type="text"
                 placeholder="Enter video URL"
                 value={previews[0]?.url || ''}
-                onChange={(e) =>
-                  setPreviews([{ type: 'video', url: e.target.value }])
-                }
+                onChange={(e) => setPreviews([{ type: 'video', url: e.target.value }])}
               />
-              <Form.Control
-                type="file"
-                label="Choose file"
-                onChange={uploadVideoHandler}
-              />
-            </Form.Group>
+             <Form.Control
+              type="file"
+              label="Choose file"
+              onChange={uploadVideoHandler}
+               accept="video/*"
+               />
+  
+  {/* Progress Bar - make sure this is inside Form.Group */}
+            {uploadProgress > 0 && (
+           <div className="mt-2">
+             <div className="progress" style={{ height: '20px' }}>
+           <div 
+              className="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+              role="progressbar"
+              style={{ width: `${uploadProgress}%` }}
+              aria-valuenow={uploadProgress}
+              aria-valuemin="0"
+              aria-valuemax="100"
+             >
+          {uploadProgress}%
+          </div>
+      </div>
+      <small className="text-muted d-block mt-1">
+        {uploadProgress < 100 ? 'Uploading...' : 'Processing...'}
+      </small>
+    </div>
+  )}
+</Form.Group>
+                
+   
 
             {/* Platform */}
             <Form.Group controlId="platform" className="my-3">
