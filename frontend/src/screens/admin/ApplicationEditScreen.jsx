@@ -148,15 +148,6 @@ const uploadVideoHandler = (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  // Calculate dynamic timeout (1s per MB + 30s buffer, max 5min)
-  const fileSizeMB = file.size / (1024 * 1024);
-  const timeoutDuration = Math.min(
-    300000, // 5 minutes maximum
-    30000 + (fileSizeMB * 1000) // 30s + 1s per MB
-  );
-
-  console.log(`Uploading ${fileSizeMB.toFixed(1)}MB file with ${timeoutDuration/1000}s timeout`);
-
   setUploadProgress(0);
   setPreviews([{ type: 'video', loading: true }]);
 
@@ -164,71 +155,54 @@ const uploadVideoHandler = (e) => {
   formData.append('file', file);
 
   const xhr = new XMLHttpRequest();
-  let uploadTimedOut = false;
+  const uploadStartTime = Date.now();
 
-  // Set timeout
-  const timeoutTimer = setTimeout(() => {
-    uploadTimedOut = true;
-    xhr.abort();
-    toast.error(`Upload timed out after ${timeoutDuration/1000} seconds`);
-    setUploadProgress(0);
-    setPreviews([]);
-  }, timeoutDuration);
-
+  // 1. Upload progress (first 95%)
   xhr.upload.addEventListener('progress', (event) => {
-    if (event.lengthComputable && !uploadTimedOut) {
-      const progress = Math.round((event.loaded / event.total) * 100);
+    if (event.lengthComputable) {
+      // Cap at 95% to account for server processing
+      const progress = Math.min(50, Math.round((event.loaded / event.total) * 100));
       setUploadProgress(progress);
-      
-      // Estimate remaining time (optional)
-      const elapsed = Date.now() - startTime;
-      const remaining = elapsed * (100/progress - 1);
-      console.log(`${progress}% - ~${Math.round(remaining/1000)}s remaining`);
     }
   });
 
-  const startTime = Date.now();
+  // 2. Track server processing (remaining 5%)
+  let processingInterval;
+  xhr.onloadstart = () => {
+    processingInterval = setInterval(() => {
+      setUploadProgress(prev => Math.min(99, prev + 1)); // Slowly advance to 99%
+    }, 500);
+  };
 
+  // 3. Completion handler
   xhr.onload = () => {
-    clearTimeout(timeoutTimer);
-    if (uploadTimedOut) return;
-
+    clearInterval(processingInterval);
+    
     if (xhr.status >= 200 && xhr.status < 300) {
       const data = JSON.parse(xhr.responseText);
-      setPreviews([{ 
-        type: 'video', 
-        url: data.url,
-        ...(data.duration && { duration: data.duration }),
-        ...(data.public_id && { public_id: data.public_id })
-      }]);
-      toast.success(`Upload completed in ${((Date.now()-startTime)/1000).toFixed(1)}s`);
-    } else {
-      const errorData = JSON.parse(xhr.responseText);
-      toast.error(errorData.message || 'Upload failed');
-      setPreviews([]);
+      setUploadProgress(100); // Complete the progress
+      
+      setTimeout(() => {
+        setPreviews([{ 
+          type: 'video',
+          url: data.url,
+          duration: data.duration,
+          public_id: data.public_id
+        }]);
+        toast.success(`Processing completed in ${((Date.now()-uploadStartTime)/1000).toFixed(1)}s`);
+      }, 500);
     }
-    setUploadProgress(0);
+    setTimeout(() => setUploadProgress(0), 2000);
   };
 
   xhr.onerror = () => {
-    clearTimeout(timeoutTimer);
-    if (!uploadTimedOut) {
-      toast.error('Network error during upload');
-      setUploadProgress(0);
-      setPreviews([]);
-    }
+    clearInterval(processingInterval);
+    toast.error('Upload failed');
+    setUploadProgress(0);
+    setPreviews([]);
   };
 
-  xhr.onabort = () => {
-    clearTimeout(timeoutTimer);
-    if (!uploadTimedOut) {
-      toast.error('Upload was cancelled');
-      setUploadProgress(0);
-      setPreviews([]);
-    }
-  };
-
-  xhr.open('POST', '/api/uploads/video');
+  xhr.open('POST', '/api/uploads/video', true);
   xhr.send(formData);
 };
 
@@ -303,24 +277,24 @@ const uploadVideoHandler = (e) => {
   
   {/* Progress Bar - make sure this is inside Form.Group */}
             {uploadProgress > 0 && (
-           <div className="mt-2">
-             <div className="progress" style={{ height: '20px' }}>
-           <div 
-              className="progress-bar progress-bar-striped progress-bar-animated bg-success" 
-              role="progressbar"
-              style={{ width: `${uploadProgress}%` }}
-              aria-valuenow={uploadProgress}
-              aria-valuemin="0"
-              aria-valuemax="100"
-             >
-          {uploadProgress}%
-          </div>
+  <div className="mt-2">
+    <div className="progress" style={{ height: '20px' }}>
+      <div 
+        className="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+        role="progressbar"
+        style={{ width: `${uploadProgress}%` }}
+        aria-valuenow={uploadProgress}
+        aria-valuemin="0"
+        aria-valuemax="100"
+      >
+        {uploadProgress}%
       </div>
-      <small className="text-muted d-block mt-1">
-        {uploadProgress < 100 ? 'Uploading...' : 'Processing...'}
-      </small>
     </div>
-  )}
+    <small className="text-muted d-block mt-1">
+      {uploadProgress < 100 ? 'Uploading...' : 'Processing...'}
+    </small>
+  </div>
+)}
 </Form.Group>
                 
    

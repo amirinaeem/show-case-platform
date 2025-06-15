@@ -4,18 +4,18 @@ import {
   uploadAppImage,
   uploadAppVideo,
   uploadMessagingFile,
+  uploadMessengerImages,
   uploadAvatar
 } from '../controllers/uploadController.js';
-import { uploadSingle } from '../config/multerConfig.js';
+import { uploadSingle, uploadMultiple } from '../config/multerConfig.js';
 
 const router = express.Router();
 
-// Upload routes using common uploadSingle middleware
-router.post('/image', protect, uploadSingle, uploadAppImage);
-router.post('/video', protect, uploadSingle, uploadAppVideo);
-router.post('/messaging', protect, uploadSingle, uploadMessagingFile);
-
-// Avatar upload (auth optional)
-router.post('/avatar', uploadSingle, uploadAvatar);
+// Upload routes using enhanced middleware with automatic cleanup
+router.post('/image', protect, uploadSingle('file'), uploadAppImage);
+router.post('/video', protect, uploadSingle('file'), uploadAppVideo);
+router.post('/files', protect, uploadMultiple('files'), uploadMessagingFile);
+router.post('/images', protect, uploadMultiple('files'), uploadMessengerImages);
+router.post('/avatar', protect, uploadSingle('file'), uploadAvatar);
 
 export default router;

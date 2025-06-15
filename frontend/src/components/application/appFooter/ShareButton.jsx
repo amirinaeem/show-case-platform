@@ -16,12 +16,13 @@ const ShareButton = ({ appId }) => {
 
   return (
     <Button 
-      variant="outline-success" 
+      variant="outline-primary" 
       onClick={handleShare}
-      className="action-btn"
+      className="pax-3 py-2 px-4"
       aria-label="Share this application"
+     
     >
-      <i className="fas fa-share me-2"></i> Share
+      <i className="fas fa-share-alt me-2"></i> Share
     </Button>
   );
 };

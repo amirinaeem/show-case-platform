@@ -12,6 +12,7 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { PeerServer } from 'peer';
+import fs from 'fs';
 
 // Config and Middleware
 import connectDB from '../config/mdb.js';
@@ -21,13 +22,15 @@ import { socketAuth } from '../middleware/authMiddleware.js';
 // Routes and Sockets
 import apiRoutes from '../routes/routeSetup.js';
 import { setupSocketHandlers } from '../sockets/socketHandlers.js';
-import messengerRoutes from '../routes/messengerRoutes.js'
+import messengerRoutes from '../routes/messengerRoutes.js';
 
 // Constants
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve();
 const PORT = process.env.PORT || 5000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const tempDir = path.join(__dirname, 'temp_uploads');
+const activeUploads = new Set();
 
 // ======================
 // Initialize Servers
@@ -61,9 +64,15 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 }));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
+
+// Make activeUploads available to all routes
+app.use((req, res, next) => {
+  req.app.locals.activeUploads = activeUploads;
+  next();
+});
 
 // ======================
 // Static Files
@@ -76,11 +85,9 @@ app.use(express.static(path.join(rootDir, 'shared')));
 // ======================
 app.get('/', (req, res) => res.send('Welcome to the API!'));
 app.use('/api', apiRoutes);
-app.use('/api/messenger', messengerRoutes)
-
+app.use('/api/messenger', messengerRoutes);
 app.get('/health', (_, res) => res.status(200).json({ status: 'healthy' }));
 app.get('/api/config/paypal', (_, res) => res.json({ clientId: process.env.PAYPAL_CLIENT_ID }));
-
 
 // ======================
 // Error Handling
@@ -110,7 +117,44 @@ io.use(socketAuth);
 setupSocketHandlers(io);
 
 // ======================
-// Start Server
+// TEMPORARY FILE CLEANUP
+// ======================
+const cleanTempFolder = () => {
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+    return;
+  }
+
+  console.log('Starting temp folder cleanup...');
+  const files = fs.readdirSync(tempDir);
+  let deletedCount = 0;
+
+  files.forEach(file => {
+    const filePath = path.join(tempDir, file);
+    
+    // Skip if file is being actively uploaded
+    if (activeUploads.has(filePath)) return;
+
+    try {
+      fs.unlinkSync(filePath);
+      deletedCount++;
+      console.log(`Deleted temp file: ${filePath}`);
+    } catch (err) {
+      console.error(`Error deleting ${filePath}:`, err.message);
+    }
+  });
+
+  console.log(`Cleanup complete. Deleted ${deletedCount} files.`);
+};
+
+// Initial cleanup when server starts
+cleanTempFolder();
+
+// Schedule periodic cleanup (every hour)
+const cleanupInterval = setInterval(cleanTempFolder, 60 * 60 * 1000);
+
+// ======================
+// Start Server 
 // ======================
 httpServer.listen(PORT, () => {
   console.log(`
@@ -128,6 +172,12 @@ httpServer.listen(PORT, () => {
 // ======================
 const shutdown = (signal) => {
   console.log(`\n${signal} received. Shutting down gracefully...`);
+  
+  // Clear intervals
+  clearInterval(cleanupInterval);
+  
+  // Perform final cleanup
+  cleanTempFolder();
 
   const shutdownTimeout = setTimeout(() => {
     console.warn('⚠️ Force exiting after timeout.');
@@ -150,14 +200,14 @@ const shutdown = (signal) => {
   });
 };
 
-// Avoid duplicate listeners (works well with nodemon)
+// Avoid duplicate listeners
 if (!globalThis.shutdownHandlersAttached) {
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   globalThis.shutdownHandlersAttached = true;
 }
 
-// Handle fatal errors
+// Error handlers
 process.on('uncaughtException', (err) => {
   console.error('❌ Uncaught Exception:', err);
   shutdown('uncaughtException');

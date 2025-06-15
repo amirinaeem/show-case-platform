@@ -1,10 +1,13 @@
-
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
 const tempDir = './temp_uploads';
-if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+
+// Ensure temp directory exists
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, tempDir),
@@ -21,16 +24,15 @@ const fileFilter = (req, file, cb) => {
   else cb(new Error('Invalid file type'));
 };
 
-const multerInstance = multer({
+export const multerInstance = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB max per file, if need more buy the paid one, the cloudinary does not allow more than 50MB
-    files: 5 // max files per upload
+    fileSize: 50 * 1024 * 1024, // 50MB
+    files: 5
   }
 });
 
-// Export separate middleware for single and multiple files
-export const uploadSingle = multerInstance.single('file');
-export const uploadMultiple = multerInstance.array('files', 5);
-
+// Simplified exports without cleanup middleware
+export const uploadSingle = multerInstance.single.bind(multerInstance);
+export const uploadMultiple = multerInstance.array.bind(multerInstance);
