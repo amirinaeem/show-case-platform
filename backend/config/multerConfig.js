@@ -2,7 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-const tempDir = './temp_uploads';
+const tempDir = '../server/temp_uploads';
 
 // Ensure temp directory exists
 if (!fs.existsSync(tempDir)) {

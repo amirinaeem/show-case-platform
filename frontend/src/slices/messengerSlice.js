@@ -4,10 +4,7 @@ import { MESSENGER_URL } from '../constants';
 export const messengerSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getFriends: builder.query({
-      query: () => ({
-        url: `${MESSENGER_URL}/friends`,
-        method: 'GET'
-      }),
+      query: () => `${MESSENGER_URL}/friends`,
       providesTags: ['Friends']
     }),
 
@@ -21,21 +18,8 @@ export const messengerSlice = apiSlice.injectEndpoints({
     }),
 
     getMessage: builder.query({
-      query: (id) => ({
-        url: `${MESSENGER_URL}/get-message/${id}`,
-        method: 'GET',
-      }),
+      query: (id) => `${MESSENGER_URL}/get-message/${id}`,
       providesTags: ['Messages']
-    }),
-
-    sendFileMessage: builder.mutation({
-      query: (formData) => ({
-        url: `${MESSENGER_URL}/send-file-message`,
-        method: 'POST',
-        body: formData,
-        
-      }),
-      invalidatesTags: ['Messages']
     }),
   }), 
 });
@@ -43,6 +27,5 @@ export const messengerSlice = apiSlice.injectEndpoints({
 export const { 
   useGetFriendsQuery,
   useSendMessageMutation,
-  useSendFileMessageMutation,
   useGetMessageQuery, 
 } = messengerSlice;

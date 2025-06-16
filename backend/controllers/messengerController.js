@@ -29,32 +29,35 @@ const getFriends = asyncHandler(async (req, res) => {
 // @access  Private
 // controllers/messengerController.js
 
-
 const messageSendDB = asyncHandler(async (req, res) => {
-  const { receiverId, text } = req.body;
+  const { receiverId, text = '', files = [] } = req.body;
   const senderId = req.user._id;
-  const senderName = req.user.name; 
+  const senderName = req.user.name;
 
   try {
-    const newMessage = await Message.create({
+    // Create the message object first
+    const messageData = {
       senderId,
-      senderName, 
+      senderName,
       receiverId,
       message: {
-        text: text
+        text
       }
-    });
+    };
 
-    
-    res.status(201).json({
-      _id: newMessage._id,
-      senderId: newMessage.senderId,
-      senderName: newMessage.senderName, 
-      receiverId: newMessage.receiverId,
-      message: newMessage.message,
-      status: newMessage.status,
-      createdAt: newMessage.createdAt
-    });
+    // Only add files if they exist
+    if (files.length > 0) {
+      messageData.message.files = files.map(file => ({
+        url: file.url,
+        type: file.type || 'image',
+        fileType: file.fileType || 'image/jpeg', // default if missing
+        fileName: file.fileName || 'file',
+        cloudinaryId: file.public_id || file.cloudinaryId
+      }));
+    }
+
+    const newMessage = await Message.create(messageData);
+    res.status(201).json(newMessage);
   } catch (error) {
     console.error('Error sending message:', error);
     res.status(500).json({
@@ -92,66 +95,6 @@ const getMessage = asyncHandler(async (req, res) => {
 });
 
 
-// @desc    Send a file message (image or other attachment)
-// @route   POST /api/messenger/send-file-message
-// @access  Private
-const sendFileMessage = asyncHandler(async (req, res) => {
-  console.log('Files received:', req.files); // Should show files now
 
-  if (!req.files || req.files.length === 0) {
-    return res.status(400).json({ message: 'No files uploaded' });
-  }
 
-  try {
-    const uploadedFiles = [];
-    
-    // Process each file
-    for (const file of req.files) {
-      console.log(`Uploading ${file.originalname} to Cloudinary...`);
-      
-      // Upload to Cloudinary
-      const result = await uploadToCloudinary(file.path, 'messenger_attachments');
-      
-      // Add to uploaded files array
-      uploadedFiles.push({
-        url: result.secure_url,
-        type: result.resource_type,
-        fileType: path.extname(file.originalname).replace('.', ''),
-        fileName: file.originalname,
-        cloudinaryId: result.public_id
-      });
-
-      // Clean up temp file
-      fs.unlinkSync(file.path);
-    }
-
-    // Create message in database
-    const newMessage = await Message.create({
-      senderId: req.user._id,
-      senderName: req.body.senderName,
-      receiverId: req.body.receiverId,
-      message: {
-        files: uploadedFiles
-      }
-    });
-
-    res.status(201).json(newMessage);
-
-  } catch (error) {
-    console.error('File upload error:', error);
-    
-    // Clean up any temp files if error occurred
-    if (req.files) {
-      req.files.forEach(file => {
-        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-      });
-    }
-    
-    res.status(500).json({
-      message: 'File upload failed',
-      error: error.message
-    });
-  }
-});
-
-export { getFriends, messageSendDB, getMessage, sendFileMessage };
+export { getFriends, messageSendDB, getMessage };

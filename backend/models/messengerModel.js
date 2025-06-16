@@ -1,6 +1,12 @@
-// backend/models/messageModel.js
 import mongoose from 'mongoose';
 
+const fileSchema = new mongoose.Schema({
+  url: { type: String, required: true },
+  type: { type: String, default: 'image' },
+  fileType: { type: String, required: true },
+  fileName: { type: String, required: true },
+  cloudinaryId: { type: String, required: true }
+}, { _id: false });  // Important: Disable _id for subdocuments
 
 const messageSchema = new mongoose.Schema({
   senderId: {
@@ -8,7 +14,7 @@ const messageSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  senderName: {  // Add this new field
+  senderName: {
     type: String,
     required: true
   },
@@ -22,13 +28,10 @@ const messageSchema = new mongoose.Schema({
       type: String,
       default: ''
     },
-    files: [{
-      url: String,
-      type: String,
-      fileType: String,
-      fileName: String,
-      cloudinaryId: String,
-    }]
+    files: {
+      type: [fileSchema],  // Use the defined fileSchema
+      default: []
+    }
   },
   status: {
     type: String,
@@ -37,6 +40,5 @@ const messageSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-const Message = mongoose.model('Message', messageSchema, 'messages');
-
+const Message = mongoose.model('Message', messageSchema);
 export default Message;

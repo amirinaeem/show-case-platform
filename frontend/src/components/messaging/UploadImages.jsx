@@ -1,12 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Button, Image, Badge, CloseButton, Spinner } from 'react-bootstrap';
-import { FaImage, FaPaperPlane, FaUpload } from 'react-icons/fa';
+import { FaImage, FaPaperPlane } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import '../../assets/styles/messaging/UploadImages.css'; // Create this CSS file for custom styles
+import '../../assets/styles/messaging/UploadImages.css';
+import { useSendMessageMutation } from '../../slices/messengerSlice';
 
-const UploadImages = () => {
+const UploadImages = ({ selectFriend }) => {
   const [attachments, setAttachments] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [sendMessage] = useSendMessageMutation();
   
   const formatFileSize = (bytes) => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -46,38 +48,55 @@ const UploadImages = () => {
     });
   };
 
-  const uploadImages = async () => {
-    if (attachments.length === 0) return;
-    
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      attachments.forEach(att => formData.append('images', att.file));
-      
-      // Replace with your actual API endpoint
-      const response = await fetch('/api/upload/images', {
-        method: 'POST',
-        body: formData,
-      });
+ const uploadImages = async () => {
+  if (attachments.length === 0 || !selectFriend?._id) return;
 
-      if (!response.ok) throw new Error('Upload failed');
-      
-      const result = await response.json();
-      toast.success('Images uploaded successfully!');
-      setAttachments([]);
-    } catch (error) {
-      toast.error(error.message || 'Failed to upload images');
-    } finally {
-      setIsUploading(false);
+  setIsUploading(true);
+  try {
+    // 1. Upload files to Cloudinary
+    const formData = new FormData();
+    attachments.forEach(att => formData.append('files', att.file));
+
+    const uploadResponse = await fetch('/api/uploads/images', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!uploadResponse.ok) {
+      const errorData = await uploadResponse.json();
+      throw new Error(errorData.message || 'File upload failed');
     }
-  };
+
+    const uploadedFiles = await uploadResponse.json();
+
+    // 2. Create message with these files
+    await sendMessage({
+      receiverId: selectFriend._id,
+      files: uploadedFiles.map(file => ({
+        url: file.url,
+        type: file.type || 'image',
+        fileType: file.fileType || file.mimetype,
+        fileName: file.fileName || file.originalname,
+        public_id: file.public_id
+      })),
+      text: '',
+    }).unwrap();
+
+    toast.success('Images sent successfully!');
+    setAttachments([]);
+  } catch (error) {
+    console.error('Upload error:', error);
+    toast.error(error.data?.message || error.message || 'Failed to send images');
+  } finally {
+    setIsUploading(false);
+  }
+};
 
   return (
     <div className="image-upload-container">
       <Button variant="link" className="upload-icon-button p-4">
         <label htmlFor="image-upload-input" className="cursor-pointer d-flex align-items-center">
           <FaImage size={20} className="upload-icon" />
-          
         </label>
         <input
           id="image-upload-input"

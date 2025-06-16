@@ -1,13 +1,16 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
+import { useSendMessageMutation } from '../../slices/messengerSlice';
 import { Button, Badge, CloseButton, Spinner } from 'react-bootstrap';
 import { FaFileAlt, FaPaperPlane, FaUpload } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import '../../assets/styles/messaging/UploadFiles.css'; // Create this CSS file for custom styles
 
 const UploadFiles = () => {
+
   const [attachments, setAttachments] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
-  
+  const [sendMessage] = useSendMessageMutation();
+
   const formatFileSize = (bytes) => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     if (bytes === 0) return '0 Bytes';
@@ -46,7 +49,7 @@ const UploadFiles = () => {
       attachments.forEach(att => formData.append('files', att.file));
       
       // Replace with your actual API endpoint
-      const response = await fetch('/api/upload/files', {
+      const response = await fetch('/api/uploads/files', {
         method: 'POST',
         body: formData,
       });

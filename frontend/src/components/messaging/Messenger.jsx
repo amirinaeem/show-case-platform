@@ -243,7 +243,7 @@ const Messenger = ({
         
         <div className="message-actions">
           <UploadFiles />
-          <UploadImages />
+          <UploadImages selectFriend = {selectFriend} />
 
           <OverlayTrigger placement="top" overlay={<Tooltip>Add Gift</Tooltip>}>
             <Button variant="link" className="action-btn">
