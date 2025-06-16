@@ -35,7 +35,6 @@ const messageSendDB = asyncHandler(async (req, res) => {
   const senderName = req.user.name;
 
   try {
-    // Create the message object first
     const messageData = {
       senderId,
       senderName,
@@ -45,13 +44,12 @@ const messageSendDB = asyncHandler(async (req, res) => {
       }
     };
 
-    // Only add files if they exist
     if (files.length > 0) {
       messageData.message.files = files.map(file => ({
         url: file.url,
-        type: file.type || 'image',
-        fileType: file.fileType || 'image/jpeg', // default if missing
-        fileName: file.fileName || 'file',
+        type: file.type || file.mimetype || 'file',
+        fileType: file.fileType || file.mimetype || 'application/octet-stream',
+        fileName: file.fileName || file.originalname || 'file',
         cloudinaryId: file.public_id || file.cloudinaryId
       }));
     }

@@ -242,7 +242,7 @@ const Messenger = ({
       <Form onSubmit={handleSubmit} className="message-input-area">
         
         <div className="message-actions">
-          <UploadFiles />
+          <UploadFiles selectFriend = {selectFriend} />
           <UploadImages selectFriend = {selectFriend} />
 
           <OverlayTrigger placement="top" overlay={<Tooltip>Add Gift</Tooltip>}>

@@ -1,74 +1,172 @@
 import { useState } from 'react';
 import { useSendMessageMutation } from '../../slices/messengerSlice';
 import { Button, Badge, CloseButton, Spinner } from 'react-bootstrap';
-import { FaFileAlt, FaPaperPlane, FaUpload } from 'react-icons/fa';
+import { FaFileAlt, FaPaperPlane, FaUpload, FaImage, FaFilePdf, FaFileWord, FaFileExcel, FaFileAudio, FaFileVideo, FaFileArchive, FaJs, FaPython, FaJava, FaPhp, FaHtml5, 
+  FaCss3Alt, FaMarkdown } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import '../../assets/styles/messaging/UploadFiles.css'; // Create this CSS file for custom styles
+import '../../assets/styles/messaging/UploadFiles.css';
 
-const UploadFiles = () => {
+// Update your FILE_ICONS mapping
+const FILE_ICONS = {
+  'image': FaImage,
+  'application/pdf': FaFilePdf,
+  'application/msword': FaFileWord,
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': FaFileWord,
+  'application/vnd.ms-excel': FaFileExcel,
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': FaFileExcel,
+  'audio': FaFileAudio,
+  'video': FaFileVideo,
+  'application/zip': FaFileArchive,
+  'application/x-rar-compressed': FaFileArchive,
+  'application/x-7z-compressed': FaFileArchive,
+  // Programming language files
+  'text/javascript': FaJs,
+  'application/javascript': FaJs,
+  'text/x-python': FaPython,
+  'text/x-java': FaJava,
+  'text/x-php': FaPhp,
+  'text/html': FaHtml5,
+  'text/css': FaCss3Alt,
+  'text/markdown': FaMarkdown,
+  'default': FaFileAlt
+};
 
+const UploadFiles = ({ selectFriend }) => {
   const [attachments, setAttachments] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [sendMessage] = useSendMessageMutation();
 
   const formatFileSize = (bytes) => {
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     if (bytes === 0) return '0 Bytes';
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${parseFloat((bytes / Math.pow(1024, i)).toFixed(2))} ${sizes[i]}`;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.min(
+      Math.floor(Math.log(bytes) / Math.log(1024)),
+      sizes.length - 1
+    );
+    return `${(bytes / Math.pow(1024, i)).toFixed(i ? 2 : 0)} ${sizes[i]}`;
   };
+
+ const getFileIcon = (fileType, fileName) => {
+  // First check MIME types
+  if (fileType.startsWith('image/')) return FILE_ICONS.image;
+  if (fileType.startsWith('audio/')) return FILE_ICONS.audio;
+  if (fileType.startsWith('video/')) return FILE_ICONS.video;
+  
+  // Then check for specific MIME types
+  if (FILE_ICONS[fileType]) return FILE_ICONS[fileType];
+  
+  // Fall back to file extensions if MIME type is generic (like text/plain)
+  const extension = fileName.split('.').pop().toLowerCase();
+  const extensionIcons = {
+    'js': FaJs,
+    'py': FaPython,
+    'java': FaJava,
+    'php': FaPhp,
+    'html': FaHtml5,
+    'css': FaCss3Alt,
+    'md': FaMarkdown,
+    'ts': FaJs, // TypeScript
+    'jsx': FaJs,
+    'tsx': FaJs,
+    'rb': FaFileAlt, // Ruby
+    'go': FaFileAlt, // Go
+    'rs': FaFileAlt, // Rust
+    'sh': FaFileAlt, // Shell
+    'json': FaFileAlt
+  };
+  
+  return extensionIcons[extension] || FILE_ICONS.default;
+};
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     
-    const newAttachments = files.map(file => ({
-      type: file.type.startsWith('image/') ? 'image' : 'file',
-      file,
-      name: file.name,
-      size: formatFileSize(file.size),
-    }));
+    if (files.length === 0) return;
+
+    // Validate file sizes (example: 25MB limit)
+    const MAX_SIZE = 25 * 1024 * 1024; // 25MB
+    const validFiles = files.filter(file => file.size <= MAX_SIZE);
+    
+    if (validFiles.length !== files.length) {
+      toast.warning(`Some files exceeded the ${formatFileSize(MAX_SIZE)} limit and were not added`);
+    }
+
+    const newAttachments = validFiles.map(file => {
+      const FileIcon = getFileIcon(file.type, file.name);
+      return {
+        type: file.type,
+        file,
+        name: file.name,
+        size: formatFileSize(file.size),
+        icon: <FileIcon size={18} className="me-2" />
+      };
+    });
 
     setAttachments(prev => [...prev, ...newAttachments]);
     e.target.value = '';
   };
 
   const removeAttachment = (index) => {
-    setAttachments(prev => {
-      const updated = [...prev];
-      updated.splice(index, 1);
-      return updated;
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadFilesHandler = async () => {
+  if (attachments.length === 0 || !selectFriend?._id) {
+    toast.warning('Please select files and a recipient');
+    return;
+  }
+  
+  setIsUploading(true);
+  try {
+    const formData = new FormData();
+    attachments.forEach(att => formData.append('files', att.file));
+
+    // Upload files to your endpoint
+    const uploadResponse = await fetch('/api/uploads/files', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}` // Add auth token
+      }
     });
-  };
 
-  const uploadFiles = async () => {
-    if (attachments.length === 0) return;
-    
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      attachments.forEach(att => formData.append('files', att.file));
-      
-      // Replace with your actual API endpoint
-      const response = await fetch('/api/uploads/files', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error('Upload failed');
-      
-      const result = await response.json();
-      toast.success('Files uploaded successfully!');
-      setAttachments([]);
-    } catch (error) {
-      toast.error(error.message || 'Failed to upload files');
-    } finally {
-      setIsUploading(false);
+    if (!uploadResponse.ok) {
+      const errorData = await uploadResponse.json().catch(() => ({}));
+      throw new Error(errorData.message || 'File upload failed');
     }
-  };
+
+    const uploadedFiles = await uploadResponse.json();
+
+    // Send message with file references
+    const result = await sendMessage({
+      receiverId: selectFriend._id,
+      files: uploadedFiles.map(file => ({
+        url: file.url,
+        type: file.type,
+        fileType: file.fileType,
+        fileName: file.fileName,
+        public_id: file.public_id
+      })),
+      text: '',
+    });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    toast.success('Files sent successfully!');
+    setAttachments([]);
+  } catch (error) {
+    console.error('Upload error:', error);
+    toast.error(error.data?.message || error.message || 'Failed to send files');
+  } finally {
+    setIsUploading(false);
+  }
+};
 
   return (
     <div className="file-upload-container">
-      <Button variant="link" className="upload-icon-button p-0">
+      <Button variant="link" className="upload-icon-button">
         <label htmlFor="file-upload-input" className="cursor-pointer d-flex align-items-center">
           <FaUpload size={18} className="upload-icon" />
           
@@ -79,40 +177,62 @@ const UploadFiles = () => {
           multiple
           onChange={handleFileChange}
           className="d-none"
-          accept="*/*" // Or specify file types: "image/*,.pdf,.doc,.docx"
+          accept="*/*"
         />
       </Button>
 
       {attachments.length > 0 && (
-        <div className="attachments-preview mt-2">
-          {attachments.map((attachment, index) => (
-            <div key={index} className="attachment-item d-flex align-items-center justify-content-between p-2 mb-2 bg-light rounded">
-              <div className="file-preview d-flex align-items-center">
-                <FaFileAlt size={20} className="me-2 text-primary" />
+        <div className="attachments-preview mt-3">
+          <div className="preview-header mb-2">
+            <strong>{attachments.length} file{attachments.length !== 1 ? 's' : ''} selected</strong>
+            <Badge bg="secondary" className="ms-2">
+              Total: {formatFileSize(attachments.reduce((sum, file) => sum + file.file.size, 0))}
+            </Badge>
+          </div>
+
+          <div className="file-list">
+            {attachments.map((attachment, index) => (
+              <div key={`${attachment.name}-${index}`} className="file-item">
                 <div className="file-info">
-                  <div className="file-name text-truncate" style={{ maxWidth: '150px' }}>
-                    {attachment.name}
+                  {attachment.icon}
+                  <div className="file-details">
+                    <div className="file-name" title={attachment.name}>
+                      {attachment.name}
+                    </div>
+                    <div className="file-meta">
+  <Badge bg="light" text="dark" className="file-size">
+    {attachment.size}
+  </Badge>
+  <Badge 
+    bg={attachment.type === 'code' ? 'primary' : 'info'} 
+    className="file-type ms-2"
+  >
+    {attachment.type === 'code' 
+      ? attachment.name.split('.').pop() 
+      : attachment.type.split('/')[0]
+    }
+  </Badge>
+</div>
                   </div>
-                  <Badge bg="secondary" className="file-size-badge">
-                    {attachment.size}
-                  </Badge>
                 </div>
+                <CloseButton 
+                  onClick={() => removeAttachment(index)}
+                  aria-label={`Remove ${attachment.name}`}
+                />
               </div>
-              <CloseButton onClick={() => removeAttachment(index)} className="ms-2" />
-            </div>
-          ))}
+            ))}
+          </div>
 
           <Button
             variant="primary"
-            size="sm"
-            onClick={uploadFiles}
+            onClick={uploadFilesHandler}
             disabled={isUploading}
-            className="w-100 mt-2 d-flex align-items-center justify-content-center"
+            className="send-button"
           >
             {isUploading ? (
               <>
                 <Spinner animation="border" size="sm" className="me-2" />
-                Uploading...
+                Sending...
               </>
             ) : (
               <>

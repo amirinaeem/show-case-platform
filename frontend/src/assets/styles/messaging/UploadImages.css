@@ -103,7 +103,7 @@
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(240, 73, 36, 0.9);
   border: none;
   border-radius: 50%;
   width: 24px;
@@ -112,12 +112,12 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #dc3545;
+  color: #e90c22;
   transition: all 0.2s;
 }
 
 .remove-image-btn:hover {
-  background: white;
+  background: rgb(124, 116, 75);
 }
 
 /* Make sure these match your message input area */

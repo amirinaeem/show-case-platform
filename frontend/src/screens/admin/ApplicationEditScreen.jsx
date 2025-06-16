@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Form, Button } from 'react-bootstrap';
 import Message from '../../components/helpers/Message';
@@ -9,6 +10,8 @@ import { useUpdateApplicationMutation, useGetApplicationDetailsQuery } from '../
 
 function ApplicationEditScreen() {
   const { id: appId } = useParams();
+
+  const { userInfo } = useSelector((state) => state.auth);
 
   // State variables for application fields
   const [name, setName] = useState('');
@@ -148,62 +151,112 @@ const uploadVideoHandler = (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
+  // Validate file type
+  const validTypes = [
+  'video/mp4', 
+  'video/quicktime', // This is the MIME type for .mov
+  'video/x-msvideo', // .avi
+  'video/x-matroska', // .mkv
+  'video/webm',
+  'video/x-ms-wmv', // .wmv
+  'video/x-flv', // .flv
+  'video/mpeg' // .mpeg
+];
+  if (!validTypes.includes(file.type)) {
+    toast.error('Invalid video format. Please use MP4, WebM, or MOV');
+    return;
+  }
+
+  // Validate file size (50MB limit)
+  const MAX_SIZE = 50 * 1024 * 1024;
+  if (file.size > MAX_SIZE) {
+    toast.error('Video file exceeds 50MB limit');
+    return;
+  }
+
   setUploadProgress(0);
   setPreviews([{ type: 'video', loading: true }]);
 
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('file', file); // Must match multer's field name
 
   const xhr = new XMLHttpRequest();
   const uploadStartTime = Date.now();
 
-  // 1. Upload progress (first 95%)
+  // Upload progress tracking (0-95%)
   xhr.upload.addEventListener('progress', (event) => {
     if (event.lengthComputable) {
-      // Cap at 95% to account for server processing
-      const progress = Math.min(50, Math.round((event.loaded / event.total) * 100));
-      setUploadProgress(progress);
+      const percent = Math.min(95, Math.round((event.loaded / event.total) * 100));
+      setUploadProgress(percent);
     }
   });
 
-  // 2. Track server processing (remaining 5%)
+  // Server processing simulation (95-99%)
   let processingInterval;
   xhr.onloadstart = () => {
     processingInterval = setInterval(() => {
-      setUploadProgress(prev => Math.min(99, prev + 1)); // Slowly advance to 99%
-    }, 500);
+      setUploadProgress(prev => Math.min(99, prev + 1));
+    }, 300);
   };
 
-  // 3. Completion handler
+  // Handle successful response
   xhr.onload = () => {
     clearInterval(processingInterval);
     
     if (xhr.status >= 200 && xhr.status < 300) {
-      const data = JSON.parse(xhr.responseText);
-      setUploadProgress(100); // Complete the progress
-      
-      setTimeout(() => {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        setUploadProgress(100);
+        
         setPreviews([{ 
           type: 'video',
           url: data.url,
           duration: data.duration,
           public_id: data.public_id
         }]);
-        toast.success(`Processing completed in ${((Date.now()-uploadStartTime)/1000).toFixed(1)}s`);
-      }, 500);
+        
+        toast.success(`Video uploaded in ${((Date.now()-uploadStartTime)/1000).toFixed(1)}s`);
+      } catch (parseError) {
+        console.error('Response parse error:', parseError);
+        toast.error('Failed to process video');
+      }
+    } else {
+      try {
+        const errorData = JSON.parse(xhr.responseText);
+        toast.error(errorData.message || 'Upload failed');
+      } catch {
+        toast.error(`Upload failed with status ${xhr.status}`);
+      }
     }
-    setTimeout(() => setUploadProgress(0), 2000);
+    
+    setTimeout(() => setUploadProgress(0), 1000);
   };
 
+  // Handle errors
   xhr.onerror = () => {
     clearInterval(processingInterval);
-    toast.error('Upload failed');
+    toast.error('Network error during upload');
+    setUploadProgress(0);
+    setPreviews([]);
+  };
+
+  xhr.onabort = () => {
+    clearInterval(processingInterval);
+    toast.warning('Upload cancelled');
     setUploadProgress(0);
     setPreviews([]);
   };
 
   xhr.open('POST', '/api/uploads/video', true);
+  xhr.setRequestHeader('Authorization', `Bearer ${userInfo.token}`); // If using auth
   xhr.send(formData);
+
+  // Return cleanup function in case component unmounts during upload
+  return () => {
+    if (xhr.readyState !== XMLHttpRequest.DONE) {
+      xhr.abort();
+    }
+  };
 };
 
   return (

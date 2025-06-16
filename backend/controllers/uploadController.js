@@ -20,6 +20,23 @@ const cleanupFile = async (filePath, activeUploads) => {
   }
 };
 
+const uploadAvatar = asyncHandler(async (req, res, next) => {
+  if (!req.file) throw new Error('No file uploaded');
+  
+  const filePath = req.file.path;
+  req.app.locals.activeUploads.add(filePath);
+
+  try {
+    const result = await uploadToCloudinary(filePath, 'avatars');
+    res.json({ url: result.secure_url, public_id: result.public_id });
+  } catch (error) {
+    throw new Error(`Avatar upload failed: ${error.message}`);
+  } finally {
+    req.app.locals.activeUploads.delete(filePath);
+    await cleanupFile(filePath, req.app.locals.activeUploads);
+  }
+});
+
 // Individual controllers with direct Cloudinary upload
 const uploadAppImage = asyncHandler(async (req, res, next) => {
   if (!req.file) throw new Error('No file uploaded');
@@ -38,6 +55,7 @@ const uploadAppImage = asyncHandler(async (req, res, next) => {
   }
 });
 
+// In your uploadController.js, enhance the video upload handler:
 const uploadAppVideo = asyncHandler(async (req, res, next) => {
   if (!req.file) throw new Error('No file uploaded');
   
@@ -46,13 +64,18 @@ const uploadAppVideo = asyncHandler(async (req, res, next) => {
 
   try {
     const result = await uploadToCloudinary(filePath, 'appvideo');
+    
+    // Add proper response for frontend
     res.json({ 
       url: result.secure_url,
       public_id: result.public_id,
-      duration: result.duration,
-      format: result.format
+      duration: result.duration || 0, // Default if not available
+      format: result.format,
+      width: result.width,
+      height: result.height
     });
   } catch (error) {
+    console.error('Video upload error:', error);
     throw new Error(`Video upload failed: ${error.message}`);
   } finally {
     req.app.locals.activeUploads.delete(filePath);
@@ -61,38 +84,55 @@ const uploadAppVideo = asyncHandler(async (req, res, next) => {
 });
 
 const uploadMessengerFiles = asyncHandler(async (req, res, next) => {
-  if (!req.file) throw new Error('No file uploaded');
-  
-  const filePath = req.file.path;
-  req.app.locals.activeUploads.add(filePath);
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ message: 'No files uploaded' });
+  }
+
+  const results = [];
+  const uploadPromises = req.files.map(async (file) => {
+    const filePath = file.path;
+    req.app.locals.activeUploads.add(filePath);
+
+    try {
+      const result = await uploadToCloudinary(filePath, 'messenger_Files');
+      
+      // Determine if this is a code file
+      const isCodeFile = [
+        'text/javascript', 'application/javascript', 
+        'text/x-python', 'text/x-java', 'text/x-php',
+        'text/html', 'text/css', 'text/x-c', 'text/x-c++',
+        'text/x-ruby', 'text/x-go', 'text/x-rust',
+        'text/x-shellscript'
+      ].some(mime => file.mimetype.includes(mime));
+
+      results.push({
+        url: result.secure_url,
+        public_id: result.public_id,
+        type: isCodeFile ? 'code' : file.mimetype.split('/')[0],
+        fileType: file.mimetype,
+        fileName: file.originalname
+      });
+    } catch (err) {
+      console.error(`Failed to upload ${file.originalname}:`, err);
+      throw err;
+    } finally {
+      req.app.locals.activeUploads.delete(filePath);
+      await cleanupFile(filePath, req.app.locals.activeUploads);
+    }
+  });
 
   try {
-    const result = await uploadToCloudinary(filePath, 'messenger_Files');
-    res.json({ url: result.secure_url, public_id: result.public_id });
+    await Promise.all(uploadPromises);
+    res.json(results);
   } catch (error) {
-    throw new Error(`File upload failed: ${error.message}`);
-  } finally {
-    req.app.locals.activeUploads.delete(filePath);
-    await cleanupFile(filePath, req.app.locals.activeUploads);
+    console.error('File upload error:', error);
+    res.status(500).json({
+      message: 'Some files failed to upload',
+      error: error.message
+    });
   }
 });
 
-const uploadAvatar = asyncHandler(async (req, res, next) => {
-  if (!req.file) throw new Error('No file uploaded');
-  
-  const filePath = req.file.path;
-  req.app.locals.activeUploads.add(filePath);
-
-  try {
-    const result = await uploadToCloudinary(filePath, 'avatars');
-    res.json({ url: result.secure_url, public_id: result.public_id });
-  } catch (error) {
-    throw new Error(`Avatar upload failed: ${error.message}`);
-  } finally {
-    req.app.locals.activeUploads.delete(filePath);
-    await cleanupFile(filePath, req.app.locals.activeUploads);
-  }
-});
 
 const uploadMessengerImages = asyncHandler(async (req, res, next) => {
   if (!req.files || req.files.length === 0) {

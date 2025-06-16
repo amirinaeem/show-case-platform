@@ -48,7 +48,7 @@ const UploadImages = ({ selectFriend }) => {
     });
   };
 
- const uploadImages = async () => {
+ const uploadImagesHandler = async () => {
   if (attachments.length === 0 || !selectFriend?._id) return;
 
   setIsUploading(true);
@@ -141,7 +141,7 @@ const UploadImages = ({ selectFriend }) => {
           <Button
             variant="primary"
             size="sm"
-            onClick={uploadImages}
+            onClick={uploadImagesHandler}
             disabled={isUploading}
             className="w-100 mt-2 d-flex align-items-center justify-content-center"
           >
