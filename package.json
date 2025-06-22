@@ -7,10 +7,11 @@
   "scripts": {
     "start": "node backend/server/server.js",
     "server": "nodemon backend/server/server.js",
-    "client": "npm start --prefix frontend",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "client": "cd frontend && yarn start",
+    "dev": "concurrently \"yarn server\" \"yarn client\"",
     "data:import": "node backend/seeder.js",
-    "data:destroy": "node backend/seeder.js -d"
+    "data:destroy": "node backend/seeder.js -d",
+    "install-all": "yarn install && cd frontend && yarn install"
   },
   "author": "MO.Naeem Amiri",
   "license": "MIT",
@@ -39,6 +40,7 @@
     "multer-storage-cloudinary": "^4.0.0",
     "node-cache": "^5.1.2",
     "peer": "^1.0.2",
+    "react-scripts": "5.0.1",
     "redis": "^5.0.1",
     "socket.io": "^4.8.1",
     "ts-morph": "^25.0.1",

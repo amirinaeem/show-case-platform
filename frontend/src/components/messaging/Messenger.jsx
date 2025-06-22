@@ -43,7 +43,7 @@ const Messenger = ({
     refetch
   } = useGetMessageQuery(selectFriend?._id, {
     skip: !selectFriend?._id,
-    pollingInterval: 5000, // Optional: refetch messages every 5 seconds
+    //pollingInterval: 5000, // Optional: refetch messages every 5 seconds
   });
 
   // Send message mutation
