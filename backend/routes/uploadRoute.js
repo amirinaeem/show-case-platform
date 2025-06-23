@@ -16,6 +16,6 @@ router.post('/image', protect, uploadSingle('file'), uploadAppImage);
 router.post('/video', protect, uploadSingle('file'), uploadAppVideo);
 router.post('/files', protect, uploadMultiple('files'), uploadMessengerFiles);
 router.post('/images', protect, uploadMultiple('files'), uploadMessengerImages);
-router.post('/avatar', protect, uploadSingle('file'), uploadAvatar);
+router.post('/avatar', uploadSingle('file'), uploadAvatar);
 
 export default router;

@@ -100,37 +100,11 @@ const replyOwnerOrAdmin = asyncHandler(async (req, res, next) => {
   next();
 });
 
-// Socket.io authentication middleware
-const socketAuth = async (socket, next) => {
-  try {
-    const token = socket.handshake.auth?.token;
-    console.log('Incoming connection with token:', token); // Add this line
-    
-    if (!token) {
-      console.warn('No token provided');
-      throw new Error('No token provided');
-    }
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-    
-    if (!user) {
-      console.warn('User not found for token');
-      throw new Error('User not found');
-    }
-    
-    socket.user = user;
-    next();
-  } catch (error) {
-    console.error('Socket auth error:', error.message);
-    next(new Error('Not authorized'));
-  }
-};
 
 export {
   protect,
   admin,
   commentOwnerOrAdmin,
   replyOwnerOrAdmin,
-  socketAuth
+  
 };

@@ -10,51 +10,90 @@ import connectDB from './config/mdb.js';
 
 dotenv.config();
 
-connectDB();
+// Add connection error handling
+connectDB().catch(err => {
+  console.error('DB Connection Error:'.red.inverse, err);
+  process.exit(1);
+});
 
+// Improved data import with transactions
 const importData = async () => {
-    try {
-        await Order.deleteMany();
-        await Application.deleteMany();
-        await User.deleteMany();
-        const createdUsers = await User.insertMany(users);
-        const adminUser = createdUsers[0]._id;
-        const sampleApplications = applicationsData.map((app) => {
-            return {...app, user: adminUser}
-        });
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
+  try {
+    await Order.deleteMany({ session });
+    await Application.deleteMany({ session });
+    await User.deleteMany({ session });
 
-        await Application.insertMany(sampleApplications);
+    const createdUsers = await User.insertMany(users, { session });
+    const adminUser = createdUsers.find(u => u.isAdmin)?._id || createdUsers[0]._id;
 
-        console.log('Data Imported!'.green.inverse);
+    const sampleApplications = applicationsData.map(app => ({
+      ...app,
+      user: adminUser,
+      // Add createdAt timestamp if not present
+      createdAt: app.createdAt || new Date()
+    }));
 
-        process.exit();
+    await Application.insertMany(sampleApplications, { session });
 
-    } catch(error) {
+    await session.commitTransaction();
+    console.log('✅ Data Imported Successfully'.green.inverse);
+    process.exit(0);
 
-        console.error(`${error}`.red.inverse);
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('❌ Import Error:'.red.inverse, error);
+    process.exit(1);
+  } finally {
+    session.endSession();
+  }
+};
 
-        process.exit(1)
-    }
-}
-
+// Improved data destruction
 const destroyData = async () => {
-    try {
-        await Order.deleteMany();
-        await Application.deleteMany();
-        await User.deleteMany();
+  try {
+    // Confirm before destructive operation
+    const readline = (await import('readline')).createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
 
-        console.log('Data Destroyed!'.red.inverse);
-        process.exit();
+    const answer = await new Promise(resolve => {
+      readline.question('⚠️  Are you sure you want to DELETE ALL DATA? (y/n) ', resolve);
+    });
 
-    } catch(error) {
-       
-        console.error(`${error}`.red.inverse);
-        process.exit(1);
+    if (answer.toLowerCase() !== 'y') {
+      console.log('Operation cancelled'.yellow);
+      process.exit(0);
     }
+
+    await Promise.all([
+      Order.deleteMany(),
+      Application.deleteMany(),
+      User.deleteMany()
+    ]);
+
+    console.log('🗑️  All Data Destroyed'.red.inverse);
+    process.exit(0);
+
+  } catch (error) {
+    console.error('❌ Destruction Error:'.red.inverse, error);
+    process.exit(1);
+  }
+};
+
+// Add help text
+if (process.argv[2] === '-h') {
+  console.log(`
+Usage:
+  node seeder.js       - Import sample data
+  node seeder.js -d    - Destroy all data
+  node seeder.js -h    - Show this help
+`);
+  process.exit(0);
 }
 
-if(process.argv[2] === '-d') {
-    destroyData();
-} else {
-    importData();
-}
+// Execute based on argument
+process.argv[2] === '-d' ? destroyData() : importData();

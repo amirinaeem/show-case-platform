@@ -1,0 +1,19 @@
+{
+  "name": "socket-server",
+  "version": "1.0.0",
+  "description": "Real-time Socket.io server for show-case-platform",
+  "main": "socketServer.js",
+  "type": "module", 
+  "private": true, 
+  "license": "MIT",
+  "scripts": {
+    "start": "node socketServer.js",
+    "dev": "nodemon socketServer.js --ext js,json" 
+  },
+  "dependencies": {
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

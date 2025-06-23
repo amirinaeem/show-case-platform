@@ -10,18 +10,14 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import cors from 'cors';
 import { createServer } from 'http';
-import { Server as SocketIOServer } from 'socket.io';
-import { PeerServer } from 'peer';
 import fs from 'fs';
 
 // Config and Middleware
 import connectDB from '../config/mdb.js';
 import { notFound, errorHandler } from '../middleware/errorMiddleware.js';
-import { socketAuth } from '../middleware/authMiddleware.js';
 
 // Routes and Sockets
 import apiRoutes from '../routes/routeSetup.js';
-import { setupSocketHandlers } from '../sockets/socketHandlers.js';
 import messengerRoutes from '../routes/messengerRoutes.js';
 
 // Constants
@@ -37,13 +33,6 @@ const activeUploads = new Set();
 // ======================
 const app = express();
 const httpServer = createServer(app);
-
-// PeerJS Signaling Server
-const peerServer = PeerServer({
-  port: 9001,
-  path: '/peerjs',
-  proxied: true,
-});
 
 // ======================
 // Connect to Database
@@ -97,27 +86,6 @@ app.use(notFound);
 app.use(errorHandler);
 
 // ======================
-// Socket.IO Setup
-// ======================
-const io = new SocketIOServer(httpServer, {
-  cors: {
-    origin: FRONTEND_URL,
-    credentials: true,
-    methods: ['GET', 'POST'],
-  },
-  connectionStateRecovery: {
-    maxDisconnectionDuration: 2 * 60 * 1000,
-    skipMiddlewares: false,
-  },
-  pingInterval: 10000,
-  pingTimeout: 5000,
-  transports: ['websocket', 'polling'],
-});
-
-io.use(socketAuth);
-setupSocketHandlers(io);
-
-// ======================
 // TEMPORARY FILE CLEANUP
 // ======================
 const cleanTempFolder = () => {
@@ -162,7 +130,6 @@ httpServer.listen(PORT, () => {
   =============================================
   🚀 Server running on port ${PORT}
   📁 Root directory: ${rootDir}
-  🌐 WebSocket: ws://localhost:${PORT}
   🌍 API: http://localhost:${PORT}/api
   =============================================
   `);
@@ -186,19 +153,10 @@ const shutdown = (signal) => {
   }, 10000);
 
   httpServer.close(() => {
-    console.log('✅ HTTP server closed.');
-
-    if (peerServer && peerServer._wss) {
-      peerServer._wss.close(() => {
-        console.log('✅ PeerJS server closed.');
-        clearTimeout(shutdownTimeout);
-        process.exit(0);
-      });
-    } else {
-      clearTimeout(shutdownTimeout);
-      process.exit(0);
-    }
-  });
+  console.log('✅ HTTP server closed.');
+  clearTimeout(shutdownTimeout);
+  process.exit(0);
+});
 };
 
 // Avoid duplicate listeners

@@ -23,6 +23,7 @@ const RegisterScreen = () => {
   const navigate = useNavigate();
 
   const { userInfo } = useSelector((state) => state.auth);
+  
   const { search } = useLocation();
   const sp = new URLSearchParams(search);
   const redirect = sp.get('redirect') || '/';
@@ -37,25 +38,27 @@ const RegisterScreen = () => {
   };
 
   const uploadAvatarHandler = async (file) => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
 
-      const res = await fetch('/api/uploads/avatar', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
+    const res = await fetch('/api/uploads/avatar', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Avatar upload failed');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Avatar upload failed');
 
-      toast.success('Avatar uploaded successfully');
-      setFormData((prev) => ({ ...prev, avatarUrl: data.url }));
-    } catch (error) {
-      toast.error(error.message);
-    }
-  };
+    toast.success('Avatar uploaded successfully');
+    setFormData((prev) => ({ ...prev, avatarUrl: data.url }));
+    return data.url; 
+  } catch (error) {
+    toast.error(error.message);
+    throw error; 
+  }
+};
 
   const handleFileChange = async (e) => {
     if (e.target.files.length > 0) {
