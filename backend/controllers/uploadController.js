@@ -24,8 +24,6 @@ const uploadAvatar = asyncHandler(async (req, res, next) => {
 
   if (!req.file) throw new Error('No file uploaded');
 
-  console.log(req.file, 'from backend controllor')
-  
   const filePath = req.file.path;
   req.app.locals.activeUploads.add(filePath);
 
