@@ -1,127 +1,145 @@
-import { ListGroup, Image, Badge, Stack, Form, Button } from 'react-bootstrap';
-
-
-import { 
-  FaEllipsisH, 
-  FaEdit, 
-  FaSistrix, 
-  FaSignOutAlt,
-  FaRegCheckCircle,
-  FaCircle
-} from "react-icons/fa";
+import { useState } from 'react';
+import { ListGroup, Image, Badge, Stack, Form } from 'react-bootstrap';
+import { FaSistrix, FaRegCheckCircle, FaCircle } from "react-icons/fa";
 import '../../assets/styles/messaging/leftSide.css';
 
-
-const LeftSide = ({userInfo, friends, setSelectFriend}) => {
- friends = friends.filter(friend => friend._id !== userInfo._id);
+const LeftSide = ({ userInfo, friends, setSelectFriend, isLoading, connectedUsers }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const filteredFriends = friends.filter(friend => 
+    friend.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="left-side">
-      {/* User Profile Section */}
-      <div className='top d-flex justify-content-between align-items-center m-2'>
+    <div className="left-side pb-5">
+      <div className='top d-flex justify-content-between align-items-center'>
         <div className='image-name d-flex align-items-center'>
-          <div className='image'>
-            <img src={userInfo.avatar} alt='user' />
+          <div className='position-relative'>
+            <Image 
+              src={userInfo.avatar} 
+              alt='user' 
+              roundedCircle 
+              width="40"
+              height="40"
+              className="me-2"
+            />
+            {connectedUsers.some(user => user.userId === userInfo._id) && (
+              <Badge pill bg="success" className="active-badge">
+                <FaCircle className="active-icon" />
+              </Badge>
+            )}
           </div>
-          <div className='name'>
-            <h3>{userInfo.name}</h3>
-          </div>
-        </div>
-
-        <div className='icons d-flex position-relative'>
-          <div className='icon'><FaEllipsisH /></div>
-          <div className='icon'><FaEdit /></div>
-
-          <div className='theme_logout'>
-            <h3>Dark Mode</h3>
-            <div className='on d-flex justify-content-between mt-2'>
-              <label htmlFor='dark'>ON</label>
-              <input type="radio" value="dark" name="theme" id="dark" />
-            </div>
-            <div className='of d-flex justify-content-between mt-2'>
-              <label htmlFor='white'>OFF</label>
-              <input type="radio" value="white" name="theme" id="white" />
-            </div>
-            <div className='logout d-flex align-items-center mt-2'>
-              <FaSignOutAlt /> Logout
-            </div>
-          </div>
+          <h5 className='mb-0'>{userInfo.name}</h5>
         </div>
       </div>
 
-      {/* Search Section */}
-      <div className='friend-search px-2'>
-        <div className='search d-flex align-items-center'>
-          <Button variant="link" className="p-0 text-dark"><FaSistrix /></Button>
+      <div className='friend-search px-3 py-2'>
+        <div className='search d-flex align-items-center bg-light rounded-pill px-3'>
+          <FaSistrix className="text-muted me-2" />
           <Form.Control 
             type="text" 
-            placeholder='Search' 
-            className='form-control' 
+            placeholder='Search friends...' 
+            className='border-0 bg-transparent shadow-none' 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Friends List Section */}
-        <div className='friends-list-container'>
-        <ListGroup variant="flush" className="friends-list">
-          {friends.map((friend, index) => (
-            <ListGroup.Item 
-              key={friend._id || index} // Use friend._id if available
-              action 
-              className={`friend-item ${friend.unread ? 'unread' : ''}
-              `}
-              onClick={() => setSelectFriend(friend)}
-            >
-              <Stack direction="horizontal" gap={3} className="align-items-center">
-                {/* Friend Avatar with Active Status */}
-                <div className="position-relative">
-                  <Image 
-                    src={friend.avatar || 'SHCAPL-logo.jpg'} 
-                    alt="friend profile" 
-                    roundedCircle 
-                    className="friend-avatar"
-                  />
-                  {friend.active && (
-                    <Badge pill bg="success" className="active-badge">
-                      <FaCircle className="active-icon" />
-                    </Badge>
-                  )}
-                </div>
+      <div className='active-users-section px-3 py-2 bg-light'>
+        <h6 className='text-muted mb-3'>Active Now</h6>
+        <div className='active-users-list d-flex'>
+          {friends
+            .filter(friend => friend.active)
+            .slice(0, 8)
+            .map(friend => (
+              <div 
+                key={friend._id} 
+                className="active-user-item position-relative mx-1"
+                onClick={() => setSelectFriend(friend)}
+              >
+                <Image 
+                  src={friend.avatar} 
+                  alt={friend.name}
+                  roundedCircle
+                  width="40"
+                  height="40"
+                />
+                <Badge pill bg="success" className="active-indicator" />
+              </div>
+            ))}
+        </div>
+      </div>
 
-                {/* Friend Name and Message */}
-                <Stack className="friend-details">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <h5 className={`friend-name mb-0 ${friend.unread ? 'fw-bold' : ''}`}>
-                      {friend.name}
-                    </h5>
-                    <span className={`message-time ${friend.unread ? 'fw-bold' : ''}`}>
-                      {friend.lastMessageTime}
-                    </span>
+      <div className='friends-list-container'>
+        <h6 className='text-muted px-3 py-2 mb-0'>All Conversations</h6>
+        {isLoading ? (
+          <div className="text-center py-4">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        ) : (
+          <ListGroup variant="flush" className="friends-list">
+            {filteredFriends.map((friend) => (
+              <ListGroup.Item 
+                key={friend._id}
+                action 
+                className={`friend-item ${friend.unread ? 'unread' : ''}`}
+                onClick={() => setSelectFriend(friend)}
+                active={false}
+              >
+                <Stack direction="horizontal" gap={3} className="align-items-center">
+                  <div className="position-relative">
+                    <Image 
+                      src={friend.avatar || 'default-avatar.png'} 
+                      alt={friend.name} 
+                      roundedCircle 
+                      width="50"
+                      height="50"
+                      className="friend-avatar"
+                    />
+                    {friend.active && (
+                      <Badge pill bg="success" className="active-badge">
+                        <FaCircle className="active-icon" />
+                      </Badge>
+                    )}
                   </div>
-                  <div className="d-flex justify-content-between align-items-center">
-                    <p className={`last-message mb-0 ${friend.unread ? 'fw-bold' : ''}`}>
-                      {friend.lastMessage && (
-                        <>
-                          <span className="you-label">
-                            {friend.lastMessage.sender === userInfo.name ? 'You: ' : ''}
-                          </span>
-                          {friend.lastMessage.text}
-                        </>
-                      )}
-                    </p>
-                    <div className="message-status">
-                      {friend.unread ? (
-                        <Badge pill bg="primary" className="unread-badge" />
-                      ) : (
-                        <FaRegCheckCircle className="read-icon" />
-                      )}
+
+                  <Stack className="friend-details flex-grow-1">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <h5 className={`friend-name mb-0 ${friend.unread ? 'fw-bold' : ''}`}>
+                        {friend.name}
+                      </h5>
+                      <small className={`message-time ${friend.unread ? 'fw-bold' : ''}`}>
+                        {friend.lastMessageTime}
+                      </small>
                     </div>
-                  </div>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <p className={`last-message mb-0 text-truncate ${friend.unread ? 'fw-bold' : ''}`}>
+                        {friend.lastMessage && (
+                          <>
+                            <span className="you-label">
+                              {friend.lastMessage.sender === userInfo.name ? 'You: ' : ''}
+                            </span>
+                            {friend.lastMessage.text}
+                          </>
+                        )}
+                      </p>
+                      <div className="message-status">
+                        {friend.unread ? (
+                          <Badge pill bg="primary" className="unread-badge" />
+                        ) : (
+                          <FaRegCheckCircle className="read-icon text-muted" />
+                        )}
+                      </div>
+                    </div>
+                  </Stack>
                 </Stack>
-              </Stack>
-            </ListGroup.Item>
-          ))}
-        </ListGroup>
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        )}
       </div>
     </div>
   );

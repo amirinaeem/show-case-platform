@@ -142,7 +142,7 @@ const Messenger = ({
   }
 
   return (
-    <div className="messenger-container">
+    <div className="messenger-container pb-5">
       {/* Message Header */}
       <div className="message-header">
         <div className="d-flex align-items-center">
@@ -172,7 +172,7 @@ const Messenger = ({
 
       {/* Messages Display Area */}
       <div
-        className="messages-display"
+        className="messages-display p-3"
         ref={scrollRef}
         style={{overflowY: 'auto'}}
       >

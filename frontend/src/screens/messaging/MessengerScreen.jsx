@@ -1,22 +1,46 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { Container, Row, Col } from 'react-bootstrap';
-import { useSocket } from '../../socket/hooks/useSocket';
-import { socketNotficationsHandler } from '../../socket/helper/notificationsHandler'; 
 import LeftSide from '../../components/messaging/LeftSide';
 import RightSide from '../../components/messaging/RightSide';
 import Messenger from '../../components/messaging/Messenger';
 import { useGetFriendsQuery } from '../../slices/messengerSlice';
+import { useSocket } from '../../socket/hooks/useSocket';
+import { socketNotficationsHandler } from '../../socket/helper/notificationsHandler';
+import '../../assets/styles/messaging/messengerScreen.css';
 
 const MessengerScreen = () => {
-  const { userInfo } = useSelector(state => state.auth);
-  const socket = useSocket(); 
+  const { userInfo } = useSelector((state) => state.auth);
+  const socket = useSocket();
   const { data: friends = [], isLoading } = useGetFriendsQuery();
-  const [selectFriend, setSelectFriend] = useState(null);
-  const [connectedUsers, setConnectedUsers] = useState([]); // Initialize as empty array
-  const [socketReady, setSocketReady] = useState(false);
 
-  // Track socket connection status
+  const [selectFriend, setSelectFriend] = useState(null);
+  const [connectedUsers, setConnectedUsers] = useState([]);
+  const [socketReady, setSocketReady] = useState(false);
+  const [showChatColumns, setShowChatColumns] = useState(false);
+  const [showMessenger, setShowMessenger] = useState(false);
+  const [showRight, setShowRight] = useState(false);
+
+  const handleSelectFriend = (friend) => {
+    setSelectFriend(friend);
+    setShowChatColumns(true);
+  };
+
+  const handleCloseChat = () => {
+    setShowRight(false);
+    setShowMessenger(false);
+    setTimeout(() => {
+      setShowChatColumns(false);
+      setSelectFriend(null);
+    }, 300);
+  };
+
+  useEffect(() => {
+    if (showChatColumns) {
+      setTimeout(() => setShowMessenger(true), 400);
+      setTimeout(() => setShowRight(true), 800);
+    }
+  }, [showChatColumns]);
+
   useEffect(() => {
     if (!socket) return;
 
@@ -32,47 +56,63 @@ const MessengerScreen = () => {
     };
   }, [socket]);
 
-  // Setup notifications only when socket is ready
   useEffect(() => {
     if (!socket || !socketReady) return;
-    
-    const cleanup = socketNotficationsHandler(socket, setConnectedUsers);
-    return cleanup;
+    return socketNotficationsHandler(socket, setConnectedUsers);
   }, [socket, socketReady]);
 
-  console.log('Socket ready:', socketReady);
-  console.log('Current connected users:', connectedUsers);
-  
+  const enhancedFriends = useMemo(() => {
+    if (!friends || !connectedUsers) return [];
+
+    return friends
+      .filter((friend) => friend._id !== userInfo._id)
+      .map((friend) => ({
+        ...friend,
+        active: connectedUsers.some((user) => user.userId === friend._id),
+      }))
+      .sort((a, b) => {
+        if (a.active && !b.active) return -1;
+        if (!a.active && b.active) return 1;
+        return a.name.localeCompare(b.name);
+      });
+  }, [friends, connectedUsers, userInfo._id]);
 
   return (
-    <Container fluid className="messenger-screen">
-      <Row className="h-100">
-        <Col md={3}>
+    <div className="messenger-screen">
+      <div className="messenger-layout">
+        <div className={`left-column ${showChatColumns ? 'shrink' : ''}`}>
           <LeftSide
             userInfo={userInfo}
-            friends={friends}
-            setSelectFriend={setSelectFriend}
+            friends={enhancedFriends}
+            setSelectFriend={handleSelectFriend}
             isLoading={isLoading}
+            connectedUsers={connectedUsers}
           />
-        </Col>
-        <Col md={6}>
-          {selectFriend ? (
+        </div>
+
+        <div className={`messenger-column ${showMessenger ? 'expand' : ''}`}>
+          {showMessenger && (
             <Messenger
               selectFriend={selectFriend}
               userInfo={userInfo}
-              
+              socket={socket}
+              socketReady={socketReady}
+              onClose={handleCloseChat}
             />
-          ) : (
-            <div className="select-friend-prompt">
-              Please select someone to chat with
-            </div>
           )}
-        </Col>
-        <Col md={3}>
-          <RightSide selectFriend={selectFriend} userInfo={userInfo} />
-        </Col>
-      </Row>
-    </Container>
+        </div>
+
+        <div className={`right-column ${showRight ? 'expand' : ''}`}>
+          {showRight && (
+            <RightSide
+              selectFriend={selectFriend}
+              userInfo={userInfo}
+              connectedUsers={connectedUsers}
+            />
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

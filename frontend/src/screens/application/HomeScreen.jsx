@@ -60,34 +60,21 @@ function HomeScreen() {
               {/* Chat Interface */}
               
              
-{showChat && (
-  <div
-    className="position-fixed shadow-lg rounded d-flex flex-column"
-    style={{
-      bottom: '90px',
-      top: '90px',
-      right: '10px',
-      left: '10px', // Add left positioning for better responsiveness
-      backgroundColor: '#f9f9f9',
-      border: '1px solid #ccc',
-      borderRadius: '12px',
-      zIndex: 1050,
-      overflow: 'hidden', // Add this to contain everything
-    }}
-  >
-    <MessengerScreen 
-      onClose={() => setShowChat(false)}
-    />
-  </div>
-)}
+          {showChat && (
+        <div
+        
+        >
+          <MessengerScreen />
+        </div>
+      )}
 
           {/* Floating Chat Toggle */}
           <button
             onClick={() => setShowChat(!showChat)}
             className="position-fixed d-flex align-items-center justify-content-center p-0 border-0"
             style={{
-              bottom: '20px',
-              right: '20px',
+              bottom: '10px',
+              left: '10px',
               width: '60px',
               height: '60px',
               borderRadius: '50%',

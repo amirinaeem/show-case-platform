@@ -1,59 +1,117 @@
 .right-side {
-  height: 100%;
+  height: 80vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  background-color: rgb(172, 187, 201);
-  color: whitesmoke;
-  border-left: 1px solid var(--border-color);
+  border-left: 1px solid rgb(87, 92, 128);
+  background-color: rgb(87, 92, 128);
 }
 
-/* Ensure it adapts inside grid layout */
-.right-side-row {
+.profile-header {
+  padding: 1rem;
+  background-color: rgb(87, 92, 128);
+  color: #ffffff;
   display: flex;
-  flex-direction: row;
-  height: 100%;
-  width: 100%;
-}
-
-.friend-column {
-  width: 320px;
-  transition: width 0.3s ease;
-  overflow-y: auto;
-  border-left: 1px solid var(--border-color);
-}
-
-.message-column {
-  flex: 1;
-  transition: all 0.3s ease;
-  overflow-y: hidden;
-}
-
-.message-send-show {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
   justify-content: space-between;
-  border-right: 1px solid var(--border-color);
+  align-items: center;
+  flex-shrink: 0;
 }
 
-/* Right-side layout collapses correctly */
-#dot:checked ~ .right-side-row .friend-column {
-  display: none;
+.profile-header h5 {
+  margin: 0;
+  font-size: 1rem;
 }
 
-#dot:checked ~ .right-side-row .message-column {
-  width: 100%;
+.icon-button {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
-/* Inside RightSide: Scroll area for card body */
-.friend-info-card .card-body {
+.icon-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.profile-card {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  flex-shrink: 0;
+}
+
+.profile-card .card-body {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.active-badge-profile {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.profile-accordion {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 1rem;
 }
 
-/* Add small padding at bottom */
-.right-side .active-friends-container {
-  margin-bottom: 1rem;
+.accordion-header {
+  padding: 0.75rem 1rem;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.accordion-header button {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  color: #495057;
+  font-weight: 500;
+}
+
+.accordion-header svg {
+  margin-right: 0.5rem;
+}
+
+.accordion-body {
+  padding: 1rem;
+}
+
+.gallery-item {
+  margin-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Custom scrollbar for accordion */
+.profile-accordion::-webkit-scrollbar {
+  width: 6px;
+}
+
+.profile-accordion::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.profile-accordion::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
 }

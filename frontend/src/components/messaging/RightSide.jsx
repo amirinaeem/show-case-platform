@@ -1,95 +1,126 @@
+import { Container, Card, Accordion, Row, Col, Image, Badge } from 'react-bootstrap';
+import { FaCaretDown, FaPhoneAlt, FaVideo, FaEllipsisV } from 'react-icons/fa';
+import { BsCheck2Circle } from 'react-icons/bs';
+import '../../assets/styles/messaging/rightSide.css';
 
-import { Container, Card, Accordion, Row, Col, Image } from 'react-bootstrap';
-import { FaCaretSquareDown } from 'react-icons/fa';
-import '../../assets/styles/messaging/rightSide.css'
+const RightSide = ({ selectFriend, userInfo, connectedUsers }) => {
+  if (!selectFriend) {
+    return (
+      <div className="right-side d-flex justify-content-center align-items-center">
+        <div className="text-center">
+          <h5>User Profile</h5>
+          <p className="text-muted">Select a friend to view profile</p>
+        </div>
+      </div>
+    );
+  }
 
-const RightSide = ({ selectFriend }) => {
-  
-  if (!selectFriend) return null;
+  const isActive = connectedUsers.some(user => user.userId === selectFriend._id);
 
   return (
-    <div className="right-side p-3">
-
-      {/* Active Friends */}
-      <Container fluid className="px-0 active-friends-container">
-        <div className="d-flex flex-nowrap active-friends-scroll">
-          {[1].map((i) => (
-            <div key={i} className="position-relative mx-2 active-friend-item">
-              <Image
-                src="SHCAPL-logo.jpg"
-                alt="user profile"
-                roundedCircle
-                className="friend-avatar"
-              />
-              <div className="active-indicator" />
-            </div>
-          ))}
+    <div className="right-side mb-5">
+      {/* User Profile Header */}
+      <div className="profile-header p-3 d-flex justify-content-between align-items-center">
+        <h5 className="mb-0">Profile</h5>
+        <div className="d-flex">
+          <button className="icon-button me-2">
+            <FaPhoneAlt />
+          </button>
+          <button className="icon-button me-2">
+            <FaVideo />
+          </button>
+          <button className="icon-button">
+            <FaEllipsisV />
+          </button>
         </div>
-      </Container>
+      </div>
 
-      {/* Friend Info */}
-      <Card className="friend-info-card">
-        <Card.Body className="p-3">
-          {/* Profile Section */}
-          <Container className="text-center mb-4">
-            <div className="position-relative d-inline-block">
-              <Image
-                src={selectFriend.avatar}
-                alt="friend profile"
-                roundedCircle
-                className="friend-avatar"
-              />
-              <span className="active-badge">Active</span>
+      {/* User Profile Card */}
+      <Card className="profile-card border-0 shadow-sm">
+        <Card.Body className="p-4 text-center">
+          <div className="position-relative d-inline-block mb-3">
+            <Image
+              src={selectFriend.avatar}
+              alt={selectFriend.name}
+              roundedCircle
+              width={120}
+              height={120}
+              className="border border-3 border-primary"
+            />
+            {isActive && (
+              <Badge pill bg="success" className="active-badge-profile">
+                Online
+              </Badge>
+            )}
+          </div>
+          <h4 className="mb-1">{selectFriend.name}</h4>
+          <p className="text-muted mb-3">
+            {isActive ? 'Active now' : 'Last seen recently'}
+          </p>
+          
+          <div className="d-flex justify-content-center mb-4">
+            <div className="text-center mx-3">
+              <div className="fw-bold">1.2K</div>
+              <small className="text-muted">Friends</small>
             </div>
-            <h4 className="mt-3 friend-name">{selectFriend.name}</h4>
-          </Container>
-
-          {/* Options Accordion */}
-          <Accordion defaultActiveKey="0" flush className="options-accordion">
-            <Accordion.Item eventKey="0" className="border-0">
-              <Accordion.Header className="option-header">
-                <span>Customize Chat</span>
-                <FaCaretSquareDown className="accordion-icon" />
-              </Accordion.Header>
-              <Accordion.Body>
-                <div className="text-muted">Chat customization options</div>
-              </Accordion.Body>
-            </Accordion.Item>
-
-            <Accordion.Item eventKey="1" className="border-0">
-              <Accordion.Header className="option-header">
-                <span>Privacy and Support</span>
-                <FaCaretSquareDown className="accordion-icon" />
-              </Accordion.Header>
-              <Accordion.Body>
-                <div className="text-muted">Privacy settings</div>
-              </Accordion.Body>
-            </Accordion.Item>
-
-            <Accordion.Item eventKey="2" className="border-0">
-              <Accordion.Header className="option-header">
-                <span>Shared Media</span>
-                <FaCaretSquareDown className="accordion-icon" />
-              </Accordion.Header>
-              <Accordion.Body>
-                <Row className="gallery-grid g-2">
-                  {[1, 2, 3, 4].map((item) => (
-                    <Col xs={6} key={item}>
-                      <Image
-                        src="SHCAPL-logo.jpg"
-                        alt="shared media"
-                        thumbnail
-                        className="gallery-image"
-                      />
-                    </Col>
-                  ))}
-                </Row>
-              </Accordion.Body>
-            </Accordion.Item>
-          </Accordion>
+            <div className="text-center mx-3">
+              <div className="fw-bold">568</div>
+              <small className="text-muted">Following</small>
+            </div>
+            <div className="text-center mx-3">
+              <div className="fw-bold">4.5K</div>
+              <small className="text-muted">Followers</small>
+            </div>
+          </div>
         </Card.Body>
       </Card>
 
+      {/* Profile Details Accordion */}
+      <Accordion defaultActiveKey="0" className="profile-accordion mt-3">
+        <Accordion.Item eventKey="0" className="border-0">
+          <Accordion.Header className="accordion-header">
+            <div className="d-flex align-items-center">
+              <BsCheck2Circle className="me-2" />
+              <span>About</span>
+            </div>
+            <FaCaretDown className="ms-auto" />
+          </Accordion.Header>
+          <Accordion.Body className="text-muted">
+            <div className="mb-2">
+              <small>Bio</small>
+              <p className="mb-0">Hey there! I'm using this awesome chat app</p>
+            </div>
+            <div className="mb-2">
+              <small>Email</small>
+              <p className="mb-0">{selectFriend.email || 'Not available'}</p>
+            </div>
+          </Accordion.Body>
+        </Accordion.Item>
+
+        <Accordion.Item eventKey="1" className="border-0">
+          <Accordion.Header className="accordion-header">
+            <div className="d-flex align-items-center">
+              <BsCheck2Circle className="me-2" />
+              <span>Media Shared</span>
+            </div>
+            <FaCaretDown className="ms-auto" />
+          </Accordion.Header>
+          <Accordion.Body>
+            <Row className="g-2">
+              {[1, 2, 3, 4, 5, 6].map((item) => (
+                <Col xs={4} key={item}>
+                  <Image
+                    src={`https://picsum.photos/200/200?random=${item}`}
+                    alt="Media"
+                    thumbnail
+                    className="gallery-item"
+                  />
+                </Col>
+              ))}
+            </Row>
+          </Accordion.Body>
+        </Accordion.Item>
+      </Accordion>
     </div>
   );
 };
