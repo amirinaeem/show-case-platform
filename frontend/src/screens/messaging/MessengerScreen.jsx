@@ -20,24 +20,19 @@ const MessengerScreen = () => {
   const [showMessenger, setShowMessenger] = useState(false);
   const [showRight, setShowRight] = useState(false);
 
+
+  console.log('connected users from messenger Screen', connectedUsers)
+
   const handleSelectFriend = (friend) => {
     setSelectFriend(friend);
     setShowChatColumns(true);
   };
 
-  const handleCloseChat = () => {
-    setShowRight(false);
-    setShowMessenger(false);
-    setTimeout(() => {
-      setShowChatColumns(false);
-      setSelectFriend(null);
-    }, 300);
-  };
-
+  
   useEffect(() => {
     if (showChatColumns) {
-      setTimeout(() => setShowMessenger(true), 400);
-      setTimeout(() => setShowRight(true), 800);
+      setTimeout(() => setShowMessenger(true), 100);
+      setTimeout(() => setShowRight(true), 400);
     }
   }, [showChatColumns]);
 
@@ -62,20 +57,23 @@ const MessengerScreen = () => {
   }, [socket, socketReady]);
 
   const enhancedFriends = useMemo(() => {
-    if (!friends || !connectedUsers) return [];
+  if (!friends || !connectedUsers) return [];
 
-    return friends
-      .filter((friend) => friend._id !== userInfo._id)
-      .map((friend) => ({
-        ...friend,
-        active: connectedUsers.some((user) => user.userId === friend._id),
-      }))
-      .sort((a, b) => {
-        if (a.active && !b.active) return -1;
-        if (!a.active && b.active) return 1;
-        return a.name.localeCompare(b.name);
-      });
-  }, [friends, connectedUsers, userInfo._id]);
+  return friends
+    .filter((friend) => friend._id !== userInfo._id)
+    .map((friend) => ({
+      ...friend,
+      active: connectedUsers.some((user) => user.id === friend._id),
+    }))
+    .sort((a, b) => {
+      if (a.active && !b.active) return -1;
+      if (!a.active && b.active) return 1;
+      return a.name.localeCompare(b.name);
+    });
+}, [friends, connectedUsers, userInfo._id]);
+
+
+const isCurrentUserOnline = connectedUsers.some(user => user.id === userInfo._id);
 
   return (
     <div className="messenger-screen">
@@ -87,6 +85,7 @@ const MessengerScreen = () => {
             setSelectFriend={handleSelectFriend}
             isLoading={isLoading}
             connectedUsers={connectedUsers}
+            isCurrentUserOnline={isCurrentUserOnline}
           />
         </div>
 
@@ -95,9 +94,8 @@ const MessengerScreen = () => {
             <Messenger
               selectFriend={selectFriend}
               userInfo={userInfo}
-              socket={socket}
-              socketReady={socketReady}
-              onClose={handleCloseChat}
+              connectedUsers={connectedUsers}
+
             />
           )}
         </div>
@@ -106,7 +104,6 @@ const MessengerScreen = () => {
           {showRight && (
             <RightSide
               selectFriend={selectFriend}
-              userInfo={userInfo}
               connectedUsers={connectedUsers}
             />
           )}

@@ -15,7 +15,7 @@
 
 /* FIXED WIDTH */
 .left-column {
-  width: 20vw;
+  width: 25vw;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -44,7 +44,8 @@
 }
 
 .right-column.expand {
-  width: 30vw;
+  width: 25vw;
+  padding-right: 2rem;
   opacity: 1;
 }
 

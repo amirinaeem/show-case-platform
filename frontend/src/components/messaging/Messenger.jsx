@@ -9,7 +9,7 @@ import {
   OverlayTrigger,
   Tooltip,
   Spinner,
-  Alert
+  Alert,
 } from 'react-bootstrap';
 import { 
   FaPhoneAlt,
@@ -19,6 +19,8 @@ import {
   FaPaperPlane,
   FaCheckDouble,
   FaFileAlt,
+  FaTimesCircle,
+  FaCircle
 } from 'react-icons/fa';
 import { RiChat3Line } from 'react-icons/ri';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -29,10 +31,16 @@ import '../../assets/styles/messaging/messenger.css';
 const Messenger = ({
   selectFriend,
   userInfo,
+  connectedUsers,
+
 }) => {
   const scrollRef = useRef();
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  const isFriendOnline = connectedUsers.some(user => user.id === selectFriend?._id)
+
+  console.log('from messenger', isFriendOnline)
 
   // Get messages for the selected friend
   const {
@@ -110,16 +118,6 @@ const Messenger = ({
     }
   };
 
-  if (!selectFriend) {
-    return (
-      <div className="messenger-container d-flex justify-content-center align-items-center">
-        <div className="text-center">
-          <RiChat3Line size={48} className="text-muted mb-3" />
-          <h5>Select a conversation to start chatting</h5>
-        </div>
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
@@ -147,15 +145,20 @@ const Messenger = ({
       <div className="message-header">
         <div className="d-flex align-items-center">
           <Image 
-            src={selectFriend?.avatar || '/images/default-avatar.png'} 
-            roundedCircle 
-            className="message-header-avatar"
-            alt="Friend avatar"
-          />
+  src={selectFriend?.avatar || '/images/default-avatar.png'} 
+  roundedCircle 
+  className={`message-header-avatar ${isFriendOnline ? 'online-avatar' : 'offline-avatar'}`}
+  alt="Friend avatar"
+/>
+          {isFriendOnline ? (
+    <div className="online-indicator">
+      <span className="online-circle"></span>
+    </div>
+  ): '' }
           <div className="ms-3">
-            <h5 className="mb-0">{selectFriend?.name || 'Unknown User'}</h5>
-            <small className="text-muted">Online</small>
-          </div>
+  <h5 className="mb-0">{selectFriend?.name || 'Unknown User'}</h5>
+  
+</div>
         </div>
         <div className="header-icons">
           <OverlayTrigger placement="top" overlay={<Tooltip>Call</Tooltip>}>
@@ -167,6 +170,13 @@ const Messenger = ({
           <OverlayTrigger placement="top" overlay={<Tooltip>More Options</Tooltip>}>
             <button className="icon-button"><FaEllipsisH /></button>
           </OverlayTrigger>
+          <small className="text-muted">
+    {isFriendOnline ? (
+      <>
+        <FaCircle className="text-success me-1" size={8} />
+      </>
+    ) : 'Offline'}
+  </small>
         </div>
       </div>
 
@@ -242,36 +252,54 @@ const Messenger = ({
       <Form onSubmit={handleSubmit} className="message-input-area">
         
         <div className="message-actions">
-          <UploadFiles selectFriend = {selectFriend} />
-          <UploadImages selectFriend = {selectFriend} />
+    {/* Fixed UploadFiles with proper tooltip */}
+    <OverlayTrigger placement="top" overlay={<Tooltip>Send Files</Tooltip>}>
+      <div>
+        <UploadFiles selectFriend={selectFriend} />
+      </div>
+    </OverlayTrigger>
 
-          <OverlayTrigger placement="top" overlay={<Tooltip>Add Gift</Tooltip>}>
-            <Button variant="link" className="action-btn">
-              <FaGift size={20} />
-            </Button>
-          </OverlayTrigger>
+    {/* Fixed UploadImages with proper tooltip */}
+    <OverlayTrigger placement="top" overlay={<Tooltip>Send Images</Tooltip>}>
+      <div>
+        <UploadImages selectFriend={selectFriend} />
+      </div>
+    </OverlayTrigger>
 
-          <Button  
-            variant="link" 
-            className="emoji-toggle-btn"
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          >
-            ❤️
-          </Button>
+    {/* Gift button (already correct) */}
+    <OverlayTrigger placement="top" overlay={<Tooltip>Add Gift</Tooltip>}>
+      <Button variant="link" className="gift-btn">
+        <FaGift size={20} />
+      </Button>
+    </OverlayTrigger>
 
-          <Button 
-            type="submit" 
-            variant="link" 
-            className="send-btn"
-            disabled={!message.trim() || isSending}
-          >
-            {isSending ? (
-              <Spinner animation="border" size="sm" />
-            ) : (
-              <FaPaperPlane size={20} />
-            )}
-          </Button>
-        </div>
+    {/* Emoji button - fixed */}
+    <OverlayTrigger placement="top" overlay={<Tooltip>Emojis</Tooltip>}>
+      <Button 
+        variant="link" 
+        className="emoji-toggle-btn"
+        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+      >
+        ❤️
+      </Button>
+    </OverlayTrigger>
+
+    {/* Send button - fixed */}
+    <OverlayTrigger placement="top" overlay={<Tooltip>Send Message</Tooltip>}>
+      <Button 
+        type="submit" 
+        variant="link" 
+        className="send-btn"
+        disabled={!message.trim() || isSending}
+      >
+        {isSending ? (
+          <Spinner animation="border" size="sm" />
+        ) : (
+          <FaPaperPlane size={20} />
+        )}
+      </Button>
+    </OverlayTrigger>
+  </div>
 
         <InputGroup className="message-input-group">
           <Form.Control
@@ -304,7 +332,7 @@ const Messenger = ({
               className="close-emoji-picker"
               onClick={() => setShowEmojiPicker(false)}
             >
-              Close
+              <FaTimesCircle size={40} />
             </Button>
           </div>
         )}

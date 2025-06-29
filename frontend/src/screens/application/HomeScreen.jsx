@@ -1,8 +1,9 @@
 import { Container, Row, Col } from 'react-bootstrap';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom'; // Add useNavigate
 import { useState } from 'react';
 import { FiMessageSquare } from 'react-icons/fi';
 import { useGetApplicationsQuery } from '../../slices/applicationsSlice.js';
+import { useSelector } from 'react-redux'; 
 import Application from '../../components/application/Application.jsx';
 import Paginate from '../../components/helpers/Paginate.jsx';
 import Loader from '../../components/helpers/Loader.jsx';
@@ -15,7 +16,16 @@ function HomeScreen() {
   const { pageNumber, keyword } = useParams();
   const { data, isLoading, isError } = useGetApplicationsQuery({ keyword, pageNumber });
   const [showChat, setShowChat] = useState(false);
-  
+  const navigate = useNavigate(); 
+  const { userInfo } = useSelector((state) => state.auth); 
+
+  const handleChatClick = () => {
+    if (!userInfo) {
+      navigate('/register');
+    } else {
+      setShowChat(!showChat);
+    }
+  };
 
   return (
     <>
@@ -57,20 +67,16 @@ function HomeScreen() {
             </Col>
           </Row>
 
-              {/* Chat Interface */}
-              
-             
+          {/* Chat Interface */}
           {showChat && (
-        <div
-        
-        >
-          <MessengerScreen />
-        </div>
-      )}
+            <div>
+              <MessengerScreen />
+            </div>
+          )}
 
           {/* Floating Chat Toggle */}
           <button
-            onClick={() => setShowChat(!showChat)}
+            onClick={handleChatClick} 
             className="position-fixed d-flex align-items-center justify-content-center p-0 border-0"
             style={{
               bottom: '10px',

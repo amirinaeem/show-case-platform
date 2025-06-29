@@ -1,21 +1,13 @@
-import { Container, Card, Accordion, Row, Col, Image, Badge } from 'react-bootstrap';
+import { Card, Accordion, Row, Col, Image } from 'react-bootstrap';
 import { FaCaretDown, FaPhoneAlt, FaVideo, FaEllipsisV } from 'react-icons/fa';
 import { BsCheck2Circle } from 'react-icons/bs';
 import '../../assets/styles/messaging/rightSide.css';
 
-const RightSide = ({ selectFriend, userInfo, connectedUsers }) => {
-  if (!selectFriend) {
-    return (
-      <div className="right-side d-flex justify-content-center align-items-center">
-        <div className="text-center">
-          <h5>User Profile</h5>
-          <p className="text-muted">Select a friend to view profile</p>
-        </div>
-      </div>
-    );
-  }
+const RightSide = ({ selectFriend, connectedUsers }) => {
+  
+  const isActive = connectedUsers.some(user => user.id === selectFriend._id);
 
-  const isActive = connectedUsers.some(user => user.userId === selectFriend._id);
+  console.log('from right side', isActive)
 
   return (
     <div className="right-side mb-5">
@@ -48,10 +40,10 @@ const RightSide = ({ selectFriend, userInfo, connectedUsers }) => {
               className="border border-3 border-primary"
             />
             {isActive && (
-              <Badge pill bg="success" className="active-badge-profile">
-                Online
-              </Badge>
-            )}
+    <div className="online-indicator-right">
+      <span className="online-circle-right"></span>
+    </div>
+  )}
           </div>
           <h4 className="mb-1">{selectFriend.name}</h4>
           <p className="text-muted mb-3">

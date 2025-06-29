@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useSendMessageMutation } from '../../slices/messengerSlice';
-import { Button, Badge, CloseButton, Spinner } from 'react-bootstrap';
+import { Button, Badge, Spinner } from 'react-bootstrap';
 import { FaFileAlt, FaPaperPlane, FaUpload, FaImage, FaFilePdf, FaFileWord, FaFileExcel, FaFileAudio, FaFileVideo, FaFileArchive, FaJs, FaPython, FaJava, FaPhp, FaHtml5, 
-  FaCss3Alt, FaMarkdown } from 'react-icons/fa';
+  FaCss3Alt, FaMarkdown, 
+  FaTimesCircle} from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import '../../assets/styles/messaging/UploadFiles.css';
+import '../../assets/styles/messaging/upload.css';
 
 // Update your FILE_ICONS mapping
 const FILE_ICONS = {
@@ -165,8 +166,8 @@ const UploadFiles = ({ selectFriend }) => {
 };
 
   return (
-    <div className="file-upload-container">
-      <Button variant="link" className="upload-icon-button">
+    <div className="upload-container">
+      <Button variant="link" className="upload-btn">
         <label htmlFor="file-upload-input" className="cursor-pointer d-flex align-items-center">
           <FaUpload size={18} className="upload-icon" />
           
@@ -182,52 +183,56 @@ const UploadFiles = ({ selectFriend }) => {
       </Button>
 
       {attachments.length > 0 && (
-        <div className="attachments-preview mt-3">
-          <div className="preview-header mb-2">
+        <div className="upload-preview-container">
+          <div className="preview-header">
             <strong>{attachments.length} file{attachments.length !== 1 ? 's' : ''} selected</strong>
             <Badge bg="secondary" className="ms-2">
               Total: {formatFileSize(attachments.reduce((sum, file) => sum + file.file.size, 0))}
             </Badge>
           </div>
 
-          <div className="file-list">
+          <div className="upload-items-list">
             {attachments.map((attachment, index) => (
-              <div key={`${attachment.name}-${index}`} className="file-item">
-                <div className="file-info">
-                  {attachment.icon}
-                  <div className="file-details">
-                    <div className="file-name" title={attachment.name}>
-                      {attachment.name}
-                    </div>
-                    <div className="file-meta">
-  <Badge bg="light" text="dark" className="file-size">
-    {attachment.size}
-  </Badge>
-  <Badge 
-    bg={attachment.type === 'code' ? 'primary' : 'info'} 
-    className="file-type ms-2"
+  <div 
+    key={`${attachment.name}-${index}`} 
+    className="file-item d-flex justify-content-between align-items-center p-2 mb-2 bg-light rounded"
   >
-    {attachment.type === 'code' 
-      ? attachment.name.split('.').pop() 
-      : attachment.type.split('/')[0]
-    }
-  </Badge>
-</div>
-                  </div>
-                </div>
-                <CloseButton 
-                  onClick={() => removeAttachment(index)}
-                  aria-label={`Remove ${attachment.name}`}
-                />
-              </div>
-            ))}
+    <div className="d-flex align-items-center">
+      {attachment.icon}
+      <div className="ms-2">
+        <div className="file-name text-truncate" style={{maxWidth: '150px'}}>
+          {attachment.name}
+        </div>
+        <div className="d-flex mt-1">
+          <Badge bg="light" text="dark" className="file-size">
+            {attachment.size}
+          </Badge>
+          <Badge 
+            bg={attachment.type === 'code' ? 'primary' : 'info'} 
+            className="file-type ms-2"
+          >
+            {attachment.type === 'code' 
+              ? attachment.name.split('.').pop() 
+              : attachment.type.split('/')[0]}
+          </Badge>
+        </div>
+      </div>
+    </div>
+    <FaTimesCircle 
+      className="text-danger ms-2"
+      onClick={() => removeAttachment(index)}
+      style={{cursor: 'pointer', flexShrink: 0}}
+      aria-label={`Remove ${attachment.name}`}
+    />
+  </div>
+))}
           </div>
 
           <Button
             variant="primary"
             onClick={uploadFilesHandler}
             disabled={isUploading}
-            className="send-button"
+            className="upload-send-btn"
           >
             {isUploading ? (
               <>
