@@ -2,14 +2,16 @@
 import { Server } from 'socket.io';
 import { registerUserHandlers } from './socketControllers/userRegisterHandlers.js';
 import { socketLogger } from './socketUtils/logger.js';
+import { env } from '../../shared/src/config/env.js';
+
 
 // ===================================================================
 // SECTION 1: SERVER CONFIGURATION
 // ===================================================================
 
-const PORT = 8000;
+const PORT = env.SOCKET_PORT || 8000;
 const CORS_CONFIG = {
-  origin: '*',
+  origin: env.FRONTEND_URL || '*',
   methods: ['GET', 'POST']
 };
 

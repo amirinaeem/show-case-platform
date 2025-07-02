@@ -1,6 +1,5 @@
 // Load environment variables
-import dotenv from 'dotenv';
-dotenv.config();
+import { env } from '../../shared/src/config/env.js';
 
 // Core Modules
 import path from 'path';
@@ -23,8 +22,8 @@ import messengerRoutes from '../routes/messengerRoutes.js';
 // Constants
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve();
-const PORT = process.env.PORT || 5000;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const PORT = env.PORT || 5000;
+const FRONTEND_URL = env.FRONTEND_URL || 'http://localhost:3000';
 const tempDir = path.join(__dirname, 'temp_uploads');
 const activeUploads = new Set();
 
@@ -77,7 +76,7 @@ app.get('/', (req, res) => res.send('Welcome to the API!'));
 app.use('/api', apiRoutes);
 app.use('/api/messenger', messengerRoutes);
 app.get('/health', (_, res) => res.status(200).json({ status: 'healthy' }));
-app.get('/api/config/paypal', (_, res) => res.json({ clientId: process.env.PAYPAL_CLIENT_ID }));
+app.get('/api/config/paypal', (_, res) => res.json({ clientId: env.PAYPAL_CLIENT_ID }));
 
 // ======================
 // Error Handling

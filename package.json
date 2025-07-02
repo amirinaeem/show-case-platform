@@ -2,75 +2,24 @@
   "name": "showcase-platform",
   "version": "1.0.0",
   "description": "showCase platform built with MERN stack",
-  "type": "module",
-  "main": "server.js",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "real_time/*",
+    "shared"
+  ],
   "scripts": {
-    "install": "yarn install && cd frontend && yarn install && cd ../real_time/socket && yarn install && cd ../webrtc && yarn install",
-    "dev": "concurrently \"yarn backend\" \"yarn frontend\" \"yarn socket\" \"yarn webrtc\"",
-    "production": "concurrently \"yarn backend-start\" \"yarn frontend-start\" \"yarn socket-start\" \"yarn webrtc-start\"",
-    
-    "backend": "nodemon backend/server/server.js",
-    "backend-start": "node backend/server/server.js",
-    "backend-install": "yarn install",
-    
-    "frontend": "cd frontend && yarn start",
-    "frontend-start": "cd frontend && yarn start",
-    "frontend-install": "cd frontend && yarn install",
-    
-    "socket": "cd real_time/socket && nodemon socketServer.js --ext js,json",
-    "socket-start": "cd real_time/socket && node socketServer.js",
-    "socket-install": "cd real_time/socket && yarn install",
-    
-    "webrtc": "cd real_time/webrtc && yarn start",
-    "webrtc-start": "cd real_time/webrtc && node webrtcClient.js",
-    "webrtc-install": "cd real_time/webrtc && yarn install",
-    
-    "data-import": "node backend/seeder.js",
-    "data-destroy": "node backend/seeder.js -d"
+    "install-all": "yarn install",
+    "dev": "concurrently \"yarn workspace backend dev\" \"yarn workspace frontend dev\" \"yarn workspace socket-server dev\"",
+    "start": "concurrently \"yarn workspace backend start\" \"yarn  workspace frontend start\" \"yarn workspace socket-server start\"",
+    "data-import": "yarn workspace backend data-import",
+    "data-destroy": "yarn workspace backend data-destroy"
   },
   "author": "MO.Naeem Amiri",
   "license": "MIT",
-  "dependencies": {
-    "@fortawesome/fontawesome-free": "^6.7.2",
-    "@fortawesome/fontawesome-svg-core": "^6.7.2",
-    "@fortawesome/free-solid-svg-icons": "^6.7.2",
-    "@fortawesome/react-fontawesome": "^0.2.2",
-    "bcrypt": "^6.0.0",
-    "bcryptjs": "^3.0.2",
-    "body-parser": "^2.2.0",
-    "cloudinary": "^1.41.3",
-    "colors": "^1.4.0",
-    "cookie-parser": "^1.4.7",
-    "date-fns": "^4.1.0",
-    "emoji-picker-react": "^4.12.2",
-    "express": "^4.21.2",
-    "formidable": "^3.5.4",
-    "helmet": "^8.1.0",
-    "http-proxy-middleware": "^3.0.5",
-    "jsonwebtoken": "^9.0.2",
-    "link-preview-js": "^3.0.14",
-    "mediasoup-client": "^3.11.0",
-    "mongodb": "^6.14.0",
-    "mongoose": "^8.11.0",
-    "multer": "^1.4.5-lts.1",
-    "multer-storage-cloudinary": "^4.0.0",
-    "node-cache": "^5.1.2",
-    "peer": "^1.0.2",
-    "peerjs": "^1.5.5",
-    "react-scripts": "5.0.1",
-    "redis": "^5.0.1",
-    "simple-peer": "^9.11.1",
-    "socket.io": "^4.8.1",
-    "ts-morph": "^25.0.1",
-    "twilio-video": "^2.31.0",
-    "validator": "^13.15.0",
-    "winston": "^3.17.0",
-    "winston-daily-rotate-file": "^5.0.0"
-  },
   "devDependencies": {
-    "@types/multer": "^1.4.12",
-    "concurrently": "^9.1.2",
-    "dotenv": "^16.5.0",
-    "nodemon": "^3.1.9"
-  }
+    "concurrently": "^9.1.2"
+  },
+  "packageManager": "yarn@4.9.2"
 }
