@@ -1,50 +1,28 @@
-import EmojiPicker from 'emoji-picker-react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useGetMessageQuery, useSendMessageMutation } from '../../slices/messengerSlice';
-import { 
-  Stack, 
-  Form, 
-  InputGroup, 
-  Button,
-  Image,
-  OverlayTrigger,
-  Tooltip,
-  Spinner,
-  Alert,
-} from 'react-bootstrap';
-import { 
-  FaPhoneAlt,
-  FaVideo,
-  FaEllipsisH,
-  FaGift, 
-  FaPaperPlane,
-  FaCheckDouble,
-  FaFileAlt,
-  FaTimesCircle,
-  FaCircle
-} from 'react-icons/fa';
-import { RiChat3Line } from 'react-icons/ri';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import EmojiPicker from 'emoji-picker-react';
 import UploadFiles from './UploadFiles';
 import UploadImages from './UploadImages';
+import {
+  Stack, Form, InputGroup, Button,
+  Image, OverlayTrigger, Tooltip, Spinner, Alert
+} from 'react-bootstrap';
+import {
+  FaPhoneAlt, FaVideo, FaEllipsisH, FaGift, FaPaperPlane,
+  FaCheckDouble, FaFileAlt, FaTimesCircle, FaCircle
+} from 'react-icons/fa';
+import { v4 as uuidv4 } from 'uuid';
 import '../../assets/styles/messaging/messenger.css';
 
-const Messenger = ({
-  selectFriend,
-  userInfo,
-  connectedUsers,
-  socket
-
-}) => {
+const Messenger = ({ selectFriend, userInfo, connectedUsers, socket }) => {
   const scrollRef = useRef();
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [localMessages, setLocalMessages] = useState([]);
 
-  const isFriendOnline = connectedUsers.some(user => user.id === selectFriend?._id)
+  const isFriendOnline = connectedUsers.some(user => user.id === selectFriend?._id);
 
-  console.log('from messenger', isFriendOnline)
-
-  // Get messages for the selected friend
+  // Fetch messages with minimal re-fetching
   const {
     data: messages = [],
     isLoading,
@@ -52,88 +30,61 @@ const Messenger = ({
     error,
   } = useGetMessageQuery(selectFriend?._id, {
     skip: !selectFriend?._id,
-    //pollingInterval: 5000, // Optional: refetch messages every 5 seconds
+    refetchOnMountOrArgChange: false,
   });
 
-  // Send message mutation
   const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
 
+  // Scroll to bottom on new messages
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, localMessages]);
 
-
-  //for test 
+  // Handle incoming socket messages
   useEffect(() => {
-  if (!socket) return;
+    if (!socket) return;
 
-  socket.on('messageReceived', (msg) => {
-    console.log('📨 Message received:', msg);
-    setLocalMessages(prev => [...prev, msg])
-  });
+    const handleMessage = (msg) => {
+      if (
+        (msg.senderId === selectFriend?._id && msg.receiverId === userInfo._id) ||
+        (msg.senderId === userInfo._id && msg.receiverId === selectFriend?._id)
+      ) {
+        // Ensure each message has a unique _id (fallback with UUID)
+        const id = msg._id || uuidv4();
+        setLocalMessages(prev => {
+          const exists = prev.find(m => m._id === id);
+          if (exists) return prev;
+          return [...prev, { ...msg, _id: id }];
+        });
+      }
+    };
 
-  return () => {
-    socket.off('messageReceived');
-  };
-  }, [socket]);
-
+    socket.on('messageReceived', handleMessage);
+    return () => socket.off('messageReceived', handleMessage);
+  }, [socket, selectFriend?._id, userInfo._id]);
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!message.trim() || !selectFriend?._id || isSending) return;
+    e.preventDefault();
+    if (!message.trim() || !selectFriend?._id || isSending) return;
 
-  try {
-    const newMessage = await sendMessage({
-      receiverId: selectFriend._id,
-      text: message,
-    }).unwrap();
+    try {
+      const newMessage = await sendMessage({
+        receiverId: selectFriend._id,
+        text: message,
+      }).unwrap();
 
-    socket.emit('newMessage', {
-      message: newMessage,
-      to: selectFriend._id
-    });
+      socket.emit('newMessage', {
+        message: newMessage,
+        to: selectFriend._id
+      });
 
-    setMessage('');
-  } catch (err) {
-    console.error('Failed to send message:', err);
-  }
-};
-  
-
-  const renderMessageContent = useCallback((msg) => {
-    if (msg.message?.files?.length > 0) {
-      return (
-        <div className="file-message">
-          {msg.message.files.map((file, i) => (
-            <div key={i} className="file-attachment-display">
-              {file.type === 'image' ? (
-                <div className="image-message-container">
-                  <Image 
-                    src={file.url} 
-                    className="shared-image"
-                    thumbnail
-                    alt={`Attachment ${i}`}
-                  />
-                </div>
-              ) : (
-                <div className="file-attachment-display">
-                  <FaFileAlt size={24} />
-                  <div className="file-info">
-                    <span className="file-name">{file.fileName}</span>
-                    <span className="file-size">{file.fileType}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-          {msg.message?.text && <p className="message-text mb-0">{msg.message.text}</p>}
-        </div>
-      );
+      setMessage('');
+    } catch (err) {
+      console.error('Failed to send message:', err);
     }
-    return <p className="message-text mb-0">{msg.message?.text || msg.text}</p>;
-  }, []);
+  };
 
   const formatTime = (timestamp) => {
     if (!timestamp) return 'Just now';
@@ -141,16 +92,50 @@ const Messenger = ({
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
- 
+  const renderMessageContent = useCallback((msg) => {
+    const { files = [], text } = msg.message || msg;
+    if (files.length > 0) {
+      return (
+        <div className="file-message">
+          {files.map((file, i) => (
+            <div key={i} className="file-attachment-display">
+              {file.type === 'image' ? (
+                <div className="image-message-container">
+                  <Image src={file.url} className="shared-image" thumbnail alt={`Attachment ${i}`} />
+                </div>
+              ) : (
+                <>
+                  <FaFileAlt size={24} />
+                  <div className="file-info">
+                    <span className="file-name">{file.fileName}</span>
+                    <span className="file-size">{file.fileType}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+          {text && <p className="message-text mb-0">{text}</p>}
+        </div>
+      );
+    }
 
+    return <p className="message-text mb-0">{text || msg.text}</p>;
+  }, []);
 
+  // Deduplicate messages from API + socket
+  const uniqueMessages = useMemo(() => {
+    const combined = [...messages, ...localMessages];
+    const map = new Map();
+    combined.forEach(msg => {
+      map.set(msg._id, msg);
+    });
+    return Array.from(map.values());
+  }, [messages, localMessages]);
 
   if (isLoading) {
     return (
       <div className="messenger-container d-flex justify-content-center align-items-center">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading messages...</span>
-        </Spinner>
+        <Spinner animation="border" role="status" />
       </div>
     );
   }
@@ -167,26 +152,21 @@ const Messenger = ({
 
   return (
     <div className="messenger-container pb-5">
-      {/* Message Header */}
-      <div className="message-header">
+      {/* Header */}
+      <div className="message-header d-flex justify-content-between align-items-center">
         <div className="d-flex align-items-center">
-          <Image 
-  src={selectFriend?.avatar || '/images/default-avatar.png'} 
-  roundedCircle 
-  className={`message-header-avatar ${isFriendOnline ? 'online-avatar' : 'offline-avatar'}`}
-  alt="Friend avatar"
-/>
-          {isFriendOnline ? (
-    <div className="online-indicator">
-      <span className="online-circle"></span>
-    </div>
-  ): '' }
+          <Image
+            src={selectFriend?.avatar || '/images/default-avatar.png'}
+            roundedCircle
+            className={`message-header-avatar ${isFriendOnline ? 'online-avatar' : 'offline-avatar'}`}
+            alt="Friend avatar"
+          />
+          {isFriendOnline && <div className="online-indicator"><span className="online-circle" /></div>}
           <div className="ms-3">
-  <h5 className="mb-0">{selectFriend?.name || 'Unknown User'}</h5>
-  
-</div>
+            <h5 className="mb-0">{selectFriend?.name || 'Unknown User'}</h5>
+          </div>
         </div>
-        <div className="header-icons">
+        <div className="header-icons d-flex align-items-center gap-2">
           <OverlayTrigger placement="top" overlay={<Tooltip>Call</Tooltip>}>
             <button className="icon-button"><FaPhoneAlt /></button>
           </OverlayTrigger>
@@ -197,39 +177,27 @@ const Messenger = ({
             <button className="icon-button"><FaEllipsisH /></button>
           </OverlayTrigger>
           <small className="text-muted">
-    {isFriendOnline ? (
-      <>
-        <FaCircle className="text-success me-1" size={8} />
-      </>
-    ) : 'Offline'}
-  </small>
+            {isFriendOnline ? <FaCircle className="text-success me-1" size={8} /> : 'Offline'}
+          </small>
         </div>
       </div>
 
-      {/* Messages Display Area */}
-      <div
-        className="messages-display p-3"
-        ref={scrollRef}
-        style={{overflowY: 'auto'}}
-      >
-        {[...messages, ...localMessages].map((msg) => {
+      {/* Messages */}
+      <div className="messages-display p-3" ref={scrollRef} style={{ overflowY: 'auto' }}>
+        {uniqueMessages.map((msg) => {
           const isMe = msg.senderId === userInfo._id;
-          
+
           return (
-            <div 
-              key={msg._id} 
-              className={`message ${isMe ? 'outgoing' : 'incoming'}`}
-            >
-              <Stack direction="horizontal" gap={2} className={isMe ? "justify-content-end" : ""}>
+            <div key={msg._id} className={`message ${isMe ? 'outgoing' : 'incoming'}`}>
+              <Stack direction="horizontal" gap={2} className={isMe ? 'justify-content-end' : ''}>
                 {!isMe && (
-                  <Image 
-                    src={selectFriend?.avatar || '/images/default-avatar.png'} 
-                    alt="Friend profile" 
-                    roundedCircle 
+                  <Image
+                    src={selectFriend?.avatar || '/images/default-avatar.png'}
+                    alt="Friend profile"
+                    roundedCircle
                     className="message-avatar"
                   />
                 )}
-                
                 <div className="message-bubble">
                   {renderMessageContent(msg)}
                   <div className="message-meta">
@@ -241,12 +209,11 @@ const Messenger = ({
                     )}
                   </div>
                 </div>
-
                 {isMe && (
-                  <Image 
-                    src={userInfo?.avatar || '/images/default-avatar.png'} 
-                    alt="Your profile" 
-                    roundedCircle 
+                  <Image
+                    src={userInfo?.avatar || '/images/default-avatar.png'}
+                    alt="Your profile"
+                    roundedCircle
                     className="message-avatar"
                   />
                 )}
@@ -254,82 +221,35 @@ const Messenger = ({
             </div>
           );
         })}
-
-        
-         <div className="typing-indicator">
-          <Stack direction="horizontal" gap={2}>
-            <Image 
-              src={selectFriend?.avatar} 
-              alt="Friend profile" 
-              roundedCircle 
-              className="message-avatar"
-            />
-            <div className="typing-bubble">
-              <div className="typing-content">
-                <RiChat3Line className="typing-icon" />
-                <span>Typing...</span>
-              </div>
-            </div>
-          </Stack>
-        </div> 
       </div>
 
-      {/* Message Input Area */}
+      {/* Input */}
       <Form onSubmit={handleSubmit} className="message-input-area">
-        
-        <div className="message-actions">
-    {/* Fixed UploadFiles with proper tooltip */}
-    <OverlayTrigger placement="top" overlay={<Tooltip>Send Files</Tooltip>}>
-      <div>
-        <UploadFiles selectFriend={selectFriend} />
-      </div>
-    </OverlayTrigger>
-
-    {/* Fixed UploadImages with proper tooltip */}
-    <OverlayTrigger placement="top" overlay={<Tooltip>Send Images</Tooltip>}>
-      <div>
-        <UploadImages selectFriend={selectFriend} />
-      </div>
-    </OverlayTrigger>
-
-    {/* Gift button (already correct) */}
-    <OverlayTrigger placement="top" overlay={<Tooltip>Add Gift</Tooltip>}>
-      <Button variant="link" className="gift-btn">
-        <FaGift size={20} />
-      </Button>
-    </OverlayTrigger>
-
-    {/* Emoji button - fixed */}
-    <OverlayTrigger placement="top" overlay={<Tooltip>Emojis</Tooltip>}>
-      <Button 
-        variant="link" 
-        className="emoji-toggle-btn"
-        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-      >
-        ❤️
-      </Button>
-    </OverlayTrigger>
-
-    {/* Send button - fixed */}
-    <OverlayTrigger placement="top" overlay={<Tooltip>Send Message</Tooltip>}>
-      <Button 
-        type="submit" 
-        variant="link" 
-        className="send-btn"
-        disabled={!message.trim() || isSending}
-      >
-        {isSending ? (
-          <Spinner animation="border" size="sm" />
-        ) : (
-          <FaPaperPlane size={20} />
-        )}
-      </Button>
-    </OverlayTrigger>
-  </div>
+        <div className="message-actions d-flex gap-2 align-items-center">
+          <OverlayTrigger placement="top" overlay={<Tooltip>Send Files</Tooltip>}>
+            <div><UploadFiles selectFriend={selectFriend} /></div>
+          </OverlayTrigger>
+          <OverlayTrigger placement="top" overlay={<Tooltip>Send Images</Tooltip>}>
+            <div><UploadImages selectFriend={selectFriend} /></div>
+          </OverlayTrigger>
+          <OverlayTrigger placement="top" overlay={<Tooltip>Add Gift</Tooltip>}>
+            <Button variant="link" className="gift-btn"><FaGift size={20} /></Button>
+          </OverlayTrigger>
+          <OverlayTrigger placement="top" overlay={<Tooltip>Emojis</Tooltip>}>
+            <Button variant="link" className="emoji-toggle-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
+              ❤️
+            </Button>
+          </OverlayTrigger>
+          <OverlayTrigger placement="top" overlay={<Tooltip>Send</Tooltip>}>
+            <Button type="submit" variant="link" className="send-btn" disabled={!message.trim() || isSending}>
+              {isSending ? <Spinner animation="border" size="sm" /> : <FaPaperPlane size={20} />}
+            </Button>
+          </OverlayTrigger>
+        </div>
 
         <InputGroup className="message-input-group">
           <Form.Control
-            as='textarea'
+            as="textarea"
             rows={1}
             placeholder="Type a message..."
             className="message-input"
@@ -346,18 +266,12 @@ const Messenger = ({
 
         {showEmojiPicker && (
           <div className="emoji-picker-container">
-            <EmojiPicker 
-              onEmojiClick={(emojiData) => {
-                setMessage(prev => prev + emojiData.emoji);
-              }} 
-              width={300} 
-              height={350} 
+            <EmojiPicker
+              onEmojiClick={(emojiData) => setMessage(prev => prev + emojiData.emoji)}
+              width={300}
+              height={350}
             />
-            <Button 
-              variant="link" 
-              className="close-emoji-picker"
-              onClick={() => setShowEmojiPicker(false)}
-            >
+            <Button variant="link" className="close-emoji-picker" onClick={() => setShowEmojiPicker(false)}>
               <FaTimesCircle size={40} />
             </Button>
           </div>

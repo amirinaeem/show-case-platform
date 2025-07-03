@@ -1,5 +1,4 @@
 // socketControllers/messageHandlers.js
-import Message from '../../../shared/src/models/messengerModel.js';
 
 export const registerMessageHandlers = (io, socket) => {
   // Handle incoming messages
@@ -9,9 +8,14 @@ export const registerMessageHandlers = (io, socket) => {
         s => s.userData?.id === to
       );
 
+      const senderSocket = socket;
+
       if (recipientSocket) {
         recipientSocket.emit('messageReceived', message);
       }
+
+
+      senderSocket.emit('messageReceived', message)
 
 
     } catch (err) {

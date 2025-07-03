@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Image, Badge, CloseButton, Spinner } from 'react-bootstrap';
+import { Button, Image, Badge, Spinner } from 'react-bootstrap';
 import { FaImage, FaPaperPlane } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useSendMessageMutation } from '../../slices/messengerSlice';

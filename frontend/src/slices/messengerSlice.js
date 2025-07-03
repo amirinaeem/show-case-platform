@@ -8,18 +8,23 @@ export const messengerSlice = apiSlice.injectEndpoints({
       providesTags: ['Friends']
     }),
 
-    sendMessage: builder.mutation({
+     sendMessage: builder.mutation({
       query: (messageData) => ({
         url: `${MESSENGER_URL}/send-message`,
         method: 'POST',
         body: messageData
       }),
-      invalidatesTags: ['Messages']
+      // Critical: Invalidate the exact query that needs updating
+      invalidatesTags: (result) => [
+        { type: 'Messages', id: result?.receiverId }
+      ],
     }),
 
     getMessage: builder.query({
       query: (id) => `${MESSENGER_URL}/get-message/${id}`,
-      providesTags: ['Messages']
+      providesTags: (result, error, id) => [
+        { type: 'Messages', id }
+      ],
     }),
   }), 
 });
