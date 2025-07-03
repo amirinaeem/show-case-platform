@@ -95,7 +95,7 @@ const isCurrentUserOnline = connectedUsers.some(user => user.id === userInfo._id
               selectFriend={selectFriend}
               userInfo={userInfo}
               connectedUsers={connectedUsers}
-
+              socket={socket}
             />
           )}
         </div>

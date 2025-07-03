@@ -11,6 +11,9 @@
     "dev": "nodemon socketServer.js --ext js,json"
   },
   "dependencies": {
+    "@socket.io/redis-adapter": "^8.3.0",
+    "dotenv": "^17.0.1",
+    "ioredis": "^5.6.1",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {

@@ -32,11 +32,13 @@ const Messenger = ({
   selectFriend,
   userInfo,
   connectedUsers,
+  socket
 
 }) => {
   const scrollRef = useRef();
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [localMessages, setLocalMessages] = useState([]);
 
   const isFriendOnline = connectedUsers.some(user => user.id === selectFriend?._id)
 
@@ -48,7 +50,6 @@ const Messenger = ({
     isLoading,
     isError,
     error,
-    refetch
   } = useGetMessageQuery(selectFriend?._id, {
     skip: !selectFriend?._id,
     //pollingInterval: 5000, // Optional: refetch messages every 5 seconds
@@ -62,6 +63,44 @@ const Messenger = ({
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+
+  //for test 
+  useEffect(() => {
+  if (!socket) return;
+
+  socket.on('messageReceived', (msg) => {
+    console.log('📨 Message received:', msg);
+    setLocalMessages(prev => [...prev, msg])
+  });
+
+  return () => {
+    socket.off('messageReceived');
+  };
+  }, [socket]);
+
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!message.trim() || !selectFriend?._id || isSending) return;
+
+  try {
+    const newMessage = await sendMessage({
+      receiverId: selectFriend._id,
+      text: message,
+    }).unwrap();
+
+    socket.emit('newMessage', {
+      message: newMessage,
+      to: selectFriend._id
+    });
+
+    setMessage('');
+  } catch (err) {
+    console.error('Failed to send message:', err);
+  }
+};
+  
 
   const renderMessageContent = useCallback((msg) => {
     if (msg.message?.files?.length > 0) {
@@ -102,21 +141,8 @@ const Messenger = ({
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!message.trim() || !selectFriend?._id || isSending) return;
+ 
 
-    try {
-      await sendMessage({
-        receiverId: selectFriend._id,
-        text: message,
-      }).unwrap();
-      setMessage('');
-      refetch(); 
-    } catch (err) {
-      console.error('Failed to send message:', err);
-    }
-  };
 
 
   if (isLoading) {
@@ -186,7 +212,7 @@ const Messenger = ({
         ref={scrollRef}
         style={{overflowY: 'auto'}}
       >
-        {messages.map((msg) => {
+        {[...messages, ...localMessages].map((msg) => {
           const isMe = msg.senderId === userInfo._id;
           
           return (

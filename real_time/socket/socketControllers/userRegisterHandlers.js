@@ -1,6 +1,8 @@
 import { socketLogger } from '../socketUtils/logger.js';
+import { registerMessageHandlers } from './registerMessageHandlers.js';
+import { addOnlineUser, removeOnlineUser, getAllOnlineUsers } from '../store/redisUserStore.js';
 
-export const registerUserHandlers = (io, socket) => {
+export const registerUserHandlers = async (io, socket) => {
   const { userInfo } = socket.handshake.auth;
 
   if (!userInfo || !userInfo._id) {
@@ -9,37 +11,33 @@ export const registerUserHandlers = (io, socket) => {
     return;
   }
 
-  // Create user data object
   const userData = {
     id: userInfo._id,
     name: userInfo.name,
-    email: userInfo.email
+    email: userInfo.email,
   };
-  
-  // Attach to socket
+
   socket.userData = userData;
-  socketLogger.networkEvent('User authenticated', socket.id, 
+
+  await addOnlineUser(userData);
+
+  socketLogger.networkEvent('User authenticated', socket.id,
     `(User: ${userInfo.name}, ID: ${userInfo._id})`);
 
   // Notify others about new connection
   socket.broadcast.emit('userConnected', userData);
 
-  // Handle user list requests
-  socket.on('getConnectedUsers', (callback) => {
-    const users = getConnectedUsers(io);
+  registerMessageHandlers(io, socket);
+
+  // Handle request to get online users from Redis
+  socket.on('getConnectedUsers', async (callback) => {
+    const users = await getAllOnlineUsers();
     callback(users);
   });
 
   // Handle disconnection
-  socket.on('disconnect', (reason) => {
-    socketLogger.disconnect(socket.id, `${reason} | User: ${userInfo.name}`);
+  socket.on('disconnect', async () => {
+    await removeOnlineUser(userData.id);
     io.emit('userDisconnected', userData.id);
   });
 };
-
-// Helper function to get all connected users
-function getConnectedUsers(io) {
-  return Array.from(io.sockets.sockets.values())
-    .map(s => s.userData)
-    .filter(Boolean);
-}
