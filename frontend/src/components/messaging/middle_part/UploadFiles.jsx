@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useSendMessageMutation } from '../../slices/messengerSlice';
+import { useSendMessageMutation } from '../../../slices/messengerSlice';
 import { Button, Badge, Spinner } from 'react-bootstrap';
 import { FaFileAlt, FaPaperPlane, FaUpload, FaImage, FaFilePdf, FaFileWord, FaFileExcel, FaFileAudio, FaFileVideo, FaFileArchive, FaJs, FaPython, FaJava, FaPhp, FaHtml5, 
   FaCss3Alt, FaMarkdown, 
   FaTimesCircle} from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import '../../assets/styles/messaging/upload.css';
+import '../../../assets/styles/messaging/upload.css';
 
 // Update your FILE_ICONS mapping
 const FILE_ICONS = {

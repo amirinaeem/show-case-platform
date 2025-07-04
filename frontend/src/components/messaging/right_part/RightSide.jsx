@@ -1,7 +1,7 @@
 import { Card, Accordion, Row, Col, Image } from 'react-bootstrap';
 import { FaCaretDown, FaPhoneAlt, FaVideo, FaEllipsisV } from 'react-icons/fa';
 import { BsCheck2Circle } from 'react-icons/bs';
-import '../../assets/styles/messaging/rightSide.css';
+import '../../../assets/styles/messaging/rightSide.css';
 
 const RightSide = ({ selectFriend, connectedUsers }) => {
   

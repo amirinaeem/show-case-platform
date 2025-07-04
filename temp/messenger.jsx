@@ -1,28 +1,34 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { useGetMessageQuery, useSendMessageMutation } from '../../slices/messengerSlice';
-import EmojiPicker from 'emoji-picker-react';
-import UploadFiles from './UploadFiles';
-import UploadImages from './UploadImages';
-import {
-  Stack, Form, InputGroup, Button,
-  Image, OverlayTrigger, Tooltip, Spinner, Alert
-} from 'react-bootstrap';
+
 import {
   FaPhoneAlt, FaVideo, FaEllipsisH, FaGift, FaPaperPlane,
   FaCheckDouble, FaFileAlt, FaTimesCircle, FaCircle
 } from 'react-icons/fa';
+import {
+  Stack, Form, InputGroup, Button,
+  Image, OverlayTrigger, Tooltip, Spinner, Alert,
+} from 'react-bootstrap';
+
+import { useGetMessageQuery, useSendMessageMutation } from '../../slices/messengerSlice';
+import EmojiPicker from 'emoji-picker-react';
+import UploadFiles from './UploadFiles';
+import UploadImages from './UploadImages';
+
 import { v4 as uuidv4 } from 'uuid';
 import '../../assets/styles/messaging/messenger.css';
 
 const Messenger = ({ selectFriend, userInfo, connectedUsers, socket }) => {
   const scrollRef = useRef();
+  const typingTimeoutRef = useRef(null);
+  const typingStopTimeoutRef = useRef(null);
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [localMessages, setLocalMessages] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [friendTyping, setFriendTyping] = useState(false);
 
   const isFriendOnline = connectedUsers.some(user => user.id === selectFriend?._id);
 
-  // Fetch messages with minimal re-fetching
   const {
     data: messages = [],
     isLoading,
@@ -35,39 +41,113 @@ const Messenger = ({ selectFriend, userInfo, connectedUsers, socket }) => {
 
   const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
 
-  // Scroll to bottom on new messages
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, localMessages]);
 
-  // Handle incoming socket messages
+  // Socket event handlers
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !selectFriend?._id) return;
+    const currentTypingTimeout = typingTimeoutRef.current;
+    const currentTypingStopTimeout = typingStopTimeoutRef.current;
+
+    console.log('Setting up socket listeners...');
 
     const handleMessage = (msg) => {
+      console.log('Message received:', msg);
       if (
-        (msg.senderId === selectFriend?._id && msg.receiverId === userInfo._id) ||
-        (msg.senderId === userInfo._id && msg.receiverId === selectFriend?._id)
+        (msg.senderId === selectFriend._id && msg.receiverId === userInfo._id) ||
+        (msg.senderId === userInfo._id && msg.receiverId === selectFriend._id)
       ) {
-        // Ensure each message has a unique _id (fallback with UUID)
         const id = msg._id || uuidv4();
         setLocalMessages(prev => {
           const exists = prev.find(m => m._id === id);
-          if (exists) return prev;
-          return [...prev, { ...msg, _id: id }];
+          return exists ? prev : [...prev, { ...msg, _id: id }];
         });
       }
     };
 
+    const handleTypingStart = ({ from }) => {
+      console.log('Typing start received from:', from);
+      if (from === selectFriend._id) {
+        setFriendTyping(true);
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+
+    const handleTypingStop = ({ from }) => {
+      console.log('Typing stop received from:', from);
+      if (from === selectFriend._id) {
+        setFriendTyping(false);
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+
     socket.on('messageReceived', handleMessage);
-    return () => socket.off('messageReceived', handleMessage);
+    socket.on('typingStart', handleTypingStart);
+    socket.on('typingStop', handleTypingStop);
+
+    return () => {
+      console.log('Cleaning up socket listeners');
+      socket.off('messageReceived', handleMessage);
+      socket.off('typingStart', handleTypingStart);
+      socket.off('typingStop', handleTypingStop);
+      clearTimeout(currentTypingTimeout);
+      clearTimeout(currentTypingStopTimeout);
+    };
   }, [socket, selectFriend?._id, userInfo._id]);
 
+  // Handle typing indicator
+  const handleTyping = useCallback(() => {
+    if (!isTyping && message.trim().length > 0) {
+      console.log('Starting typing indicator');
+      setIsTyping(true);
+      socket.emit('typingStart', {
+        from: userInfo._id,
+        to: selectFriend._id
+      });
+    }
+
+    // Reset the typing timeout
+    clearTimeout(typingStopTimeoutRef.current);
+    typingStopTimeoutRef.current = setTimeout(() => {
+      if (isTyping) {
+        console.log('Auto-stopping typing (no activity)');
+        setIsTyping(false);
+        socket.emit('typingStop', {
+          from: userInfo._id,
+          to: selectFriend._id
+        });
+      }
+    }, 1500);
+  }, [isTyping, message, socket, selectFriend?._id, userInfo._id]);
+
+  // Handle input changes
+  const handleInputChange = (e) => {
+    setMessage(e.target.value);
+    handleTyping();
+  };
+
+  // Handle message submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!message.trim() || !selectFriend?._id || isSending) return;
+
+    console.log('Submitting message...');
+    
+    // Clear typing indicators
+    if (isTyping) {
+      console.log('Clearing typing indicators on submit');
+      setIsTyping(false);
+      socket.emit('typingStop', {
+        from: userInfo._id,
+        to: selectFriend._id
+      });
+      clearTimeout(typingStopTimeoutRef.current);
+    }
 
     try {
       const newMessage = await sendMessage({
@@ -75,9 +155,11 @@ const Messenger = ({ selectFriend, userInfo, connectedUsers, socket }) => {
         text: message,
       }).unwrap();
 
+      console.log('Message sent, emitting socket event');
       socket.emit('newMessage', {
         message: newMessage,
-        to: selectFriend._id
+        to: selectFriend._id,
+        from: userInfo._id
       });
 
       setMessage('');
@@ -86,12 +168,14 @@ const Messenger = ({ selectFriend, userInfo, connectedUsers, socket }) => {
     }
   };
 
+  // Format message time
   const formatTime = (timestamp) => {
     if (!timestamp) return 'Just now';
     const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Render message content
   const renderMessageContent = useCallback((msg) => {
     const { files = [], text } = msg.message || msg;
     if (files.length > 0) {
@@ -122,7 +206,7 @@ const Messenger = ({ selectFriend, userInfo, connectedUsers, socket }) => {
     return <p className="message-text mb-0">{text || msg.text}</p>;
   }, []);
 
-  // Deduplicate messages from API + socket
+  // Combine and deduplicate messages
   const uniqueMessages = useMemo(() => {
     const combined = [...messages, ...localMessages];
     const map = new Map();
@@ -221,9 +305,31 @@ const Messenger = ({ selectFriend, userInfo, connectedUsers, socket }) => {
             </div>
           );
         })}
+
+        {friendTyping && (
+  <div className="typing-indicator">
+    <Image 
+      src={selectFriend?.avatar || '/images/default-avatar.png'} 
+      alt="Friend profile" 
+      roundedCircle 
+      className="message-avatar"
+      style={{ width: '32px', height: '32px', marginRight: '8px' }}
+    />
+    <div className="typing-bubble">
+      <div className="typing-content">
+        <div className="typing-dots">
+          <span className="typing-dot"></span>
+          <span className="typing-dot"></span>
+          <span className="typing-dot"></span>
+        </div>
+        <span className="typing-text">Typing...</span>
+      </div>
+    </div>
+  </div>
+)}
       </div>
 
-      {/* Input */}
+      {/* Input Area */}
       <Form onSubmit={handleSubmit} className="message-input-area">
         <div className="message-actions d-flex gap-2 align-items-center">
           <OverlayTrigger placement="top" overlay={<Tooltip>Send Files</Tooltip>}>
@@ -254,7 +360,7 @@ const Messenger = ({ selectFriend, userInfo, connectedUsers, socket }) => {
             placeholder="Type a message..."
             className="message-input"
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -272,7 +378,7 @@ const Messenger = ({ selectFriend, userInfo, connectedUsers, socket }) => {
               height={350}
             />
             <Button variant="link" className="close-emoji-picker" onClick={() => setShowEmojiPicker(false)}>
-              <FaTimesCircle size={40} />
+              <FaTimesCircle size={20} />
             </Button>
           </div>
         )}

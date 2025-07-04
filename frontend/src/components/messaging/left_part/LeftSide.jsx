@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { ListGroup, Image, Badge, Form } from 'react-bootstrap';
 import { FaSistrix, FaRegCheckCircle } from "react-icons/fa";
-import '../../assets/styles/messaging/leftSide.css';
+import '../../../assets/styles/messaging/leftSide.css';
+
 
 const LeftSide = ({ userInfo, friends, setSelectFriend, isLoading, isCurrentUserOnline }) => {
   const [searchTerm, setSearchTerm] = useState('');

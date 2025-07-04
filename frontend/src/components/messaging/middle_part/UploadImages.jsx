@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Button, Image, Badge, Spinner } from 'react-bootstrap';
 import { FaImage, FaPaperPlane } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { useSendMessageMutation } from '../../slices/messengerSlice';
-import '../../assets/styles/messaging/upload.css';
+import { useSendMessageMutation } from '../../../slices/messengerSlice';
+import '../../../assets/styles/messaging/upload.css';
 
 const UploadImages = ({ selectFriend }) => {
   const [attachments, setAttachments] = useState([]);

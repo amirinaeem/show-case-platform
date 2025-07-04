@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import LeftSide from '../../components/messaging/LeftSide';
-import RightSide from '../../components/messaging/RightSide';
-import Messenger from '../../components/messaging/Messenger';
+import LeftSide from '../../components/messaging/left_part/LeftSide';
+import RightSide from '../../components/messaging/right_part/RightSide';
+import Messenger from '../../components/messaging/middle_part/Messenger';
 import { useGetFriendsQuery } from '../../slices/messengerSlice';
 import { useSocket } from '../../socket/hooks/useSocket';
 import { socketNotficationsHandler } from '../../socket/helper/notificationsHandler';
