@@ -64,6 +64,9 @@
     ]
   },
   "devDependencies": {
+    "eslint": "8.23.0",
+    "eslint-config-react-app": "^7.0.1",
+    "eslint-plugin-react": "^7.37.5",
     "sass": "^1.89.0",
     "sass-loader": "^13.3.3",
     "typescript": "^5.8.3"
