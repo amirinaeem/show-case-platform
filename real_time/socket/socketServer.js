@@ -2,7 +2,7 @@
 import { Server } from 'socket.io';
 import { registerUserHandlers } from './socketControllers/userRegisterHandlers.js';
 import { socketLogger } from './socketUtils/logger.js';
-import { env } from '../../shared/src/config/env.js';
+import { env } from '../../env.js';
 
 
 // ===================================================================

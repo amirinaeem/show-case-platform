@@ -1,5 +1,5 @@
 // Load environment variables
-import { env } from '../../shared/src/config/env.js';
+import { env } from '../../env.js';
 
 // Core Modules
 import path from 'path';

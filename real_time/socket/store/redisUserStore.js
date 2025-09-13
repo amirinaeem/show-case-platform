@@ -1,5 +1,5 @@
 import { createClient } from 'redis';
-import { env } from '../../../shared/src/config/env.js';
+import { env } from '../../../env.js';
 
 const redis = createClient({ url: env.REDIS_URL });
 await redis.connect();
