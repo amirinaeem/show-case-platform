@@ -9,20 +9,21 @@
     "backend",
     "real_time/*"
   ],
-  "packageManager": "yarn@4.9.2",
+  "packageManager": "yarn@1.22.22",
   "engines": {
-    "node": ">=18 <23"
+    "node": ">=18 <23",
+    "yarn": "1.22.22"
   },
   "scripts": {
-  "dev": "concurrently -k -s first \"yarn workspace backend dev\" \"yarn workspace frontend dev\" \"yarn workspace socket-server dev\"",
-  "build": "yarn workspaces foreach -At run build",
-  "start": "yarn workspace backend start",
-  "start:socket": "yarn workspace socket-server start",
-  "start:all": "concurrently \"yarn workspace backend start\" \"yarn workspace socket-server start\"",
-  "data-import": "yarn workspace backend data-import",
-  "data-destroy": "yarn workspace backend data-destroy"
-}
-,
+    "dev": "concurrently -k -s first \"yarn workspace backend dev\" \"yarn workspace frontend dev\" \"yarn workspace socket-server dev\"",
+    "build": "yarn workspaces foreach -At run build",
+    "start": "yarn workspace backend start",
+    "start:socket": "yarn workspace socket-server start",
+    "start:all": "concurrently \"yarn workspace backend start\" \"yarn workspace socket-server start\"",
+    "data-import": "yarn workspace backend data-import",
+    "data-destroy": "yarn workspace backend data-destroy",
+    "render-build": "yarn install && yarn build"
+  },
   "author": "MO.Naeem Amiri",
   "license": "MIT",
   "devDependencies": {
