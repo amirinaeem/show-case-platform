@@ -14,15 +14,15 @@
     "node": ">=18 <23"
   },
   "scripts": {
-    "dev": "concurrently -k -s first \"yarn workspace backend dev\" \"yarn workspace frontend dev\" \"yarn workspace socket-server dev\"",
-    "build": "yarn workspaces foreach -At run build",
-    "render-build": "corepack enable && yarn install && yarn build",
-    "start": "yarn workspace backend start",
-    "start:socket": "yarn workspace socket-server start",
-    "start:all": "concurrently \"yarn workspace backend start\" \"yarn workspace socket-server start\"",
-    "data-import": "yarn workspace backend data-import",
-    "data-destroy": "yarn workspace backend data-destroy"
-  },
+  "dev": "concurrently -k -s first \"yarn workspace backend dev\" \"yarn workspace frontend dev\" \"yarn workspace socket-server dev\"",
+  "build": "yarn workspaces foreach -At run build",
+  "start": "yarn workspace backend start",
+  "start:socket": "yarn workspace socket-server start",
+  "start:all": "concurrently \"yarn workspace backend start\" \"yarn workspace socket-server start\"",
+  "data-import": "yarn workspace backend data-import",
+  "data-destroy": "yarn workspace backend data-destroy"
+}
+,
   "author": "MO.Naeem Amiri",
   "license": "MIT",
   "devDependencies": {
