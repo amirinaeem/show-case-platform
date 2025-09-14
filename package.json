@@ -21,7 +21,7 @@
     "start:all": "concurrently \"yarn workspace backend start\" \"yarn workspace socket-server start\"",
     "data-import": "yarn workspace backend data-import",
     "data-destroy": "yarn workspace backend data-destroy",
-    "render-build": "corepack enable && corepack prepare yarn@4.9.2 --activate && yarn install && yarn build"
+    "render-build": "yarn install --frozen-lockfile && yarn build"
   },
   "author": "MO.Naeem Amiri",
   "license": "MIT",
