@@ -9,10 +9,9 @@
     "backend",
     "real_time/*"
   ],
-  "packageManager": "yarn@1.22.22",
+  "packageManager": "yarn@4.9.2",
   "engines": {
-    "node": ">=18 <23",
-    "yarn": "1.22.22"
+    "node": ">=18 <23"
   },
   "scripts": {
     "dev": "concurrently -k -s first \"yarn workspace backend dev\" \"yarn workspace frontend dev\" \"yarn workspace socket-server dev\"",
