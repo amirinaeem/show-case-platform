@@ -1,8 +1,6 @@
 import express from 'express';
 import { getLinkPreview } from 'link-preview-js';
 import NodeCache from 'node-cache';
-const router = express.Router();
-const previewCache = new NodeCache({ stdTTL: 3600 });
 
 import {
   getApplications,
@@ -23,12 +21,23 @@ import {
   editReply,
   deleteReply
 } from '../controllers/applicationController.js';
-import { protect, admin, commentOwnerOrAdmin, replyOwnerOrAdmin } from '../middleware/authMiddleware.js';
 
+import {
+  protect,
+  admin,
+  commentOwnerOrAdmin,
+  replyOwnerOrAdmin
+} from '../middleware/authMiddleware.js';
 
-// ======================
-// Link Preview Route (with cache)
-// ======================
+// =====================================================
+// Setup
+// =====================================================
+const router = express.Router();
+const previewCache = new NodeCache({ stdTTL: 3600 });
+
+// =====================================================
+// 🔗 Link Preview Endpoint (with caching)
+// =====================================================
 router.get('/link-preview', async (req, res) => {
   const { url, noCache } = req.query;
 
@@ -55,14 +64,15 @@ router.get('/link-preview', async (req, res) => {
       url: preview.url,
       title: preview.title || 'No title',
       description: preview.description || '',
-      image: Array.isArray(preview.images) && preview.images.length > 0 ? preview.images[0] : null
+      image: Array.isArray(preview.images) && preview.images.length > 0
+        ? preview.images[0]
+        : null
     };
 
     previewCache.set(url, result); // Cache the result
     res.json(result);
-
   } catch (err) {
-    console.error("Backend failed to fetch link preview:", err);
+    console.error('Backend failed to fetch link preview:', err);
     res.status(500).json({
       error: 'Failed to fetch link preview',
       details: process.env.NODE_ENV === 'development' ? err.message : undefined
@@ -70,9 +80,9 @@ router.get('/link-preview', async (req, res) => {
   }
 });
 
-// ======================
-// Public Routes
-// ======================
+// =====================================================
+// 📂 Public Routes (no login required)
+// =====================================================
 router.route('/')
   .get(getApplications);
 
@@ -81,20 +91,22 @@ router.get('/top', getTopApplications);
 router.route('/:id')
   .get(getApplicationById);
 
-
-// ======================
-// Admin-only Routes
-// ======================
+// =====================================================
+// ✍️ Application Creation (authenticated users)
+// =====================================================
 router.route('/')
-  .post(protect, admin, createApplication);
+  .post(protect, createApplication);
 
+// =====================================================
+// 🔒 Admin Routes (update/delete only)
+// =====================================================
 router.route('/:id')
   .put(protect, admin, updateApplication)
   .delete(protect, admin, deleteApplication);
 
-// ======================
-// Authenticated User Routes
-// ======================
+// =====================================================
+// 🙋 Authenticated User Routes
+// =====================================================
 router.route('/:id/like')
   .post(protect, likeApplication);
 
@@ -104,28 +116,35 @@ router.route('/:id/share')
 router.route('/:id/reviews')
   .post(protect, createApplicationReview);
 
-// ======================
-// Comment System Routes
-// ======================
+// =====================================================
+// 💬 Comment System Routes
+// =====================================================
+
+// Add a comment
 router.route('/:id/comments')
   .post(protect, addComment);
+
+// Comment actions
+router.route('/:id/comments/:commentId/editComment')
+  .put(protect, commentOwnerOrAdmin, editComment);
 
 router.route('/:id/comments/:commentId/deleteComment')
   .delete(protect, commentOwnerOrAdmin, deleteComment);
 
-router.route('/:id/comments/:commentId/editComment')
-.put(protect, commentOwnerOrAdmin, editComment)
-  
 router.route('/:id/comments/:commentId/likeComment')
   .post(protect, likeComment);
 
+// Replies
 router.route('/:id/comments/:commentId/replies')
   .post(protect, replyToComment);
 
-router.route('/:id/comments/:commentId/replies/:replyId/editReply').put(protect, replyOwnerOrAdmin, editReply);
+router.route('/:id/comments/:commentId/replies/:replyId/editReply')
+  .put(protect, replyOwnerOrAdmin, editReply);
 
-router.route('/:id/comments/:commentId/replies/:replyId/deleteReply').delete(protect, replyOwnerOrAdmin, deleteReply);
-  
-router.route('/:id/comments/:commentId/replies/:replyId/likeReply').post(protect, likeToReply); 
+router.route('/:id/comments/:commentId/replies/:replyId/deleteReply')
+  .delete(protect, replyOwnerOrAdmin, deleteReply);
+
+router.route('/:id/comments/:commentId/replies/:replyId/likeReply')
+  .post(protect, likeToReply);
 
 export default router;

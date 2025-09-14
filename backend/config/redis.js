@@ -1,8 +1,8 @@
 // backend/config/redis.js
+
 import { createClient } from 'redis';
 import logger from './logger.js';
-import dotenv from 'dotenv';
-dotenv.config();
+import { env } from '../../env.js';  // Use validated env instead of dotenv
 
 class RedisClient {
   constructor() {
@@ -14,22 +14,22 @@ class RedisClient {
   async initialize() {
     try {
       this.client = createClient({
-        url: process.env.REDIS_URL || 'redis://localhost:6379',
+        url: env.REDIS_URL, // pulled from validated env
         socket: {
           reconnectStrategy: (retries) => {
             if (retries > 5) {
-              logger.warn('Too many Redis reconnection attempts');
+              logger.warn('⚠️ Too many Redis reconnection attempts');
               return false;
             }
             return Math.min(retries * 100, 5000);
-          }
-        }
+          },
+        },
       });
 
       this.setupEventListeners();
       await this.client.connect();
     } catch (error) {
-      logger.error('Redis initialization failed:', error);
+      logger.error('❌ Redis initialization failed:', error);
       throw error;
     }
   }
@@ -37,25 +37,25 @@ class RedisClient {
   setupEventListeners() {
     this.client.on('error', (err) => {
       this.isConnected = false;
-      logger.error('Redis error:', err);
+      logger.error('❌ Redis error:', err);
     });
 
     this.client.on('connect', () => {
-      logger.info('Redis connecting...');
+      logger.info('🔌 Redis connecting...');
     });
 
     this.client.on('ready', () => {
       this.isConnected = true;
-      logger.info('Redis connected and ready');
+      logger.info('✅ Redis connected and ready');
     });
 
     this.client.on('end', () => {
       this.isConnected = false;
-      logger.info('Redis disconnected');
+      logger.info('⚠️ Redis disconnected');
     });
 
     this.client.on('reconnecting', () => {
-      logger.info('Redis reconnecting...');
+      logger.info('♻️ Redis reconnecting...');
     });
   }
 
@@ -63,7 +63,7 @@ class RedisClient {
     try {
       return await this.client.get(key);
     } catch (error) {
-      logger.error(`Redis get failed for key ${key}:`, error);
+      logger.error(`❌ Redis get failed for key "${key}":`, error);
       throw error;
     }
   }
@@ -72,7 +72,7 @@ class RedisClient {
     try {
       return await this.client.set(key, value, options);
     } catch (error) {
-      logger.error(`Redis set failed for key ${key}:`, error);
+      logger.error(`❌ Redis set failed for key "${key}":`, error);
       throw error;
     }
   }
@@ -81,14 +81,14 @@ class RedisClient {
     try {
       await this.client.quit();
       this.isConnected = false;
+      logger.info('✅ Redis connection closed');
     } catch (error) {
-      logger.error('Redis disconnection failed:', error);
+      logger.error('❌ Redis disconnection failed:', error);
       throw error;
     }
   }
 }
 
-// Create a singleton instance
+// Singleton instance
 const redis = new RedisClient();
-
 export default redis;

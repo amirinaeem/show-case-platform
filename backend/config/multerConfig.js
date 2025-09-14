@@ -2,14 +2,29 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-const tempDir = '../server/temp_uploads';
+// Use absolute path for uploads directory
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const uploadsDir = path.join(__dirname, '../uploads');
+const tempDir = path.join(__dirname, '../temp_uploads');
 
-// Ensure temp directory exists
-if (!fs.existsSync(tempDir)) {
-  fs.mkdirSync(tempDir, { recursive: true });
-}
+// Ensure directories exist
+[uploadsDir, tempDir].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
 
-const storage = multer.diskStorage({
+// Storage for avatar uploads (goes to permanent uploads directory)
+const avatarStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const uniqueName = `avatar-${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  }
+});
+
+// Storage for temporary files
+const tempStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, tempDir),
   filename: (req, file, cb) => {
     const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
@@ -18,12 +33,11 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  // Allow all file types but with size limits
   const allowedExtensions = [
-    // Video formats
-  '.mp4', '.mov', '.avi', '.mkv', '.webm', '.wmv', '.flv', '.mpeg',
     // Images
-    '.jpg', '.jpeg', '.png', '.gif', '.webp',
+    '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg',
+    // Videos
+    '.mp4', '.mov', '.avi', '.mkv', '.webm', '.wmv', '.flv', '.mpeg',
     // Documents
     '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt',
     // Archives
@@ -42,8 +56,18 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-export const multerInstance = multer({
-  storage,
+// Multer instance for avatars (permanent storage)
+export const avatarUpload = multer({
+  storage: avatarStorage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB for avatars
+  }
+});
+
+// Multer instance for temporary files
+export const tempUpload = multer({
+  storage: tempStorage,
   fileFilter,
   limits: {
     fileSize: 50 * 1024 * 1024, // 50MB
@@ -51,6 +75,7 @@ export const multerInstance = multer({
   }
 });
 
-// Simplified exports without cleanup middleware
-export const uploadSingle = multerInstance.single.bind(multerInstance);
-export const uploadMultiple = multerInstance.array.bind(multerInstance);
+// Simplified exports
+export const uploadSingle = tempUpload.single.bind(tempUpload);
+export const uploadMultiple = tempUpload.array.bind(tempUpload);
+export const uploadAvatar = avatarUpload.single.bind(avatarUpload);

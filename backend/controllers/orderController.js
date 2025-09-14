@@ -1,5 +1,6 @@
 import asyncHandler from '../middleware/asyncHandler.js';
 import Order from '../models/orderModel.js';
+import { env } from '../../env.js';
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -128,7 +129,7 @@ const getOrders = asyncHandler(async (req, res) => {
 const getPayPalClientId = asyncHandler(async (req, res) => {
   try {
     // Fetch PayPal Client ID from environment variables
-    const paypalClientId = process.env.PAYPAL_CLIENT_ID;
+    const paypalClientId = env.PAYPAL_CLIENT_ID;
 
     if (!paypalClientId) {
       res.status(500);
@@ -149,5 +150,5 @@ export {
   updateOrderToPaid,
   updateOrderToDelivered,
   getOrders,
-  getPayPalClientId, // Export the new function
+  getPayPalClientId,
 };

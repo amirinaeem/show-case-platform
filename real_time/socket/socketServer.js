@@ -1,85 +1,56 @@
+/**
+ * Socket.IO integration with Express httpServer
+ *
+ * This attaches Socket.IO to the same server instance used by Express,
+ * so you only need to deploy one service/process.
+ */
 
-import { Server } from 'socket.io';
+import { Server as IOServer } from 'socket.io';
 import { registerUserHandlers } from './socketControllers/userRegisterHandlers.js';
 import { socketLogger } from './socketUtils/logger.js';
-import { env } from '../../env.js';
 
+// Allowed origins (configure properly in production)
+const ALLOWED_ORIGINS = [
+  process.env.FRONTEND_URL || 'http://localhost:3000'
+];
 
-// ===================================================================
-// SECTION 1: SERVER CONFIGURATION
-// ===================================================================
+export function attachSocketServer(httpServer) {
+  const io = new IOServer(httpServer, {
+    cors: { origin: ALLOWED_ORIGINS, methods: ['GET', 'POST'] },
+    connectionStateRecovery: {
+      maxDisconnectionDuration: 30_000 // 30 seconds to reconnect
+    }
+  });
 
-const PORT = env.SOCKET_PORT || 8000;
-const CORS_CONFIG = {
-  origin: env.FRONTEND_URL || '*',
-  methods: ['GET', 'POST']
-};
+  // Startup log
+  socketLogger.serverStart('attached to Express httpServer', { ALLOWED_ORIGINS });
 
-// ===================================================================
-// SECTION 2: SERVER INITIALIZATION
-// ===================================================================
+  // Connection management
+  io.on('connection', (socket) => {
+    socketLogger.connection(socket.id);
 
+    try {
+      registerUserHandlers(io, socket);
+      socketLogger.handlerSuccess(socket.id);
+    } catch (err) {
+      socketLogger.handlerError(socket.id, err);
+      socket.disconnect(true);
+      return;
+    }
 
-const io = new Server(PORT, { 
-  cors: CORS_CONFIG,
-  connectionStateRecovery: {
-    maxDisconnectionDuration: 30000 // 30 seconds to reconnect
-  }
-});
+    socket.on('ping', () => socketLogger.networkEvent('Ping', socket.id));
+    socket.on('pong', (latency) =>
+      socketLogger.networkEvent('Pong', socket.id, `(${latency}ms)`)
+    );
+    socket.on('disconnect', (reason) =>
+      socketLogger.disconnect(socket.id, reason)
+    );
+  });
 
-// ===================================================================
-// SECTION 3: SERVER STARTUP
-// ===================================================================
+  // Error handling
+  io.engine.on('connection_error', (err) => {
+    socketLogger.connectionError(err);
+  });
 
-socketLogger.serverStart(PORT, CORS_CONFIG);
-
-// ===================================================================
-// SECTION 4: CONNECTION MANAGEMENT
-// ===================================================================
-
-io.on('connection', (socket) => {
-  
-  socketLogger.connection(socket.id);
-
-  try {
-    registerUserHandlers(io, socket);
-    socketLogger.handlerSuccess(socket.id);
-  } catch (err) {
-    
-    socketLogger.handlerError(socket.id, err);
-    socket.disconnect(true); 
-    return;
-  }
-
-  // =================================================================
-  // SUBSECTION 4.1: NETWORK MONITORING
-  // =================================================================
-
-  socket.on('ping', () => socketLogger.networkEvent('Ping', socket.id));
-  socket.on('pong', (latency) => socketLogger.networkEvent('Pong', socket.id, `(${latency}ms)`));
-
-
-  socket.on('disconnect', (reason) => socketLogger.disconnect(socket.id, reason));
-});
-
-// ===================================================================
-// SECTION 5: ERROR HANDLING
-// ===================================================================
-
-
-io.engine.on('connection_error', (err) => {
-  socketLogger.connectionError(err);
-});
-
-// ===================================================================
-// SECTION 6: PROCESS MANAGEMENT
-// ===================================================================
-
-
-process.on('SIGTERM', () => {
-  socketLogger.shutdown();
-  io.close(() => process.exit(0)); 
-});
-
-
-export { io as socketServer };
+  return io;
+}

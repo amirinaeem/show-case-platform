@@ -1,25 +1,37 @@
 {
   "name": "showcase-platform",
-  "version": "1.0.0",
-  "description": "showCase platform built with MERN stack",
   "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Showcase platform built with MERN stack",
   "workspaces": [
     "frontend",
     "backend",
-    "real_time/*",
-    "shared"
+    "real_time/*"
   ],
+  "packageManager": "yarn@4.9.2",
+  "engines": {
+    "node": ">=18.18 <23"
+  },
   "scripts": {
-    "install-all": "yarn install",
-    "dev": "concurrently \"yarn workspace backend dev\" \"yarn workspace frontend dev\" \"yarn workspace socket-server dev\"",
-    "start": "concurrently \"yarn workspace backend start\" \"yarn  workspace frontend start\" \"yarn workspace socket-server start\"",
+    "dev": "concurrently -k -s first \"yarn workspace backend dev\" \"yarn workspace frontend dev\" \"yarn workspace socket-server dev\"",
+    "build": "yarn workspaces foreach -At run build",
+    "start": "yarn workspace backend start",
+    "start:socket": "yarn workspace socket-server start",
+    "start:all": "concurrently \"yarn workspace backend start\" \"yarn workspace socket-server start\"",
     "data-import": "yarn workspace backend data-import",
     "data-destroy": "yarn workspace backend data-destroy"
   },
   "author": "MO.Naeem Amiri",
   "license": "MIT",
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "@types/react": "^19.1.13",
+    "concurrently": "^9.1.2",
+    "socket.io-adapter": "^2.5.5",
+    "webpack": "^5.101.3"
   },
-  "packageManager": "yarn@4.9.2"
+  "dependencies": {
+    "validator": "^13.15.15",
+    "zod": "^4.1.8"
+  }
 }

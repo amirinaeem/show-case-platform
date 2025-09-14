@@ -11,7 +11,14 @@ import '../../assets/styles/messaging/messengerScreen.css';
 const MessengerScreen = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const socket = useSocket();
-  const { data: friends = [], isLoading } = useGetFriendsQuery();
+  const { data: friends = [], isLoading, isError, error } =
+  useGetFriendsQuery(undefined, { skip: !userInfo });
+
+useEffect(() => {
+  if (isError) console.error('getFriends error:', error);
+}, [isError, error]);
+
+console.log('friends from messenger screen', friends);
 
   const [selectFriend, setSelectFriend] = useState(null);
   const [connectedUsers, setConnectedUsers] = useState([]);

@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema(
     },
     avatar: { 
       type: String, 
-      default: "/SHCAPL-logo.jpg" 
+      default: "/images/logo.jpg" 
     },
     password: { 
       type: String, 

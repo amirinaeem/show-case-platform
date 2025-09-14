@@ -20,7 +20,7 @@ const authUser = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       isAdmin: user.isAdmin,
-      avatar: user.avatar || '/SHCAPL-logo.jpg',
+      avatar: user.avatar || "/images/logo.jpg",
     });
   } else {
     res.status(401);
@@ -46,7 +46,7 @@ const registerUser = asyncHandler(async (req, res) => {
         name,
         email,
         password,
-        avatar: avatar || '/SHCAPL-logo.jpg' 
+        avatar: avatar || "/images/logo.jpg" 
     });
 
     if (user) {
@@ -86,7 +86,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
             name: user.name,
             email: user.email,
             isAdmin: user.isAdmin,
-            avatar: user.avatar || '/SHCAPL-logo.jpg',
+            avatar: user.avatar || "/images/logo.jpg",
         });
     } else {
         res.status(404);
@@ -115,7 +115,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
             name: updatedUser.name,
             email: updatedUser.email,
             isAdmin: updatedUser.isAdmin,
-            avatar: updatedUser.avatar || '/SHCAPL-logo.jpg',
+            avatar: updatedUser.avatar || "/images/logo.jpg",
         });
     } else {
         res.status(404);
@@ -193,7 +193,7 @@ const updateUser = asyncHandler(async (req, res) => {
             name: updatedUser.name,
             email: updatedUser.email,
             isAdmin: updatedUser.isAdmin,
-            avatar: updatedUser.avatar || '/SHCAPL-logo.jpg',
+            avatar: updatedUser.avatar || "/images/logo.jpg",
         });
     } else {
         res.status(404);

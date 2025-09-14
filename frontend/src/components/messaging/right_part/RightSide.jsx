@@ -32,7 +32,7 @@ const RightSide = ({ selectFriend, connectedUsers }) => {
         <Card.Body className="p-4 text-center">
           <div className="position-relative d-inline-block mb-3">
             <Image
-              src={selectFriend.avatar}
+              src={selectFriend?.avatar || "/images/logo.jpg"}
               alt={selectFriend.name}
               roundedCircle
               width={120}

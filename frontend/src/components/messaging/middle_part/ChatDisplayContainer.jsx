@@ -22,7 +22,7 @@ const ChatDisplayContainer = ({
             <Stack direction="horizontal" gap={2} className={isMe ? 'justify-content-end' : ''}>
               {!isMe && (
                 <Image 
-                  src={selectFriend?.avatar || '/images/default-avatar.png'} 
+                  src={selectFriend?.avatar || "/images/logo.jpg"} 
                   roundedCircle 
                   className="message-avatar"
                   alt="Friend avatar"
@@ -41,7 +41,7 @@ const ChatDisplayContainer = ({
               </div>
               {isMe && (
                 <Image 
-                  src={userInfo?.avatar || '/images/default-avatar.png'} 
+                  src={userInfo?.avatar || "/images/logo.jpg"} 
                   roundedCircle 
                   className="message-avatar"
                   alt="Your avatar"
@@ -55,7 +55,7 @@ const ChatDisplayContainer = ({
       {friendTyping && (
         <div className="typing-indicator">
           <Image 
-            src={selectFriend?.avatar || '/images/default-avatar.png'} 
+            src={selectFriend?.avatar || "/images/logo.jpg"} 
             roundedCircle 
             className="message-avatar"
             alt="Typing indicator"

@@ -63,7 +63,7 @@ const CommentsList = ({ comments = [], appId, currentUserId, isAdmin = false }) 
               <div className="comment-row">
                 <div className="avatar-circle" style={{ cursor: 'pointer' }}>
                   <img
-                    src={comment.avatar || '/SHCAPL-logo.jpg'}
+                    src={comment.avatar || '/images/logo.jpg'}
                     alt={comment.name || 'User'}
                     loading="lazy"
                     style={{ cursor: 'pointer' }}

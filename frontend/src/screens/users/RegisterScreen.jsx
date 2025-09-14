@@ -38,39 +38,49 @@ const RegisterScreen = () => {
   };
 
   const uploadAvatarHandler = async (file) => {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
 
-    const res = await fetch('/api/uploads/avatar', {
-      method: 'POST',
-      body: formData,
-      credentials: 'include',
-    });
+      const res = await fetch('/api/uploads/avatar', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Avatar upload failed');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Avatar upload failed');
 
-    toast.success('Avatar uploaded successfully');
-    setFormData((prev) => ({ ...prev, avatarUrl: data.url }));
-    return data.url; 
-  } catch (error) {
-    toast.error(error.message);
-    throw error; 
-  }
-};
+      toast.success('Avatar uploaded successfully');
+      return data.url; 
+    } catch (error) {
+      toast.error(error.message);
+      throw error; 
+    }
+  };
 
   const handleFileChange = async (e) => {
     if (e.target.files.length > 0) {
       const file = e.target.files[0];
 
-      // Show preview
+      // Show temporary preview
       const reader = new FileReader();
       reader.onload = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
 
-      // Upload to server
-      await uploadAvatarHandler(file);
+      try {
+        // Upload to server and get the actual URL
+        const avatarUrl = await uploadAvatarHandler(file);
+        
+        // Update both formData and preview with the actual server URL
+        setFormData((prev) => ({ ...prev, avatarUrl }));
+        setImagePreview(avatarUrl); // Use the server URL for preview
+        
+      } catch (error) {
+        // If upload fails, clear the preview
+        setImagePreview('');
+        console.error('Upload failed:', error);
+      }
     }
   };
 
@@ -149,33 +159,33 @@ const RegisterScreen = () => {
         </Form.Group>
 
         <Form.Group controlId="profileImage" className="mb-4">
-          <Form.Label>Profile Image</Form.Label>
-          <div className="d-flex align-items-center gap-3">
-            {imagePreview && (
-              <img
-                src={imagePreview}
-                alt="Profile preview"
-                className="rounded-circle"
-                style={{
-                  width: '80px',
-                  height: '80px',
-                  objectFit: 'cover',
-                  border: '2px solid #dee2e6',
-                }}
-              />
-            )}
-            <div className="flex-grow-1">
-              <Form.Control
-                type="file"
-                onChange={handleFileChange}
-                accept="image/*"
-              />
-              <Form.Text className="text-muted">
-                Optional: Upload a profile picture
-              </Form.Text>
-            </div>
-          </div>
-        </Form.Group>
+  <Form.Label>Profile Image</Form.Label>
+  <div className="d-flex align-items-center gap-3">
+    <img
+      src={imagePreview || userInfo?.avatar || "/images/logo.jpg"}
+      alt="Profile preview"
+      className="rounded-circle"
+      style={{
+        width: "80px",
+        height: "80px",
+        objectFit: "cover",
+        border: "2px solid #dee2e6",
+      }}
+      onError={(e) => {
+        // fallback to local placeholder if Cloudinary/local file fails
+        e.target.src = "/images/logo.jpg";
+      }}
+    />
+    <div className="flex-grow-1">
+      <Form.Control
+        type="file"
+        onChange={handleFileChange}
+        accept="image/*"
+      />
+    </div>
+  </div>
+</Form.Group>
+
 
         <Button
           type="submit"

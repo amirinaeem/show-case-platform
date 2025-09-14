@@ -23,7 +23,7 @@ function UsersHomeScreen() {
     <Card key={user._id} className="top-user-card mb-3 shadow-sm">
       <div className="d-flex flex-column align-items-center p-3">
         <Image
-          src={user.avatar || 'SHCAPL-logo.jpg'}
+          src={user.avatar || '/images/logo.jpg'}
           roundedCircle
           width="100"
           height="100"
@@ -58,7 +58,7 @@ function UsersHomeScreen() {
           {firstRow.map(user => (
             <div key={user._id} className="mx-2">
               <Image
-              src={user.avatar || 'SHCAPL-logo.jpg'}
+              src={user.avatar || '/images/logo.jpg'}
               roundedCircle
               width="45"
               height="45"
@@ -78,7 +78,7 @@ function UsersHomeScreen() {
             {secondRow.map(user => (
               <div key={user._id} className="mx-2">
                 <Image
-                src={user.avatar || 'SHCAPL-logo.jpg'}
+                src={user.avatar || '/images/logo.jpg'}
                 roundedCircle
                 width="45"
                 height="45"

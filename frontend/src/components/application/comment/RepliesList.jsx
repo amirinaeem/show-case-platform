@@ -49,7 +49,7 @@ const RepliesList = ({
             <div className="comment-row">
               <div className="avatar-circle small">
                 <img
-                  src={reply.avatar || '/SHCAPL-logo.jpg'}
+                  src={reply.avatar || '/images/logo.jpg'}
                   alt={reply.name || 'User'}
                   loading="lazy"
                 />

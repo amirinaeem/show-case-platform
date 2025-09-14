@@ -1,19 +1,19 @@
-import mongoose from "mongoose";
+// backend/config/mdb.js
 
-import dotenv from 'dotenv';
-dotenv.config();
+import mongoose from 'mongoose';
+import { env } from '../../env.js';  // Import validated env instead of using dotenv here
 
 const connectDB = async () => {
- try {
-    const connect = await mongoose.connect(process.env.MONGODB_URI);
-    console.log(`MongoDB Connected: ${connect.connection.host}`);
- } catch (error) {
-    console.log(`Error: ${error.message}`);
-    process.exit(1)
- }
-}
+  try {
+    const connection = await mongoose.connect(env.MONGODB_URI);
+    console.log(`✅ MongoDB Connected: ${connection.connection.host}`);
+  } catch (error) {
+    console.error(`❌ MongoDB Connection Error: ${error.message}`);
+    process.exit(1); // Exit process with failure
+  }
+};
 
-
-console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'Loaded' : 'Missing!');
+// Extra debug log
+console.log('MONGODB_URI:', env.MONGODB_URI ? 'Loaded' : 'Missing!');
 
 export default connectDB;

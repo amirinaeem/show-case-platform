@@ -1,6 +1,6 @@
 import { createAdapter } from '@socket.io/redis-adapter';
 import { createClient } from 'redis';
-import { env } from '../../../shared/src/config/env.js';
+import { env } from '../../../env.js';
 
 
 const pubClient = createClient({ url: env.REDIS_URL });

@@ -7,7 +7,6 @@ import { useLogoutMutation } from '../../slices/usersApiSlice';
 import { logout } from '../../slices/authSlice';
 import SearchBox from './SearchBox';
 
-import logo from '../../assets/SHCAPL-logo.jpg'
 
 function Header() {
 
@@ -35,7 +34,7 @@ function Header() {
         <Container>
           <LinkContainer to='/'>
           <Navbar.Brand>
-          <img className='logo' src={logo} alt='logo' />
+              <img className='logo' src="/images/logo.jpg" alt="App Logo" />
           SHCAPL.COM
           </Navbar.Brand>
           </LinkContainer>

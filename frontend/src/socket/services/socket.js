@@ -1,18 +1,18 @@
+// frontend/src/config/socket.js
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = process.env.NODE_ENV === 'production' 
-  ? 'wss://yourdomain.com' 
-  : 'ws://localhost:8000';
+// Always pull from .env (React will inline REACT_APP_* at build time)
+const SOCKET_URL = process.env.REACT_APP_SOCKET_URL;
 
 export const socket = io(SOCKET_URL, {
   autoConnect: false,
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
-  transports: ['websocket']
+  transports: ['websocket'],
 });
 
-// Enhanced debugging
+// Debug logs only in development
 if (process.env.NODE_ENV === 'development') {
   socket
     .on('connect', () => console.log('✅ Socket connected:', socket.id))

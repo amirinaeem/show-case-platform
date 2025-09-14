@@ -38,7 +38,7 @@ const getApplicationById = asyncHandler(async (req, res) => {
 const createApplication = asyncHandler(async (req, res) => {
     const application = new Application({
         name: 'cyber solution',
-        image:  '/images/sample/SHCAPL-logo.jpg',
+        image:  '/images/ecom1.jpg',
         description: `If you want to keep all fields as required, you need to provide default values for them when creating a new application. Here's how you can update If you want to keep all fields as required, you need to provide default values for them when creating a new application. Here's how you can updateIf you want to keep all fields as required, you need to provide default values for them when creating a new application. Here's how you can updateIf you want to keep all fields as required, you need to provide default values for them when creating a new application. Here's how you can updateIf you want to keep all fields as required, you need to provide default values for them when creating a new application. Here's how you can update`,
         platform: 'Web',
         programmingLanguage:  'JavaScript',
@@ -309,7 +309,7 @@ const addComment = asyncHandler(async (req, res) => {
     _id: new mongoose.Types.ObjectId(), // Ensure we have an ID
     user: req.user._id,
     name: req.user.name,
-    avatar: req.user.avatar || '/SHCAPL-logo.jpg',
+    avatar: req.user.avatar || "/images/logo.jpg",
     comment: comment.trim(),
     replies: [],
     likes: [],
@@ -472,7 +472,7 @@ const replyToComment = asyncHandler(async (req, res) => {
     _id: new mongoose.Types.ObjectId(),
     user: req.user._id, // Current authenticated user
     name: req.user.name,
-    avatar: req.user.avatar || '/SHCAPL-logo.jpg',
+    avatar: req.user.avatar || '/images/logo.jpg',
     reply: reply.trim(),
     replyTo: comment.user || null, // Original comment author
     likes: [],

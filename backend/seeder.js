@@ -1,39 +1,47 @@
-import mongoose from "mongoose";
-import dotenv from 'dotenv';
+// backend/seeder.js
+
+import mongoose from 'mongoose';
 import colors from 'colors';
-import users from "./data/users.js";
+
+import users from './data/users.js';
 import applicationsData from './data/applicationsData.js';
 import User from './models/userModel.js';
 import Application from './models/applicationModel.js';
 import Order from './models/orderModel.js';
 import connectDB from './config/mdb.js';
+import { env } from '../env.js'; // ✅ validated env
 
-dotenv.config();
+// ==============================
+// Database Connection
+// ==============================
+console.log('Using DB:', env.MONGODB_URI ? '✅ Loaded' : '❌ Missing');
 
-// Add connection error handling
 connectDB().catch(err => {
-  console.error('DB Connection Error:'.red.inverse, err);
+  console.error('❌ DB Connection Error:'.red.inverse, err);
   process.exit(1);
 });
 
-// Improved data import with transactions
+// ==============================
+// Import Sample Data
+// ==============================
 const importData = async () => {
   const session = await mongoose.startSession();
   session.startTransaction();
-  
+
   try {
-    await Order.deleteMany({ session });
-    await Application.deleteMany({ session });
-    await User.deleteMany({ session });
+    // ✅ Correct usage: pass {} as filter, { session } as options
+    await Order.deleteMany({}, { session });
+    await Application.deleteMany({}, { session });
+    await User.deleteMany({}, { session });
 
     const createdUsers = await User.insertMany(users, { session });
-    const adminUser = createdUsers.find(u => u.isAdmin)?._id || createdUsers[0]._id;
+    const adminUser =
+      createdUsers.find(u => u.isAdmin)?._id || createdUsers[0]._id;
 
     const sampleApplications = applicationsData.map(app => ({
       ...app,
       user: adminUser,
-      // Add createdAt timestamp if not present
-      createdAt: app.createdAt || new Date()
+      createdAt: app.createdAt || new Date(),
     }));
 
     await Application.insertMany(sampleApplications, { session });
@@ -41,7 +49,6 @@ const importData = async () => {
     await session.commitTransaction();
     console.log('✅ Data Imported Successfully'.green.inverse);
     process.exit(0);
-
   } catch (error) {
     await session.abortTransaction();
     console.error('❌ Import Error:'.red.inverse, error);
@@ -51,18 +58,24 @@ const importData = async () => {
   }
 };
 
-// Improved data destruction
+// ==============================
+// Destroy All Data
+// ==============================
 const destroyData = async () => {
   try {
-    // Confirm before destructive operation
     const readline = (await import('readline')).createInterface({
       input: process.stdin,
-      output: process.stdout
+      output: process.stdout,
     });
 
     const answer = await new Promise(resolve => {
-      readline.question('⚠️  Are you sure you want to DELETE ALL DATA? (y/n) ', resolve);
+      readline.question(
+        '⚠️  Are you sure you want to DELETE ALL DATA? (y/n) ',
+        resolve
+      );
     });
+
+    readline.close();
 
     if (answer.toLowerCase() !== 'y') {
       console.log('Operation cancelled'.yellow);
@@ -72,19 +85,20 @@ const destroyData = async () => {
     await Promise.all([
       Order.deleteMany(),
       Application.deleteMany(),
-      User.deleteMany()
+      User.deleteMany(),
     ]);
 
     console.log('🗑️  All Data Destroyed'.red.inverse);
     process.exit(0);
-
   } catch (error) {
     console.error('❌ Destruction Error:'.red.inverse, error);
     process.exit(1);
   }
 };
 
-// Add help text
+// ==============================
+// CLI Helper
+// ==============================
 if (process.argv[2] === '-h') {
   console.log(`
 Usage:
@@ -95,5 +109,7 @@ Usage:
   process.exit(0);
 }
 
-// Execute based on argument
+// ==============================
+// Execute Command
+// ==============================
 process.argv[2] === '-d' ? destroyData() : importData();

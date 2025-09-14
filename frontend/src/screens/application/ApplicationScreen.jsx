@@ -11,6 +11,7 @@ import { useGetApplicationDetailsQuery, useCreateReviewMutation } from "../../sl
 import { addToCart } from "../../slices/cartSlice";
 
 function ApplicationScreen() {
+  
   const { id: appId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -22,6 +23,8 @@ function ApplicationScreen() {
   const [createReview, { isLoading: loadingApplicationReview }] = useCreateReviewMutation();
 
   const { userInfo } = useSelector((state) => state.auth);
+
+  console.log(application.image, 'from application screen')
 
   // Add to Cart Handler
   const addToCartHandler = () => {

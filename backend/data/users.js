@@ -7,28 +7,28 @@ const users = [
       email: 'admin@email.com',
       password: bcrypt.hashSync('123456', 10),
       isAdmin: true,
-      avatar: '/SHCAPL-logo.jpg', // Add avatar URL
+      avatar: "images/logo.jpg", // Add avatar URL
     },
     {
       name: 'Neem',
       email: 'publicamiri@email.com',
       password: bcrypt.hashSync('123456', 10),
       isAdmin: false,
-      avatar: '/SHCAPL-logo.jpg', // Add avatar URL
+      avatar: "images/logo.jpg", // Add avatar URL
     },
     {
       name: 'water Melon',
       email: 'water@email.com',
       password: bcrypt.hashSync('123456', 10),
       isAdmin: false,
-      avatar: '/SHCAPL-logo.jpg', // Add avatar URL
+      avatar: "images/logo.jpg", // Add avatar URL
     },
     {
       name: 'Cucumber',
       email: 'cucumber@email.com',
       password: bcrypt.hashSync('123456', 10),
       isAdmin: false,
-      avatar: '/SHCAPL-logo.jpg', // Add avatar URL
+      avatar: "images/logo.jpg", // Add avatar URL
     },
   ];
 

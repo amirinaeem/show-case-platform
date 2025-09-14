@@ -4,7 +4,7 @@ const applicationsData = [
   {
     user: new mongoose.Types.ObjectId(), 
     name: "Excellent e-commerce solution! Easy to customize and deploy",
-    image: "/images/cybers/cyber1.jpg",
+    image: "/images/ecom1.jpg",
     description: `
     Limitless app kit is fully based on LESS pre-processor, includes 100+ commented LESS files.
     Each file corresponds to a single component, layout, page, plugin or extension – so you can
@@ -127,7 +127,7 @@ const applicationsData = [
   {
     user: new mongoose.Types.ObjectId(), 
     name: "E-commerce Website",
-    image: "/images/cybers/cyber2.jpg",
+    image: "/images/ecom2.jpg",
     description: `
     Limitless app kit is fully based on LESS pre-processor, includes 100+ commented LESS files.
     Each file corresponds to a single component, layout, page, plugin or extension – so you can
@@ -250,7 +250,7 @@ const applicationsData = [
   {
     user: new mongoose.Types.ObjectId(), 
     name: "E-commerce Website",
-    image: "/images/cybers/cyber3.jpg",
+    image: "/images/ecom3.jpg",
     description: `
     Limitless app kit is fully based on LESS pre-processor, includes 100+ commented LESS files.
     Each file corresponds to a single component, layout, page, plugin or extension – so you can
@@ -373,7 +373,7 @@ const applicationsData = [
   {
     user: new mongoose.Types.ObjectId(), 
     name: "E-commerce Website",
-    image: "/images/cybers/cyber4.jpg",
+    image: "/images/ecom4.jpg",
     description: `
     Limitless app kit is fully based on LESS pre-processor, includes 100+ commented LESS files.
     Each file corresponds to a single component, layout, page, plugin or extension – so you can
@@ -496,7 +496,7 @@ const applicationsData = [
   {
     user: new mongoose.Types.ObjectId(), 
     name: "E-commerce Website",
-    image: "/images/cybers/cyber5.jpg",
+    image: "/images/ecom1.jpg",
     description: `
     Limitless app kit is fully based on LESS pre-processor, includes 100+ commented LESS files.
     Each file corresponds to a single component, layout, page, plugin or extension – so you can
@@ -619,7 +619,7 @@ const applicationsData = [
   {
     user: new mongoose.Types.ObjectId(), 
     name: "E-commerce Website",
-    image: "/images/social/social3.jpg",
+    image: "/images/ecom2.jpg",
     description: `
     Limitless app kit is fully based on LESS pre-processor, includes 100+ commented LESS files.
     Each file corresponds to a single component, layout, page, plugin or extension – so you can

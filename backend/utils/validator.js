@@ -1,18 +1,54 @@
-import mongoose from 'mongoose';
+// backend/utils/validator.js
+import validator from 'validator';
 
+/**
+ * Validate email format
+ */
+export const isValidEmail = (email) => {
+  return validator.isEmail(email || '');
+};
 
+/**
+ * Validate password strength
+ * - At least 8 characters
+ * - At least 1 uppercase letter
+ * - At least 1 lowercase letter
+ * - At least 1 number
+ */
+export const isStrongPassword = (password) => {
+  return validator.isStrongPassword(password || '', {
+    minLength: 8,
+    minLowercase: 1,
+    minUppercase: 1,
+    minNumbers: 1,
+    minSymbols: 0,
+  });
+};
+
+/**
+ * Validate MongoDB ObjectId format
+ */
 export const validateObjectId = (id) => {
-  if (!id || typeof id !== 'string') return false;
-  return mongoose.Types.ObjectId.isValid(id) &&
-    new mongoose.Types.ObjectId(id).toString() === id;
+  return validator.isMongoId(id || '');
 };
 
 
-export const validateCommentText = (comment) => {
-  if (!comment || typeof comment !== 'string' || !comment.trim()) {
-    throw new Error('Comment content is required and must be a non-empty string.');
-  }
-  if (comment.length > 5000) {  // You said 5000, but your message said 500 characters
-    throw new Error('Comment/reply cannot exceed 5000 characters.');
-  }
+export const validateCommentText = (text) => {
+  if (!text || typeof text !== 'string') return false;
+  const trimmed = text.trim();
+  return trimmed.length > 0 && trimmed.length <= 500;
+};
+
+/**
+ * Check if string is not empty
+ */
+export const isNonEmptyString = (str) => {
+  return typeof str === 'string' && str.trim().length > 0;
+};
+
+/**
+ * Generic input sanitizer (remove dangerous characters)
+ */
+export const sanitizeInput = (input) => {
+  return validator.escape(input || '');
 };

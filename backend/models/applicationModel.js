@@ -17,7 +17,7 @@ const replySchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     name: { type: String, required: true },
-    avatar: { type: String, default: '/SHCAPL-logo.jpg' },
+    avatar: { type: String, default: "/images/logo.jpg" },
     reply: {
       type: String,
       required: true,
@@ -50,7 +50,7 @@ const commentSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     name: { type: String, required: true },
-    avatar: { type: String, default: '/SHCAPL-logo.jpg' },
+    avatar: { type: String, default: "/images/logo.jpg" },
     comment: {
       type: String,
       required: true,

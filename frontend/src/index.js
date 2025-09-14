@@ -4,11 +4,12 @@ import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } 
 import { PayPalScriptProvider } from '@paypal/react-paypal-js';
 import { Provider } from 'react-redux';
 import store from './store';
-//import 'bootstrap/dist/css/bootstrap.min.css';
+// import 'bootstrap/dist/css/bootstrap.min.css';
 import './assets/styles/bootstrap.custom.css';
 import './assets/styles/index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+
 import HomeScreen from './screens/application/HomeScreen';
 import PrivateRoute from './components/users/PrivateRoute';
 import AdminRoute from './components/admin/AdminRoute';
@@ -27,8 +28,10 @@ import ApplicationEditScreen from './screens/admin/ApplicationEditScreen';
 import UserListScreen from './screens/admin/UserListScreen';
 import UserEditScreen from './screens/admin/UserEditScreen';
 
+// ⬇️ Add this import
+import { useGetPayPalClientIdQuery } from './slices/ordersApiSlice';
 
-
+// Build the router (unchanged)
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path='/' element={<App />}>
@@ -37,12 +40,12 @@ const router = createBrowserRouter(
       <Route path='/search/:keyword' element={<HomeScreen />} />
       <Route path='/page/:pageNumber' element={<HomeScreen />} />
       <Route path='/search/:keyword/page/:pageNumber' element={<HomeScreen />} />
-      
+
       {/* Application Routes */}
       <Route path='/application/:id' element={<ApplicationScreen />}>
-        <Route path='comments' element={<HomeScreen />} /> {/* Only if needed */}
+        <Route path='comments' element={<HomeScreen />} />
       </Route>
-      
+
       <Route path='/cart' element={<CartScreen />} />
       <Route path='/login' element={<LoginScreen />} />
       <Route path='/register' element={<RegisterScreen />} />
@@ -69,16 +72,33 @@ const router = createBrowserRouter(
   )
 );
 
+// Small gate that fetches the PayPal client id once and mounts the SDK globally.
+// We intentionally render nothing while loading to avoid remounting the whole app later.
+function PayPalProviderGate({ children }) {
+  const { data, isLoading, error } = useGetPayPalClientIdQuery();
+
+  if (isLoading) return null;
+  if (error || !data?.clientId) {
+    console.error('PayPal client id not available', error);
+    return children; // Render app without PayPal (buttons simply won’t render)
+  }
+
+  return (
+    <PayPalScriptProvider options={{ 'client-id': data.clientId, currency: 'USD' }}>
+      {children}
+    </PayPalScriptProvider>
+  );
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <Provider store={store}>
-      <PayPalScriptProvider deferLoading={true}>
-      <RouterProvider router={router} />
-      </PayPalScriptProvider>
+      <PayPalProviderGate>
+        <RouterProvider router={router} />
+      </PayPalProviderGate>
     </Provider>
   </React.StrictMode>
 );
-
 
 reportWebVitals();

@@ -5,7 +5,7 @@ const MessengerHeader = ({ selectFriend, isFriendOnline }) => (
   <div className="message-header d-flex justify-content-between align-items-center">
     <div className="d-flex align-items-center">
       <Image
-        src={selectFriend?.avatar || '/images/default-avatar.png'}
+        src={selectFriend?.avatar || "/images/logo.jpg"}
         roundedCircle
         className={`message-header-avatar ${isFriendOnline ? 'online-avatar' : 'offline-avatar'}`}
         alt="Friend avatar"
