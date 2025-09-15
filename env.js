@@ -1,4 +1,4 @@
-// shared/env.js (at root)
+// shared/env.js
 
 // Core imports
 import path from 'path';
@@ -24,12 +24,12 @@ const envSchema = z.object({
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
   JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
 
-  // Payments
-  PAYPAL_API_URL: z.string().url(),
-  PAYPAL_CLIENT_ID: z.string().min(1, 'PAYPAL_CLIENT_ID is required'),
+  // Payments (✅ default if missing)
+  PAYPAL_API_URL: z.string().url().default('https://api-m.sandbox.paypal.com'),
+  PAYPAL_CLIENT_ID: z.string().default(''),
 
-  // Redis
-  REDIS_URL: z.string().min(1, 'REDIS_URL is required'),
+  // Redis (✅ default if missing → local dev only!)
+  REDIS_URL: z.string().default('redis://localhost:6379'),
 
   // Messaging
   MESSAGING_UPLOADS_DIR: z.string().default('messagingUploads'),
